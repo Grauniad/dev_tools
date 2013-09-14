@@ -18,8 +18,8 @@ ifndef DEV_TOOLS_DIR
    $(error DEV_TOOLS_DIR must point to the root of the dev_tools depot)
 endif
 
-EXPORTS_DIR=$(PROJECT_ROOT_DIR)exports/
-SCRIPTS_DIR=$(DEV_TOOLS_DIR)Scripts/
+EXPORTS_DIR=$(PROJECT_ROOT_DIR)/exports/
+SCRIPTS_DIR=$(DEV_TOOLS_DIR)/Scripts/
 
 # Define the internal file structure
 EXPORT_TESTS_TO=$(EXPORTS_DIR)tests/
@@ -169,7 +169,7 @@ INCLUDE_FLAGS+=$(addprefix -I,$(ADDITIONAL_INCLUDE_FLAGS))
 
 # Expose libDefer to the test framework
 # Make the defer header available for use in test scripts
-TEST_COMP_FLAGS=-I$(LINKER_DIR)Libraries/libDefer/
+TEST_COMP_FLAGS=-I$(DEV_TOOLS_DIR)/CPP/Libraries/libDefer/
 TEST_COMP_FLAGS+=$(ADDITIONAL_TEST_COMP_FLAGS)
 
 
