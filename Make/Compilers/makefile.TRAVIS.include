@@ -16,7 +16,7 @@ PROFILE_GEN_COMMAND=$(SCRIPTS_DIR)/prof2html.py $(EXPORT_PROFILE_DIR)/$$(basenam
 PROFILE_VIEWER=$(WEB_VIEWER) $(EXPORT_PROFILE_DIR)index.html
 
 CPP=g++-4.8
-FORTRAN=gfortran
+FORTRAN=gfortran-4.8
 AR=ar
 
 COVER_FILE=index.html
