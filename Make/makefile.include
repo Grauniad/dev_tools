@@ -326,12 +326,19 @@ endif
 
 # Allow shutting down a folder based on a TOOL_CHAIN
 ifdef NO_$(TOOL_CHAIN)
-   BUILD_DEPS=
+   BUILD_DEPS=BUILD_FOLDERS
    POST_BUILD_DEPS=
    TO_COPY=
-   FOLDERS_TO_BUILD=
-   FOLDERS_TO_CLEAN=
    $(warning Skipping directory $(CURDIR) due to NO_$(TOOL_CHAIN) specification)
+endif
+
+ifdef ONLY_MODES
+   ifneq ($(findstring $(MODE),$(ONLY_MODES)),$(MODE))
+       BUILD_DEPS=BUILD_FOLDERS
+       POST_BUILD_DEPS=
+       TO_COPY=
+       $(warning Skipping directory $(CURDIR) due to mode $(MODE))
+   endif
 endif
 
 
