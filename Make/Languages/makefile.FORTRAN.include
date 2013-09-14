@@ -1,5 +1,5 @@
-ifndef CPP
-    $(error CPP must be specified!)
+ifndef FORTRAN
+    $(error FORTRAN must be specified!)
 endif
 
 COMP=$(FORTRAN)
