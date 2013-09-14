@@ -462,9 +462,9 @@ $(LIB_TO_BUILD): $(TO_BUILD)
 	$(AR) -cr $@ $(shell ls $(EXPORT_OBJS_DIR)/*)
 
 # Macro for moving include files to the includes directory. 
-$(EXPORT_INCLUDES_DIR)%: %
+$(EXPORTED_INCLUDES): $(EXPORT_INCLUDES_DIR)%: %
 	cp $+ $@
-
+ 
 # Macro for copying source code when using coverage testing
 $(EXPORT_OBJS_DIR)%$(SOURCE_EXTENSION): %$(SOURCE_EXTENSION)
 	cp $+ $@
