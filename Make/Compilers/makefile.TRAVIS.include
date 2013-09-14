@@ -1,0 +1,27 @@
+DEFAULT_DEBUG_FLAGS=-ggdb
+DEFAULT_RELEASE_FLAGS=-O2 -march=native
+DEFAULT_FAST_FLAGS=-Ofast -march=native
+DEFAULT_COMP_PROFILE_FLAGS=-pg $(DEFAULT_RELEASE_FLAGS)
+DEFAULT_CPPSTD=gnu++98
+DEFAULT_FORTRAN_STD=f2008
+
+# Handle hold g++
+COMPILER_CPP11=c++0x
+COMPILER_ALL_WARNINGS=-Wall
+COMPILER_FATAL_WARNINGS=-Werror
+COMPILER_COVERAGE=--coverage
+
+PROFILE_COMMAND=gprof $$test > $(EXPORT_PROFILE_DIR)/$$(basename $$test).profile  || exit;
+PROFILE_GEN_COMMAND=$(SCRIPTS_DIR)/prof2html.py $(EXPORT_PROFILE_DIR)/$$(basename $$test).profile || exit;
+PROFILE_VIEWER=$(WEB_VIEWER) $(EXPORT_PROFILE_DIR)index.html
+
+CPP=g++
+FORTRAN=gfortran
+AR=ar
+
+COVER_FILE=index.html
+
+GEN_COVER: 
+	lcov --capture --directory $(PROJECT_ROOT_DIR) --output-file $(EXPORT_COVER_DIR)test.info
+	genhtml -f --demangle-cpp  --legend --num-spaces 4 -s $(EXPORT_COVER_DIR)test.info --output-directory $(EXPORT_COVER_DIR)
+
