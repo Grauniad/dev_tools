@@ -22,7 +22,7 @@ endif
 ifndef DEFAULT_FAST_FLAGS
     $(error DEFAULT_FAST_FLAGS must be specified!)
 endif
-ifndef DEFAULT_CPP_PROFILE_FLAGS
+ifndef DEFAULT_COMP_PROFILE_FLAGS
     $(error DEFAULT_CPP_PROFILE_FLAGS must be specified!)
 endif
 ifndef DEFAULT_CPPSTD

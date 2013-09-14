@@ -1,7 +1,9 @@
-EXPORT_INCLUDES=$(shell echo *.h *.hpp)
-SOURCES=$(shell echo *.cpp)
-
-TARGET_LIB=libUtils
-CPP_TAGS_FILE=libUtils-c++.tags
+MAKE_DIRS= libLog \
+           libIO\
+           libBinary \
+           libCSV\
+           libOS\
+           libTime\
+           libMisc
 
 include ../makefiles_libaries.include

@@ -29,6 +29,9 @@ EXPORT_LIB_DIR=$(EXPORTS_DIR)lib/
 EXPORT_PROFILE_DIR=$(EXPORTS_DIR)profs/
 EXPORT_COVER_DIR=$(EXPORTS_DIR)coverage/
 
+INCLUDES_DIR:=$(EXPORT_INCLUDES_DIR)
+LIBS_DIR=$(EXPORT_LIB_DIR)
+
 ifndef WEB_VIEWER
     WEB_VIEWER=firefox
 endif
@@ -162,7 +165,7 @@ endif
 # These should be configured above
 # DO NOT CHANGE THESE UNLESS YOU KNOW WHAT YOU ARE DOING
 INCLUDE_FLAGS=-I$(EXPORT_INCLUDES_DIR) -I$(CURDIR)
-INCLUDE_FLAGS+=$(ADDITIONAL_INCLUDE_FLAGS)
+INCLUDE_FLAGS+=$(addprefix -I,$(ADDITIONAL_INCLUDE_FLAGS))
 
 # Expose libDefer to the test framework
 # Make the defer header available for use in test scripts
@@ -226,6 +229,28 @@ FILES_TO_CLEAN=
 FOLDERS_TO_CLEAN=
 LINKED_FILES=
 TO_COPY=
+SUB_FOLDER=
+
+
+ifdef TARGET_LIB
+   $(shell mkdir -p $(EXPORT_LIB_DIR))
+   LIB_TO_BUILD=$(addsuffix .a,$(EXPORT_LIB_DIR)$(TARGET_LIB))
+   BUILD_DEPS+=$(LIB_TO_BUILD)
+   FILES_TO_CLEAN+=$(LIB_TO_BUILD)
+   SUB_FOLDER=$(TARGET_LIB)
+endif
+
+ifdef EXECUTABLE   
+   BUILD_DEPS+=EXEC
+   EXEC_TO_BUILD=$(PROJECT_ROOT_DIR)$(EXECUTABLE)
+   FILES_TO_CLEAN+=$(EXEC_TO_BUILD)
+   SUB_FOLDER=$(EXECUTABLE)
+endif
+
+EXPORT_INCLUDES_DIR:=$(EXPORT_INCLUDES_DIR)$(SUB_FOLDER)/
+EXPORT_OBJS_DIR:=$(EXPORT_OBJS_DIR)$(SUB_FOLDER)/
+EXPORT_PROFILE_DIR:=$(EXPORT_PROFILE_DIR)$(SUB_FOLDER)/
+EXPORT_COVER_DIR:=$(EXPORT_COVER_DIR)$(SUB_FOLDER)/
 
 ifeq ($(findstring cover,$(MAKECMDGOALS)),cover)
    $(shell mkdir -p $(EXPORT_COVER_DIR))
@@ -256,18 +281,6 @@ ifdef MAKE_DIRS
    FOLDERS_TO_CLEAN=$(MAKE_DIRS)
 endif
 
-ifdef TARGET_LIB
-   $(shell mkdir -p $(EXPORT_LIB_DIR))
-   LIB_TO_BUILD=$(addsuffix .a,$(EXPORT_LIB_DIR)$(TARGET_LIB))
-   BUILD_DEPS+=$(LIB_TO_BUILD)
-   FILES_TO_CLEAN+=$(LIB_TO_BUILD)
-endif
-
-ifdef EXECUTABLE   
-   BUILD_DEPS+=EXEC
-   EXEC_TO_BUILD=$(PROJECT_ROOT_DIR)$(EXECUTABLE)
-   FILES_TO_CLEAN+=$(EXEC_TO_BUILD)
-endif
 
 ifdef BUILD_TIME_TESTS
    $(shell mkdir -p $(EXPORT_TESTS_TO))
@@ -295,6 +308,7 @@ endif
 
 ifdef LINKED_LIBS
    LINKED_FILES+=$(addprefix $(EXPORT_LIB_DIR),$(addsuffix .a,$(LINKED_LIBS)))
+   INCLUDE_FLAGS+=$(addprefix -I$(INCLUDES_DIR),$(addsuffix /,$(LINKED_LIBS)))
 endif
 
 
@@ -445,7 +459,7 @@ $(EXPORT_TESTS_TO)%: %$(SOURCE_EXTENSION) $(LINKED_FILES)
 
 # Macro for building STATIC libraries
 $(LIB_TO_BUILD): $(TO_BUILD)
-	$(AR) -cr 	$@ 	$+
+	$(AR) -cr $@ $(shell ls $(EXPORT_OBJS_DIR)/*)
 
 # Macro for moving include files to the includes directory. 
 $(EXPORT_INCLUDES_DIR)%: %
@@ -487,6 +501,8 @@ usage:
 	@echo "CPP_TAGS_FILE       (<exports/tags/%)       name of ctags file for this directory"
 	@echo "    <$(CPP_TAGS_FILE)>"
 	@echo ""
+	@echo "        Linker Options"
+	@echo "INCLUDES_DIR:  $(INCLUDES_DIR)"
 	@echo "        Compiler Options"
 	@echo "COMPILER: $(COMP)"
 	@echo ""
