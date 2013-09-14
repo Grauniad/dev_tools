@@ -3,13 +3,8 @@
 #
 # Make sure DEV_TOOLS's submodules have been intialised
 #
-pushd DEV_TOOLS/
 
-git submodule init
-git submodule update
-
-popd
-
+git submodule update --init --recursive
 
 #
 # Install GNU c++11 compiler
