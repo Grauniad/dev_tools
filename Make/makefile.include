@@ -483,7 +483,7 @@ $(EXPORT_OBJS_DIR)%.o: %$(SOURCE_EXTENSION)
 # TAGS
 ifneq ($(strip $(TAGS_TO_BUILD)),)
 #rebuild the tags file if anything has changed
-$(TAGS_TO_BUILD): $(subst $(TAGS_TO_BUILD),,$(BUILD_DEPS))
+$(TAGS_TO_BUILD): $(EXPORT_INCLUDES) $(SOURCES)
 	$(CTAGS) $(CTAGS_FLAGS) -f $(TAGS_TO_BUILD) $(CURDIR)
 endif
 
