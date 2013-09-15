@@ -150,7 +150,7 @@ ifndef GDB_OPTIONS
    #  - define break points here
    #  - defines the code that auto-starts and cleans up the test
    GDB_OPTIONS+=-x $(PROJECT_ROOT_DIR)/.gdb_breakpoints 
-   GDB_OPTIONS+=-x $(PROJECT_ROOT_DIR)/.gdb_setup 
+   GDB_OPTIONS+=-x $(DEV_TOOLS_DIR)/Scripts/.gdb_setup
    # We want the test return code to test success
    GDB_OPTIONS+=-return-child-result
 endif

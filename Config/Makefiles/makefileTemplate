@@ -1,0 +1,14 @@
+# DEV_TOOLS requries c++11
+USE_CPP11=YES
+
+ifndef TOOL_CHAIN
+    TOOL_CHAIN=GNU
+endif
+
+ifndef PROJECT_ROOT_DIR
+    PROJECT_ROOT_DIR=__PROJECT_DIR__
+endif
+
+DEV_TOOLS_DIR=$(PROJECT_ROOT_DIR)/DEV_TOOLS/
+
+include $(DEV_TOOLS_DIR)/Make/makefile.include
