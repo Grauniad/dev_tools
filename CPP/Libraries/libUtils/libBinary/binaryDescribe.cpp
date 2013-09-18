@@ -17,7 +17,7 @@ std::string BinaryDescribe::Describe(const BinaryReader& src, long len) {
         line << " ";
 
         asciistr << "|";
-        for ( int i=0; i<16; i++) {
+        for ( int i=0; i<16 && (index + i ) < len; i++) {
             if (i%8 == 0)
                 binstr << " ";
             // Get each character

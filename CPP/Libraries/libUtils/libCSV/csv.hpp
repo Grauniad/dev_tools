@@ -23,15 +23,14 @@ void CSV<Types...>::WriteCSV(BinaryWriter writer) {
 template<class...Types>
 CSV<Types...> CSV<Types...>::LoadCSV(BinaryReader reader) {
     CSV<Types...> csv;
-    //TODO
-    SLOG_FROM ( LOG_VERBOSE, "CSV::LoadCSV", "Reading a new CSV file" << endl << BinaryDescribe::Describe(reader, 10240))
+    SLOG_FROM ( LOG_VERBOSE, "CSV::LoadCSV", "Reading a new CSV file" << endl << BinaryDescribe::Describe(reader, reader.Size()))
 
     DataVector buf(1024);
     BinaryWriter w(buf);
     BinaryReader r(buf);
     while ( reader.Offset() < reader.End() ) {
         buf.Clear();
-        BinaryReader next = reader.Find(char(10));
+        BinaryReader next = reader.Find('\n');
         // Extract the line
         reader.Read(w,next-reader+1);
         // Replace the '\n' with '\0'

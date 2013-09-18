@@ -29,8 +29,11 @@ EXPORT_LIB_DIR=$(EXPORTS_DIR)lib/
 EXPORT_PROFILE_DIR=$(EXPORTS_DIR)profs/
 EXPORT_COVER_DIR=$(EXPORTS_DIR)coverage/
 
+EXTERNAL_INCLUDE_DIR=$(DEV_TOOLS_DIR)/EXTERNAL_INCLUDES/
+
 INCLUDES_DIR:=$(EXPORT_INCLUDES_DIR)
 LIBS_DIR=$(EXPORT_LIB_DIR)
+EXTERNAL_LIBS=
 
 ifndef WEB_VIEWER
     WEB_VIEWER=firefox
@@ -77,6 +80,23 @@ endif
 ifndef FAST_FLAGS
    FAST_FLAGS=$(DEFAULT_FAST_FLAGS)
 endif
+
+ifndef USE_LOCAL_GSL
+   USE_LOCAL_GSL=YES
+endif
+
+ifndef USE_GSL
+   USE_GSL=NO
+endif
+
+ifndef USE_LOCAL_BOOST
+   USE_LOCAL_BOOST=YES
+endif
+
+ifndef USE_BOOST
+   USE_BOOST=NO
+endif
+
 
 
 
@@ -172,7 +192,6 @@ INCLUDE_FLAGS+=$(addprefix -I,$(ADDITIONAL_INCLUDE_FLAGS))
 TEST_COMP_FLAGS=-I$(DEV_TOOLS_DIR)/CPP/Libraries/libDefer/
 TEST_COMP_FLAGS+=$(ADDITIONAL_TEST_COMP_FLAGS)
 
-
 ifdef COMP_FLAGS
     COMP_FLAGS+=$(INCLUDE_FLAGS)
 else
@@ -211,6 +230,7 @@ endif
 ifeq ($(FAST_ON),YES)
   COMP_FLAGS+=$(FAST_FLAGS)
 endif
+
 
 
 ifeq ($(findstring cover,$(MAKECMDGOALS)),cover)
@@ -311,6 +331,24 @@ ifdef LINKED_LIBS
    INCLUDE_FLAGS+=$(addprefix -I$(INCLUDES_DIR),$(addsuffix /,$(LINKED_LIBS)))
 endif
 
+# Foreign libraries
+ifeq ($(USE_GSL),YES)
+ifeq ($(USE_LOCAL_GSL),YES)
+    EXTERNAL_LIBS+=$(GSL_LOCAL_LINK_FLAGS)
+else
+    EXTERNAL_LIBS+=$(GSL_DEV_TOOLS_LINK_FLAGS)
+    INCLUDE_FLAGS+=-I$(EXTERNAL_INCLUDE_DIR)/GSL
+endif
+endif
+
+ifeq ($(USE_BOOST),YES)
+ifeq ($(USE_LOCAL_BOOST),YES)
+    # Nothing - boost already on the include path
+else
+    INCLUDE_FLAGS+=-I$(EXTERNAL_INCLUDE_DIR)/BOOST
+endif
+endif
+
 
 ifeq ($(strip $(FILES_TO_CLEAN)),)
     CLEAN_CMD=@echo "nothing to clean"
@@ -362,7 +400,7 @@ clean: FOLDERS_TO_CLEAN
 	$(CLEAN_CMD)
 
 EXEC: $(TO_BUILD) $(LINKED_FILES)
-	$(COMP) $(COMP_FLAGS) -o $(EXEC_TO_BUILD) $(TO_BUILD) $(LINKED_FILES)
+	$(COMP) $(COMP_FLAGS) -o $(EXEC_TO_BUILD) $(TO_BUILD) $(LINKED_FILES) $(EXTERNAL_LIBS)
 
 VIEW_COVERAGE:
 	@if [ "$(SOURCES)" != "" ]; \
@@ -462,7 +500,7 @@ VIEW_COVER:
 
 
 $(EXPORT_TESTS_TO)%: %$(SOURCE_EXTENSION) $(LINKED_FILES)
-	$(COMP) $(COMP_FLAGS) $(TEST_COMP_FLAGS) -o $@ $+ $(LINKED_FILES)
+	$(COMP) $(COMP_FLAGS) $(TEST_COMP_FLAGS) -o $@ $+ $(LINKED_FILES) $(EXTERNAL_LIBS)
 
 # Macro for building STATIC libraries
 $(LIB_TO_BUILD): $(TO_BUILD)
@@ -508,10 +546,27 @@ usage:
 	@echo "CPP_TAGS_FILE       (<exports/tags/%)       name of ctags file for this directory"
 	@echo "    <$(CPP_TAGS_FILE)>"
 	@echo ""
+	@echo "        Export Locations"
+	@echo "EXPORT_COVER_DIR:    $(EXPORT_PROFILE_DIR)"
+	@echo "EXPORT_INCLUDES_DIR: $(EXPORT_INCLUDES_DIR)"
+	@echo "EXPORT_LIB_DIR:      $(EXPORT_LIB_DIR)"
+	@echo "EXPORT_OBJS_DIR:     $(EXPORT_OBJS_DIR)"
+	@echo "EXPORT_PROFILE_DIR:  $(EXPORT_PROFILE_DIR)"
+	@echo "EXPORT_TAGS_DIR:     $(EXPORT_TAGS_DIR)"
+	@echo "EXPORT_TESTS_TO:     $(EXPORT_TESTS_TO)"
+	@echo ""
 	@echo "        Linker Options"
 	@echo "INCLUDES_DIR:  $(INCLUDES_DIR)"
+	@echo "USE_GSL:       $(USE_GSL)   ( LOCAL: $(USE_LOCAL_GSL))"
+	@echo "USE_BOOST:     $(USE_BOOST)   ( LOCAL: $(USE_LOCAL_BOOST))"
+	@echo "LINKED_FILES:  $(LINKED_FILES)"
+	@echo "EXTERNAL_LIBS: $(EXTERNAL_LIBS)"
+	@echo ""
 	@echo "        Compiler Options"
-	@echo "COMPILER: $(COMP)"
+	@echo "MODE:              $(MODE)"
+	@echo "TOOL_CHAIN:        $(TOOL_CHAIN)"
+	@echo "COMPILER:          $(COMP)"
+	@echo "SOURCE_EXTENSION:  $(SOURCE_EXTENSION)"
 	@echo ""
 	@echo "ADDITIONAL_INCLUDE_FLAGS:  Add extra include directories - (), <$(ADDITIONAL_INCLUDE_FLAGS)>"
 	@echo "ADDITIONAL_TEST_COMP_FLAGS: Add extra flags used when compiling test binaries - (), <$(ADDITIONAL_INCLUDE_FLAGS)>"

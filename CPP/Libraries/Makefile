@@ -1,5 +1,6 @@
 MAKE_DIRS= libIOInterface\
 		   libUtils \
-		   libTest
+		   libTest \
+		   
 
 include ../../../makefile.include

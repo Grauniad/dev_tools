@@ -18,6 +18,10 @@ CPP=g++
 FORTRAN=gfortran
 AR=ar
 
+GSL_LOCAL_LINK_FLAGS=-lgsl -lgslcblas -lm
+GSL_DEV_TOOLS_LINK_FLAGS=$(DEV_TOOLS_DIR)/EXTERNAL_LIBS/GSL/libgsl.a $(DEV_TOOLS_DIR)/EXTERNAL_LIBS/GSL/libgslcblas.a -lm
+
+
 COVER_FILE=index.html
 
 GEN_COVER: 

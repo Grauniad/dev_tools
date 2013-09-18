@@ -54,3 +54,10 @@ ifndef PROFILE_VIEWER
     $(error PROFILE_VIEWER must be specified!)
 endif
 
+ifndef GSL_LOCAL_LINK_FLAGS
+    $(error GSL_LOCAL_LINK_FLAGS Must be specified)
+endif
+
+ifndef GSL_DEV_TOOLS_LINK_FLAGS
+    $(error GSL_DEV_TOOLS_LINK_FLAGS Must be specified)
+endif

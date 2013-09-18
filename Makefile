@@ -1,4 +1,5 @@
-MAKE_DIRS= Config \
+MAKE_DIRS=  \
+           Config \
            FORTRAN \
            CPP 
 
