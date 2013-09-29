@@ -5,5 +5,6 @@ TARGET_LIB=libNumeric
 TAGS_FILE=libUtils-numerid.tags
 
 MODE=FORTRAN
+NO_INTEL=YES
 
 include ../../../../makefile.include
