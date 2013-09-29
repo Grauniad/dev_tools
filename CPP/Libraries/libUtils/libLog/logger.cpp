@@ -4,6 +4,8 @@
 #include <string>
 #include <sstream>
 #include <util_time.h>
+#include "channel.h"
+#include "channel.hpp"
 
 using namespace std;
 
@@ -74,10 +76,10 @@ LogDevice& LogFactory::CLOG() {
 }
 
 std::stringstream& LogFactory::Buf() {
-    static std::stringstream buf;
-    buf.str("");
-    buf.clear();
-    return buf;
+    thread_local std::stringstream logFactory_buf;
+    logFactory_buf.str("");
+    logFactory_buf.clear();
+    return logFactory_buf;
 }
 
 /*
@@ -93,6 +95,9 @@ Logger::Logger() {
     logLevelNames[LOG_VERY_VERBOSE] = "DEBUG 3";
     logLevelNames[LOG_WARNING] = "WARNING";
     logLevelNames[LOG_ERROR] = "ERROR";
+    logLevelNames[LOG_LOCKS] = "THREADING::LOCKS";
+    logLevelNames[LOG_SCHEDULER] = "THREADING::SCHEDULER";
+    logLevelNames[LOG_CHANNEL] = "THREADING::CHANNELS";
 
     enabled[LOG_DEFAULT]      = true;
     enabled[LOG_WARNING]      = true;
@@ -104,6 +109,7 @@ Logger::Logger() {
 
 
     RegisterLog(LogFactory::CLOG());
+
 }
 
 void Logger::RegisterLog(LogDevice& log) {
@@ -118,6 +124,8 @@ void Logger::RemoveLog(LogDevice& log) {
 void Logger::LogMessage( const string& message, 
                          LOG_LEVEL level,
                          const string& context) {
+    // Only one thread may log at a time
+    std::unique_lock<std::recursive_mutex> lock(loggingMutex);
     for(const LogDeviceKey& device: devices) {
         device.Log(message, context, Time(), level );
     }

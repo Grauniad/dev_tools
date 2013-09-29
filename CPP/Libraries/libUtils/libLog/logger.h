@@ -1,11 +1,11 @@
 #ifndef __LOGGER_H__
 #define __LOGGER_H__
-#include <set>
 #include "binaryWriter.h"
-#include <vector>
+#include <set>
 #include <sstream>
-
-class Time;
+#include <vector>
+#include <unordered_map>
+#include <mutex>
 
 /*
  * Provides a basic logging utility:
@@ -30,23 +30,22 @@ class Time;
  */
 
 // Expressions for logging messages
-#define PRINT(text) if ( Logger::Instance().LogEnabled(LOG_DEFAULT) ) { Logger::Instance().LogMessage(text, LOG_DEFAULT); }
-#define LOG(level, text) if ( Logger::Instance().LogEnabled(level) ) { Logger::Instance().LogMessage(text, level); }
-#define LOG_FROM(level, context, text) if ( Logger::Instance().LogEnabled(level) ) { Logger::Instance().LogMessage(text, level, context); }
+#include "logger_preProcessor.h"
 
-#define SPRINT(text) if ( Logger::Instance().LogEnabled(LOG_DEFAULT) ) { std::stringstream& __s__ = LogFactory::Buf(); __s__ << text; Logger::Instance().LogMessage(__s__.str(), LOG_DEFAULT); }
-#define SLOG(level, text) if ( Logger::Instance().LogEnabled(level) ) { std::stringstream& __s__ = LogFactory::Buf(); __s__ << text; Logger::Instance().LogMessage(__s__.str(), level); }
-#define SLOG_FROM(level, context, text) if ( Logger::Instance().LogEnabled(level) ) { std::stringstream& __s__ = LogFactory::Buf(); __s__ << text; Logger::Instance().LogMessage(__s__.str(), level, context); }
+class Time;
 
 // Valid Log Levels
 using namespace std; 
 enum LOG_LEVEL {
+    LOG_CHANNEL,
+    LOG_LOCKS,
     LOG_DEFAULT,
+    LOG_ERROR,
     LOG_OVERVIEW,
+    LOG_SCHEDULER,
     LOG_VERBOSE,
     LOG_VERY_VERBOSE,
     LOG_WARNING,
-    LOG_ERROR,
     __NUM_LOG_LEVELS
 };
 
@@ -173,7 +172,8 @@ private:
 
     bool enabled[__NUM_LOG_LEVELS];
     set<LogDeviceKey,LogDeviceKey::Less> devices;
-    vector<string> logLevelNames;
+    vector<string>           logLevelNames;
+    std::recursive_mutex     loggingMutex;
 };
 
 

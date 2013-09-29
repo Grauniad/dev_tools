@@ -5,7 +5,7 @@ SOURCES=$(shell echo *.cpp)
 ADDITIONAL_INCLUDE_FLAGS+=$(DEV_TOOLS_DIR)/CPP/Libraries/libUtils/libOS/
 
 # For timestamps
-ADDITIONAL_INCLUDE_FLAGS+=$(DEV_TOOLS_DIR)/CPP/Libraries/libUtils/libTime/
+ADDITIONAL_INCLUDE_FLAGS+=$(DEV_TOOLS_DIR)/CPP/Libraries/libUtils/libTime/ $(DEV_TOOLS_DIR)/CPP/Libraries/libThread/
 
 MODE=CPP
 TAGS_FILE=utilities_log_c++.tags

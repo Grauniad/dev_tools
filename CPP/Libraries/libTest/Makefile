@@ -4,6 +4,6 @@ SOURCES=$(shell echo *.cpp)
 TARGET_LIB=libTest
 TAGS_FILE=libTest-c++.tags
 
-LINKED_LIBS=libIOInterface libUtils
+LINKED_LIBS=libIOInterface libUtils libThread
 
 include ../makefiles_libaries.include

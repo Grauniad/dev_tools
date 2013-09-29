@@ -1,6 +1,7 @@
 LINKED_LIBS= libIOInterface\
              libUtils  \
-			 libTest
+			 libTest \
+			 libThread
 
 BUILD_TIME_TESTS=testDescribe
 CPP_TAGS_FILE=testdescribetags

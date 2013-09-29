@@ -1,6 +1,7 @@
 LINKED_LIBS= libUtils  \
              libIOInterface \
-             libTest
+             libTest \
+			 libThread
 
 BUILD_TIME_TESTS=stdWriter stdReader
 CPP_TAGS_FILE=testStdWriter.c++tags

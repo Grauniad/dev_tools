@@ -89,12 +89,24 @@ ifndef USE_GSL
    USE_GSL=NO
 endif
 
+ifndef USE_LOCAL_PLPLOT
+   USE_LOCAL_PLPLOT=YES
+endif
+
+ifndef USE_PLPLOT
+   USE_PLPLOT=NO
+endif
+
 ifndef USE_LOCAL_BOOST
    USE_LOCAL_BOOST=YES
 endif
 
 ifndef USE_BOOST
    USE_BOOST=NO
+endif
+
+ifndef USE_THREADS
+    USE_THREADS=YES
 endif
 
 
@@ -349,6 +361,19 @@ else
 endif
 endif
 
+ifeq ($(USE_PLPLOT),YES)
+ifeq ($(USE_LOCAL_PLPLOT),YES)
+    EXTERNAL_LIBS+=$(PLPLOT_LOCAL_LINK_FLAGS)
+else
+    EXTERNAL_LIBS+=$(PLPLOT_DEV_TOOLS_LINK_FLAGS)
+    INCLUDE_FLAGS+=-I$(EXTERNAL_INCLUDE_DIR)/PLPLOT
+endif
+endif
+
+ifeq ($(USE_THREADS),YES)
+    EXTERNAL_LIBS+=$(THREADS_LINK_FLAGS)
+endif
+
 
 ifeq ($(strip $(FILES_TO_CLEAN)),)
     CLEAN_CMD=@echo "nothing to clean"
@@ -559,6 +584,7 @@ usage:
 	@echo "INCLUDES_DIR:  $(INCLUDES_DIR)"
 	@echo "USE_GSL:       $(USE_GSL)   ( LOCAL: $(USE_LOCAL_GSL))"
 	@echo "USE_BOOST:     $(USE_BOOST)   ( LOCAL: $(USE_LOCAL_BOOST))"
+	@echo "USE_PLPLOT:    $(USE_PLPLOT)   ( LOCAL: $(USE_LOCAL_PLPLOT))"
 	@echo "LINKED_FILES:  $(LINKED_FILES)"
 	@echo "EXTERNAL_LIBS: $(EXTERNAL_LIBS)"
 	@echo ""

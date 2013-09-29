@@ -4,7 +4,8 @@ MAKE_DIRS= IOInterface\
 		   binaryDescribe\
 		   Utils \
 		   csv \
-		    
+		     \
+		   Threads
 
 
 include ../../../makefile.include

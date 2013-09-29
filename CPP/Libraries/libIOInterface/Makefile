@@ -4,7 +4,11 @@ SOURCES=$(shell echo *.cpp)
 TARGET_LIB=libIOInterface
 TAGS_FILE=libIOInterface-c++.tags
 
+MODE=CPP
+
+LINKED_LIBS=libUtils
+
 # We need the utils headers
-ADDITIONAL_INCLUDE_FLAGS=$(DEV_TOOLS_DIR)/CPP/Libraries/libUtils/libLog/
+ADDITIONAL_INCLUDE_FLAGS=$(DEV_TOOLS_DIR)/CPP/Libraries/libUtils/libLog/ 
 
 include ../makefiles_libaries.include

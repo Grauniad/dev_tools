@@ -25,8 +25,25 @@ DefaultTestLogger::DefaultTestLogger(): ffull_log("test.full_log") {
 
     Logger::Instance().LogEnabled( LOG_DEFAULT, true);
     Logger::Instance().LogEnabled( LOG_OVERVIEW, true);
-    Logger::Instance().LogEnabled( LOG_VERBOSE, true);
-    Logger::Instance().LogEnabled( LOG_VERY_VERBOSE, true);
+    if ( !ENV::IsSet("NO_LOG_VERBOSE") ) {
+        Logger::Instance().LogEnabled( LOG_VERBOSE, true);
+    }
+
+    if ( !ENV::IsSet("NO_LOG_VERY_VERBOSE") ) {
+        Logger::Instance().LogEnabled( LOG_VERY_VERBOSE, true);
+    }
+
+    if ( !ENV::IsSet("NO_LOG_LOCKS") ) {
+        Logger::Instance().LogEnabled( LOG_LOCKS, true);
+    }
+
+    if ( !ENV::IsSet("NO_LOG_CHANNEL") ) {
+        Logger::Instance().LogEnabled( LOG_CHANNEL, true);
+    }
+
+    if ( !ENV::IsSet("NO_LOG_SCHEDULER") ) {
+        Logger::Instance().LogEnabled( LOG_SCHEDULER, true);
+    }
     Logger::Instance().LogEnabled( LOG_WARNING, true);
     Logger::Instance().LogEnabled( LOG_ERROR, true);
 }
