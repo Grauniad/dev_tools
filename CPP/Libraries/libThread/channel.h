@@ -5,6 +5,7 @@
 #include <atomic>
 #include <mutex>
 #include <queue>
+#include <deque>
 #include <atomic>
 #include <condition_variable>
 #include <string>
@@ -37,6 +38,12 @@ enum CHANNEL_STATE {
     CHANNEL_STATE_ALIVE,
     CHANNEL_STATE_DEAD,
     __NUM_CHANNEL_STATES
+};
+
+enum CHANNEL_LOC {
+    CHANNEL_LOC_FRONT,
+    CHANNEL_LOC_BACK,
+    __NUM_CHANNEL_LOCS
 };
 
 static long ChannelId() {
@@ -82,6 +89,8 @@ public:
         return *this;
     }
 
+    void Put(T&& item, CHANNEL_LOC loc = CHANNEL_LOC_BACK);
+
     T Get();
 
     void Kill();
@@ -89,6 +98,15 @@ public:
     virtual std::atomic_size_t& QueueSize() {
         return MAX_QUEUED;
     }
+
+    std::atomic_size_t& BlockedReaders() {
+        return readers;
+    }
+
+    std::atomic_size_t& BlockedWriters() {
+        return writers;
+    }
+
 private:
     std::string Context(std::string f) {
         std::stringstream s;
@@ -97,8 +115,12 @@ private:
     }
 
     std::atomic<CHANNEL_STATE>   state;
-    std::queue<T>                taskQueue;
+    std::deque<T>                taskQueue;
     std::atomic_size_t           MAX_QUEUED;
+
+    // Those waiting to do something
+    std::atomic_size_t           readers;
+    std::atomic_size_t           writers;
 
     // Only one thread may touch the queue at a time
     std::recursive_mutex         queueMutex;

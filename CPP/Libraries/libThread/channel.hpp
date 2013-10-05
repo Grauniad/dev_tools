@@ -8,7 +8,9 @@
 template <class T>
 Channel<T>::Channel(size_t max): 
     state(CHANNEL_STATE_ALIVE),
-    MAX_QUEUED(max)
+    MAX_QUEUED(max),
+    readers(0),
+    writers(0)
 {
 }
 
@@ -85,9 +87,9 @@ void Channel<T>::Unlock() {
 }
 
 template<class T>
-Channel<T>& Channel<T>::operator<< (T&& item) {
+void Channel<T>::Put( T&& item, CHANNEL_LOC loc) {
     SLOG_FROM( LOG_LOCKS, 
-              Context("operator<<"),
+              Context("Put"),
               "Thread (" << Thread::MyId() 
                         << ") is seeking a channel lock!"
               )
@@ -95,7 +97,7 @@ Channel<T>& Channel<T>::operator<< (T&& item) {
     std::unique_lock<std::recursive_mutex> queueLock(queueMutex);
 
     SLOG_FROM( LOG_LOCKS, 
-              Context("operator<<"),
+              Context("Put"),
               "Thread (" << Thread::MyId() 
                         << ") acquired a channel lock!"
               )
@@ -105,56 +107,68 @@ Channel<T>& Channel<T>::operator<< (T&& item) {
     {
         if ( state == CHANNEL_STATE_DEAD ) {
             SLOG_FROM( LOG_CHANNEL, 
-                      Context("operator<<"),
+                      Context("Put"),
                       "Thread (" << Thread::MyId() 
                        << ") is trying to write to a dead channel!"
                       )
 
             SLOG_FROM( LOG_LOCKS, 
-                      Context("operator<<"),
+                      Context("Put"),
                       "Thread (" << Thread::MyId() 
                        << ") is releasing channel lock (throwing)"
                       )
             throw ChannelDeadException(*this);
         }
         SLOG_FROM( LOG_LOCKS, 
-                  Context("operator<<"),
+                  Context("Put"),
                   "Thread (" << Thread::MyId() 
                             << ") is yielding a channel lock to wait()"
                   )
         // We now own the queue: but there is no room! We must release
         // our lock and wait for someone to make some room...
-        queueReadFlag.wait(queueLock);
+        writers++;
+            queueReadFlag.wait(queueLock);
+        writers--;
         // NOTE: wait will have re-aquired the queue for us; we're 
         //       back in sole control
         SLOG_FROM( LOG_LOCKS, 
-                  Context("operator<<"),
+                  Context("Put"),
                   "Thread ("<< Thread::MyId() 
                            << ") was awoken, and acquired a channel lock"
                   )
     }
 
     // Move construct the item on the queue
-    taskQueue.emplace(std::move(item));
+    if ( loc == CHANNEL_LOC_BACK ) {
+        taskQueue.emplace_end(std::move(item));
+    } else {
+        taskQueue.emplace_front(std::move(item));
+    }
 
     // Notify a waiting reader (if any)
     queueWriteFlag.notify_one();
 
     SLOG_FROM( LOG_CHANNEL, 
-              Context("operator<<"),
+              Context("Put"),
               "Thread ("<< Thread::MyId() 
                        << ") Pushed an item into the channel" << endl
                        << "The queue is now of size: " << Size();
               )
 
     SLOG_FROM( LOG_LOCKS, 
-              Context("operator<<"),
+              Context("Put"),
               "Thread ("<< Thread::MyId() 
                        << ") Is done with Channel, releasing lock..."
               )
 
     return *this;
     // queue released when queueLock is unwound
+}
+
+template<class T>
+Channel<T>& Channel<T>::operator<< (T&& item) {
+    Put(std::move(item));
+    return *this;
 }
 
 template<class T>
@@ -201,7 +215,9 @@ T Channel<T>::Get() {
                   )
         // We now own the queue, but there is no data! We must release 
         // the lock and wait for someonen to put some there...
-        queueWriteFlag.wait(queueLock);
+        readers++;
+            queueWriteFlag.wait(queueLock);
+        readers--;
         // NOTE: wait will have re-aquired the queue for us; we're 
         //       back in sole control
         SLOG_FROM( LOG_LOCKS, 
@@ -215,7 +231,7 @@ T Channel<T>::Get() {
     T item(std::move(taskQueue.front()));
 
     // Pop the queue
-    taskQueue.pop();
+    taskQueue.pop_front();
 
     // Notify a waiting writer (if any)
     queueReadFlag.notify_one();

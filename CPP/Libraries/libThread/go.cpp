@@ -8,9 +8,20 @@
 
 Task_Slave::Task_Slave(shared_ptr<Channel<Task_Ref> >& workQueue):
     theQueue(workQueue),
-    worker{&Task_Slave::DoWork, this},
-    threadId(Thread::MyId())
+    threadId(Thread::MyId()),
+    worker{&Task_Slave::DoWork, this}
 { }
+
+Task_Slave::Task_Slave(Task_Ref t):
+    theQueue(nullptr),
+    threadId(Thread::MyId()),
+    worker{&Task_Slave::DoDedicated, this, t}
+{ }
+
+void Task_Slave::DoDedicated(Task_Ref t) {
+    ThreadId() = Thread::MyId();
+    DoTask(t);
+}
 
 void Task_Slave::DoWork() {
     try {
@@ -26,20 +37,8 @@ void Task_Slave::DoWork() {
                       )
 
             t = theQueue->Get();
+            DoTask(t);
 
-            SLOG_FROM( LOG_SCHEDULER, 
-                      "Task_Slave::DoWork",
-                      "Thread (" << Thread::MyId() 
-                                << ") Is doing work!"
-                      )
-
-            t->Complete();
-
-            SLOG_FROM( LOG_SCHEDULER, 
-                      "Task_Slave::DoWork",
-                      "Thread (" << Thread::MyId() 
-                                << ") Has finished its work!"
-                      )
         }
     } catch ( ChannelDeadException& deadChan ) {
         if ( deadChan.Id() == theQueue->Id() ) {
@@ -58,6 +57,24 @@ void Task_Slave::DoWork() {
         }
     }
 }
+
+
+void Task_Slave::DoTask(Task_Ref t) {
+    SLOG_FROM( LOG_SCHEDULER, 
+              "Task_Slave::DoTask",
+              "Thread (" << Thread::MyId() 
+                        << ") Is doing work!"
+              )
+
+    t->Complete();
+
+    SLOG_FROM( LOG_SCHEDULER, 
+              "Task_Slave::DoTask",
+              "Thread (" << Thread::MyId() 
+                        << ") Has finished its work!"
+              )
+}
+
 
 Task_Master::Task_Master(): theQueue(new Channel<Task_Ref>(0)) 
 {
@@ -119,6 +136,32 @@ void Task_Master::Schedule(Task_Ref t) {
                   << " ( Thread: " << Thread::MyId() << ")"
                   )
     }
+}
+
+void Task_Master::StartDedicated(Task_Ref t) {
+    if ( t.Started() ) {
+        // If its already running we don't have to do anything
+        return;
+    }
+    slaves.emplace_back(t);
+}
+
+void Task_Master::Promote(Task_Ref t) {
+    if ( t.Started() ) {
+        // If its already running we don't have to do anything
+        return;
+    }
+    theQueue->Put(t,CHANNEL_LOC_FRONT);
+}
+
+void Task_Master::AddThreads(size_t n) {
+    // Add threads to the pool
+    slaves.reserve(slaves.size()+n);
+    for(size_t i =0; i< n; i++) {
+        slaves.emplace_back(theQueue);
+    }
+
+    numThreads+=n;
 }
 
 void Task_Master::Kill() {

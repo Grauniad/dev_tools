@@ -5,10 +5,25 @@
  * Common interface, so we can store in a homogenous array
  */
 class Task_Base {
-    public:
-        virtual void Complete() = 0;
-        virtual void Done() = 0;
-        virtual ~Task_Base() {}
+public:
+    Task_Base(): started(false) {}
+    virtual void Complete() = 0;
+    virtual void Done() = 0;
+    virtual ~Task_Base() {}
+
+    atomic_bool& Started() {
+        return started;
+    }
+private:
+    atomic_bool    started;
+};
+
+enum TASK_POLICY {
+    TASK_POLICY_DEDICATED, /* Force the scheduler to create a new thread */
+    TASK_POLICY_IMMEDIATE, /* Start immediately (create a new thread if existing pool is busy) */
+    TASK_POLICY_ON_DEMAND, /* Queue the task, if it is not running at the time of first read, run it in a new thread*/
+    TASK_POLICY_STANDARD,  /* FIFO semantics ** BEWARE DEADLOCKS! ** */
+    __NUM_TASK_POLICIES
 };
 
 /*
@@ -58,7 +73,7 @@ protected:
 /*
  * Templated Task implementation
  */
-template<class T>
+template<class T, TASK_POLICY POLICY = TASK_POLICY_ON_DEMAND>
 class Task: public Task_Base {
 public:
     using F = std::function<void(Channel<T>&)>;
@@ -85,7 +100,13 @@ public:
     }
 
     virtual void Complete() {
+        if ( Started() ) {
+            // Prevent a double run
+            return;
+        }
+
         try {
+            Started() = true;
             //TODO:
             //std::call_once(runFlag,work, resultStream);
             work(resultStream);
@@ -114,7 +135,7 @@ public:
     rTask(rTask<T>&& rhs): Task_Ref(std::move(rhs)) {}
 
     // Now both the lhs and rhs own the object
-    rTask(const Task_Ref& rhs): Task_Ref(rhs) {}
+    rTask(const rTask<T>& rhs): Task_Ref(rhs) {}
 
     // Manages a new task
     rTask(Task<T>* task): Task_Ref(task) {}
@@ -137,7 +158,7 @@ public:
         return *this;
     }
 
-    Task<T>& operator* () {
+    Task<>& operator* () {
         return *static_cast<Task<T>* >(tsk.get());
     }
 
