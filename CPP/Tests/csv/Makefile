@@ -1,10 +1,10 @@
 LINKED_LIBS= libUtils  \
 			 libIOInterface \
-			 libTest \
-			 libThread
+			 libTest
 
-BUILD_TIME_TESTS=writeFile 
+BUILD_TIME_TESTS=writeFile  csv_dynamic
 CPP_TAGS_FILE=csv_tess
+MODE=CPP
 
 NO_INTEL=YES
 
