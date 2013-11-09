@@ -1,3 +1,8 @@
+#define IF_LOG(level,code) \
+    if ( Logger::Instance().LogEnabled(level) ) { \
+        code \
+    }
+
 #define FLOG_FROM(level, context, code) \
     if ( Logger::Instance().LogEnabled(level) ) { \
         Logger::Instance().LogMessage( [=] () -> std::string { \

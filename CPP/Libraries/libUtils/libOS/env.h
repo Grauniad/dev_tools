@@ -18,6 +18,8 @@ public:
 
     static bool   IsSet(const string& name);
 
+    static bool   IsInList(const string& name, const string& item);
+
     template <class T>
     static T GetEnvValue( const std::string& name,
                                     T defaultValue) {

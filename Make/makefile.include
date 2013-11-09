@@ -130,6 +130,10 @@ ifeq ($(findstring fast,$(MAKECMDGOALS)),fast)
    FAST_ON=YES
 endif
 
+ifeq ($(findstring full_log,$(MAKECMDGOALS)),full_log)
+   export ELF_64_TEST_FULL_TEST_LOG=TRUE
+endif
+
 # Set to YES to enable
 ifndef DEBUG_ON
     DEBUG_ON=YES
@@ -416,6 +420,7 @@ release: all
 fast: all
 coverbuild: GEN_COVER
 coverview: VIEW_COVER
+full_log: all
 
 
 profileview:
@@ -587,6 +592,17 @@ usage:
 	@echo "USE_PLPLOT:    $(USE_PLPLOT)   ( LOCAL: $(USE_LOCAL_PLPLOT))"
 	@echo "LINKED_FILES:  $(LINKED_FILES)"
 	@echo "EXTERNAL_LIBS: $(EXTERNAL_LIBS)"
+	@echo ""
+	@echo "        Test Options ( set to activate)"
+	@echo "DEV_TOOLS_TEST_CAPTURE_FROM  (Cherry pick contexts to full_log):"
+	@echo "    >$(DEV_TOOLS_TEST_CAPTURE_FROM)<"
+	@echo "Other Test Options ( set to activate)"
+	@echo "    DEV_TOOLS_TEST_FULL_TEST_LOG:  >$(DEV_TOOLS_TEST_FULL_TEST_LOG)<"
+	@echo "    NO_LOG_CHANNEL:                >$(NO_LOG_CHANNEL)<"
+	@echo "    NO_LOG_LOCKS:                  >$(NO_LOG_LOCKS)<"
+	@echo "    NO_LOG_SCHEDULER:              >$(NO_LOG_SCHEDULER)<"
+	@echo "    NO_LOG_VERBOSE:                >$(NO_LOG_VERBOSE)<"
+	@echo "    NO_LOG_VERY_VERBOSE:           >$(NO_LOG_VERY_VERBOSE)<"
 	@echo ""
 	@echo "        Compiler Options"
 	@echo "MODE:              $(MODE)"

@@ -15,3 +15,8 @@ string ENV::GetEnvString(const string& name, const string default_value) {
 bool ENV::IsSet(const string& name) {
     return getenv(name.c_str()) != NULL;
 }
+
+bool ENV::IsInList(const string& name, const string& item) {
+    string env = ENV::GetEnvString(name, "");
+    return ( env.find(item) != string::npos);
+}
