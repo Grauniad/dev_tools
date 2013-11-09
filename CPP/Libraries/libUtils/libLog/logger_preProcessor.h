@@ -1,3 +1,19 @@
+#ifdef DEV_TOOLS_NO_LOGGING
+/*
+ * Optimise out logging
+ */
+
+#define IF_LOG(level,code) /* Logging has been optimised out! */
+#define FLOG_FROM(level, context, code) /* Logging has been optimised out! */
+#define PRINT(text) /* Logging has been optimised out! */
+#define LOG(level, text) /* Logging has been optimised out! */
+#define LOG_FROM(level, context, text) /* Logging has been optimised out! */
+#define SPRINT(text) /* Logging has been optimised out! */
+#define SLOG(level, text) /* Logging has been optimised out! */
+#define SLOG_FROM(level, context, text) /* Logging has been optimised out! */
+
+#else
+
 #define IF_LOG(level,code) \
     if ( Logger::Instance().LogEnabled(level) ) { \
         code \
@@ -46,3 +62,4 @@
         Logger::Instance().LogMessage(__s__.str(), level, context); \
     }
 
+#endif
