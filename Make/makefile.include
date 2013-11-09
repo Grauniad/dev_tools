@@ -593,7 +593,7 @@ usage:
 	@echo "LINKED_FILES:  $(LINKED_FILES)"
 	@echo "EXTERNAL_LIBS: $(EXTERNAL_LIBS)"
 	@echo ""
-	@echo "        Test Options ( set to activate)"
+	@echo "        Test Options"
 	@echo "DEV_TOOLS_TEST_CAPTURE_FROM  (Cherry pick contexts to full_log):"
 	@echo "    >$(DEV_TOOLS_TEST_CAPTURE_FROM)<"
 	@echo "Other Test Options ( set to activate)"
