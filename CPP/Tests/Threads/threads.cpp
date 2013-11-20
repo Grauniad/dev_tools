@@ -7,13 +7,34 @@ int IterateResults(testLogger& log );
 int QueueTasks(testLogger& log );
 int RunImmediately(testLogger& log);
 int RunOnDemand(testLogger& log);
+int FireAndForget(testLogger& log);
 
 int main(int argc, const char *argv[])
 {
-    Test("Doing a dumb LCM algo in parallel...",IterateResults).RunTest();
+    Test("Basic Task Healtch Check",FireAndForget).RunTest();
+    //Test("Doing a dumb LCM algo in parallel...",IterateResults).RunTest();
     //Test("Testing Run Immediately mechanism",RunImmediately).RunTest();
     //Test("Testing on-demand mechanism",RunOnDemand).RunTest();
     //Test("Testing Queue mechanism",QueueTasks).RunTest();
+    return 0;
+}
+
+int FireAndForget( testLogger& log ) {
+    // Trivial task
+    rTask<long> t = GO (long, 
+        results << 42;
+    );
+
+    log << "Waiting for a while, to make sure no one tries to kill the thread...";
+    Thread::Sleep(1000);
+
+    long l;
+    t >> l;
+
+    if ( l != 42 ) {
+        log << "Execpted l to be 42, but got " << l << endl;
+        return 1;
+    }
     return 0;
 }
 
@@ -43,7 +64,7 @@ int QueueTasks (testLogger& log ) {
     bool got[50];
 
     // Auto frees resources
-    Local_Tasks taskList;
+    Local_Tasks<bool> taskList;
 
     this_thread::yield();
     Thread::Sleep(1000);
@@ -113,7 +134,7 @@ int RunOnDemand (testLogger& log ) {
     bool got[50];
 
     // Auto frees resources
-    Local_TypedTasks<bool> taskList;
+    Local_Tasks<bool> taskList;
 
     this_thread::yield();
     Thread::Sleep(1000);
@@ -173,7 +194,7 @@ int RunOnDemand (testLogger& log ) {
      */
     for  ( rTask<bool>& t : taskList) {
         bool forceStart;
-        t->Results() >> forceStart;
+        t.Results() >> forceStart;
     }
 
     LOG( LOG_OVERVIEW, "Tried to get info from each task")
@@ -214,7 +235,7 @@ int RunImmediately (testLogger& log ) {
     bool got[50];
 
     // Auto frees resources
-    Local_Tasks taskList;
+    Local_Tasks<bool> taskList;
 
     this_thread::yield();
     Thread::Sleep(1000);
@@ -303,9 +324,9 @@ int IterateResults(testLogger& log ) {
          * the other threads are yet to post any more results
          */
         if ( m23 < m34 ) {
-            t23->Results() >> m23;
+            t23.Results() >> m23;
         } else {
-            t34->Results() >> m34;
+            t34.Results() >> m34;
         }
         log << i << ": " << m23 << " , " << m34;
     }

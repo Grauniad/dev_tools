@@ -14,6 +14,8 @@ public:
     atomic_bool& Started() {
         return started;
     }
+
+    virtual long Id() = 0;
 private:
     atomic_bool    started;
 };
@@ -71,6 +73,7 @@ public:
         return tsk.get();
     }
 
+
 protected:
     shared_ptr<Task_Base>    tsk;
 };
@@ -95,11 +98,21 @@ public:
             { }
 
     virtual ~Task() {
+        SLOG_FROM( LOG_SCHEDULER, 
+                  "Task::~Task",
+                  "Thread (" << Thread::MyId() 
+                            << ") is killing task "
+                            << Id() 
+                            << ", declaring done..."
+                  )
         /*
          *  - Stop any new threads starting to wait
          *  - Throws out the executing thread (if any)
          */
         Done();
+
+        // Lock down the task...
+        std::unique_lock<std::mutex> runLock(runMutex);
 
         // No-one is executing us, and no one can start waiting, but
         // we must wait for anyone currently waiting on the channel to
@@ -107,8 +120,23 @@ public:
         while (    resultStream.BlockedReaders() > 0 
                 || resultStream.BlockedWriters() > 0 ) 
         {
+            SLOG_FROM( LOG_SCHEDULER, 
+                      "Task::~Task",
+                      "Thread (" << Thread::MyId() 
+                                << ") is yielind as there are still "
+                                << "blocked readers / writers on task "
+                                << Id() 
+                      )
             this_thread::yield();
         }
+
+        SLOG_FROM( LOG_SCHEDULER, 
+                  "Task::~Task",
+                  "Thread (" << Thread::MyId() 
+                            << ") is killing task "
+                            << Id() 
+                            << ", locking down results..."
+                  )
 
         // no-one is still waiting on us (and no one can start)
 
@@ -120,30 +148,76 @@ public:
         // class, and no-one is executing the work. We can now die!
         resultStream.Unlock();
 
+        SLOG_FROM( LOG_SCHEDULER, 
+                  "Task::~Task",
+                  "Thread (" << Thread::MyId() 
+                            << ") has destroyed task "
+                            << Id() 
+                  )
+
     }
 
 
     virtual void Done() {
         resultStream.Kill();
         // Wait for a running application to release the task
-        std::unique_lock<std::mutex> runLock;
+        std::unique_lock<std::mutex> runLock(runMutex);
     }
 
     virtual void Complete() {
-        std::unique_lock<std::mutex> runLock;
+        // Make sure we are in so control of the task...
+        std::unique_lock<std::mutex> runLock(runMutex);
 
         if ( Started() ) {
+            SLOG_FROM( LOG_SCHEDULER, 
+                      "Task::Complete",
+                      "Thread (" << Thread::MyId() 
+                                << ") did not start task "
+                                << Id() 
+                                << " because it has already started"
+                      )
             // Prevent a double run
+            return;
+        }
+
+        // Make sure we haven't been "Done"
+        if ( !resultStream.Alive() ) {
+            SLOG_FROM( LOG_SCHEDULER, 
+                      "Task::Complete",
+                      "Thread (" << Thread::MyId() 
+                                << ") did not start task "
+                                << Id() 
+                                << " because the result stream is dead"
+                      )
+            // Prevent running a dead task
             return;
         }
 
         try {
             Started() = true;
-            //TODO:
-            //std::call_once(runFlag,work, resultStream);
+
+            SLOG_FROM( LOG_SCHEDULER, 
+                      "Task::Complete",
+                      "Thread (" << Thread::MyId() 
+                                << ") started task "
+                                << Id() 
+                      )
             work(resultStream);
+
+            SLOG_FROM( LOG_SCHEDULER, 
+                      "Task::Complete",
+                      "Thread (" << Thread::MyId() 
+                                << ") completed task "
+                                << Id() 
+                      )
         } catch (ChannelDeadException& deadChan) {
             if ( deadChan.Id() == resultStream.Id() ) {
+                SLOG_FROM( LOG_SCHEDULER, 
+                          "Task::Complete",
+                          "Thread (" << Thread::MyId() 
+                                    << ") stopped - channel is dead"
+                                    << Id() 
+                          )
                 // Someone has killed the results stream - indicating no
                 // more work to do
                 return;
@@ -153,6 +227,14 @@ public:
             }
         }
     }
+
+    virtual long Id() {
+        return resultStream.Id();
+    }
+
+    void Lock();
+
+    void Unlock();
 
 
 private:

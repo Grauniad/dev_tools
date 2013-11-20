@@ -256,4 +256,9 @@ T Channel<T>::Get() {
     return item;
 }
 
+template <class T>
+bool Channel<T>::Alive() {
+    return state == CHANNEL_STATE_ALIVE;
+}
+
 #endif

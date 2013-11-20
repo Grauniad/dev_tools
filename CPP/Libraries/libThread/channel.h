@@ -46,17 +46,13 @@ enum CHANNEL_LOC {
     __NUM_CHANNEL_LOCS
 };
 
-static long ChannelId() {
-    static long nextId =0;
-    nextId +=1;
-    return nextId;
-}
 
+long ChannelId();
 
 class Channel_Base {
 public:
     Channel_Base (): myId(ChannelId()) { }
-    std::atomic_long& Id() {
+    long Id() {
         return myId;
     }
 
@@ -94,6 +90,8 @@ public:
     T Get();
 
     void Kill();
+
+    bool Alive();
 
     virtual std::atomic_size_t& QueueSize() {
         return MAX_QUEUED;

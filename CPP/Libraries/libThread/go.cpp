@@ -11,6 +11,11 @@ Task_Slave::Task_Slave(shared_ptr<Channel<Task_Ref> >& workQueue):
     threadId(Thread::MyId())
 
 { 
+    SLOG_FROM( LOG_SCHEDULER, 
+              "Task_Slave::Task_Slave",
+              "Thread (" << Thread::MyId() 
+                        << ") is going to create a new slave"
+              )
     // Move assign the thread
     worker = new std::thread{&Task_Slave::DoWork,this};
 }
@@ -19,7 +24,13 @@ Task_Slave::Task_Slave(Task_Ref t):
     theQueue(nullptr),
     threadId(Thread::MyId())
 { 
-    worker = new std::thread{&Task_Slave::DoWork,this};
+    SLOG_FROM( LOG_SCHEDULER, 
+              "Task_Slave::Task_Slave",
+              "Thread (" << Thread::MyId() 
+                        << ") is going to start a new thread"
+                        << " for a dedicated task"
+              )
+    worker = new std::thread{&Task_Slave::DoTask,this,t};
 }
 
 void Task_Slave::DoDedicated(Task_Ref t) {
@@ -69,7 +80,7 @@ void Task_Slave::DoTask(Task_Ref t) {
     SLOG_FROM( LOG_SCHEDULER, 
               "Task_Slave::DoTask",
               "Thread (" << Thread::MyId() 
-                        << ") Is doing work!"
+                        << ") Is doing work on " << t->Id()
               )
 
     t->Complete();
@@ -77,7 +88,7 @@ void Task_Slave::DoTask(Task_Ref t) {
     SLOG_FROM( LOG_SCHEDULER, 
               "Task_Slave::DoTask",
               "Thread (" << Thread::MyId() 
-                        << ") Has finished its work!"
+                        << ") Has finished its work on " << t->Id();
               )
 }
 
@@ -127,15 +138,16 @@ void Task_Master::Schedule(Task_Ref t) {
     } else {
         SLOG_FROM( LOG_SCHEDULER, 
                   "Task_Master::Schedule",
-                  "Scheduling new task"
-                  << "( Thread: " << Thread::MyId() << ")"
+                  "Scheduling new task with channel "
+                  << t->Id()
+                  << " ( Thread: " << Thread::MyId() << ")"
                   )
 
         (*theQueue) << Task_Ref(t);
 
         SLOG_FROM( LOG_SCHEDULER, 
                   "Task_Master::Schedule",
-                  "New task scheduled, current queue size: "
+                  "New task (" << t->Id() << ") scheduled, current queue size: "
                   << theQueue->Size()
                   << " ( Thread: " << Thread::MyId() << ")"
                   )

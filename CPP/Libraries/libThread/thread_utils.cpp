@@ -7,13 +7,13 @@
 using namespace std;
 
 
+static std::mutex idLock;
 
 long Thread::MyId() { 
-    static std::mutex idLock;
+    std::unique_lock<std::mutex> lock(idLock);
+
     static unordered_map<std::thread::id,long> threadIds;
     static long nextId = 0;
-
-    std::unique_lock<std::mutex> lock(idLock);
 
     auto id =  this_thread::get_id();
     auto it = threadIds.find(id) ;
