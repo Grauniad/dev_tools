@@ -8,10 +8,12 @@ int QueueTasks(testLogger& log );
 int RunImmediately(testLogger& log);
 int RunOnDemand(testLogger& log);
 int FireAndForget(testLogger& log);
+int DeathInTask(testLogger& log);
 
 int main(int argc, const char *argv[])
 {
-    Test("Basic Task Healtch Check",FireAndForget).RunTest();
+    Test("Basic Task Healtch Check...",FireAndForget).RunTest();
+    Test("Check a worker may cleanup task...",DeathInTask).RunTest();
     //Test("Doing a dumb LCM algo in parallel...",IterateResults).RunTest();
     //Test("Testing Run Immediately mechanism",RunImmediately).RunTest();
     //Test("Testing on-demand mechanism",RunOnDemand).RunTest();
@@ -35,6 +37,23 @@ int FireAndForget( testLogger& log ) {
         log << "Execpted l to be 42, but got " << l << endl;
         return 1;
     }
+    return 0;
+}
+
+int DeathInTask( testLogger& log ) {
+    rTask<long> t = GO (long, 
+        // Go to sleep once we have 20 elements queued
+        results.QueueSize() = 1;
+
+        // Generate elements
+        for (long i =1; true; i++) {
+            results << i+0;
+        }
+    );
+
+    t->Done();
+
+    // Returning releases our pointer, worker will clean when he's ready
     return 0;
 }
 

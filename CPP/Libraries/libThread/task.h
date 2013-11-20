@@ -1,5 +1,11 @@
 #ifndef __DEV_TOOLS_LIBRARIES_THREADS_GO_TASKS_H
 #define __DEV_TOOLS_LIBRARIES_THREADS_GO_TASKS_H
+#include <atomic>
+#include <mutex>
+#include <memory>
+#include "channel.h"
+#include "logger.h"
+#include "thread_utils.h"
 
 /*
  * Common interface, so we can store in a homogenous array
@@ -11,13 +17,18 @@ public:
     virtual void Done() = 0;
     virtual ~Task_Base() {}
 
-    atomic_bool& Started() {
+    std::atomic_bool& Started() {
         return started;
     }
 
     virtual long Id() = 0;
+
+    void Lock();
+
+    void Unlock();
 private:
-    atomic_bool    started;
+    std::atomic_bool    started;
+    std::mutex     infoMutex;
 };
 
 
@@ -75,7 +86,7 @@ public:
 
 
 protected:
-    shared_ptr<Task_Base>    tsk;
+    std::shared_ptr<Task_Base>    tsk;
 };
 
 template<class T>
@@ -113,6 +124,7 @@ public:
 
         // Lock down the task...
         std::unique_lock<std::mutex> runLock(runMutex);
+        Lock();
 
         // No-one is executing us, and no one can start waiting, but
         // we must wait for anyone currently waiting on the channel to
@@ -148,6 +160,8 @@ public:
         // class, and no-one is executing the work. We can now die!
         resultStream.Unlock();
 
+        Unlock();
+
         SLOG_FROM( LOG_SCHEDULER, 
                   "Task::~Task",
                   "Thread (" << Thread::MyId() 
@@ -159,7 +173,9 @@ public:
 
 
     virtual void Done() {
-        resultStream.Kill();
+        Lock();
+            resultStream.Kill();
+        Unlock();
         // Wait for a running application to release the task
         std::unique_lock<std::mutex> runLock(runMutex);
     }
@@ -234,10 +250,6 @@ public:
         return resultStream.Id();
     }
 
-    void Lock();
-
-    void Unlock();
-
 
 private:
     Channel<T>         resultStream;
@@ -245,7 +257,6 @@ private:
     std::once_flag     runFlag;
     TASK_POLICY        policy;
     std::mutex         runMutex;
-    std::mutex         infoMutex;
 };
 
 

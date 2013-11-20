@@ -77,18 +77,29 @@ void Task_Slave::DoWork() {
 
 
 void Task_Slave::DoTask(Task_Ref t) {
+    // Save some needless mutexes
+    long id = -1;
+    long thread_id = -1;
+
+    IF_LOG( LOG_SCHEDULER,
+        t->Lock();
+            id = t->Id();
+        t->Unlock();
+        thread_id = Thread::MyId();
+    )
+
     SLOG_FROM( LOG_SCHEDULER, 
               "Task_Slave::DoTask",
-              "Thread (" << Thread::MyId() 
-                        << ") Is doing work on " << t->Id()
+              "Thread (" << thread_id 
+                        << ") Is doing work on " << id
               )
 
     t->Complete();
 
     SLOG_FROM( LOG_SCHEDULER, 
               "Task_Slave::DoTask",
-              "Thread (" << Thread::MyId() 
-                        << ") Has finished its work on " << t->Id();
+              "Thread (" << thread_id 
+                        << ") Has finished its work on " << id
               )
 }
 
