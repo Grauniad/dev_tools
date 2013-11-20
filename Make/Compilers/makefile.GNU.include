@@ -1,6 +1,6 @@
 DEFAULT_DEBUG_FLAGS=-ggdb 
 DEFAULT_RELEASE_FLAGS=-O2 -march=native
-DEFAULT_FAST_FLAGS=-Ofast -march=native
+DEFAULT_FAST_FLAGS=-Ofast -march=native -DDEV_TOOLS_NO_LOGGING
 DEFAULT_COMP_PROFILE_FLAGS=-pg $(DEFAULT_RELEASE_FLAGS)
 DEFAULT_CPPSTD=gnu++98
 DEFAULT_FORTRAN_STD=f2008
@@ -21,6 +21,7 @@ AR=ar
 GSL_LOCAL_LINK_FLAGS=-lgsl -lgslcblas -lm
 GSL_DEV_TOOLS_LINK_FLAGS=$(DEV_TOOLS_DIR)/EXTERNAL_LIBS/GSL/libgsl.a $(DEV_TOOLS_DIR)/EXTERNAL_LIBS/GSL/libgslcblas.a -lm
 PLPLOT_DEV_TOOLS_LINK_FLAGS=$(DEV_TOOLS_DIR)/EXTERNAL_LIBS/PLPLOT/libplplotd.a $(DEV_TOOLS_DIR)/EXTERNAL_LIBS/PLPLOT/libltdl.a
+PLPLOT_LOCAL_LINK_FLAGS=-I/usr/include/plplot  -lplplotd -lltdl -ldl -lm -lcsirocsa -lcsironn -lqhull -lqsastime -lfreetype
 THREADS_LINK_FLAGS=-pthread
 
 
