@@ -6,6 +6,7 @@
 #include <vector>
 #include <unordered_map>
 #include <mutex>
+#include <list>
 
 /*
  * Provides a basic logging utility:
@@ -95,6 +96,10 @@ public:
     static LogDevice& CERR();
     static LogDevice& CLOG();
     static std::stringstream& Buf();
+    static std::stringstream* NewBuf();
+    static void ClearBufs();
+private:
+    static std::list<std::stringstream*>   bufs;
 };
 
 class GenericFormatLogger { 
@@ -113,7 +118,9 @@ public:
 class Logger {
 public:
     Logger ();
-    virtual ~Logger (){}
+    virtual ~Logger (){
+        LogFactory::ClearBufs();
+    }
 
     static Logger& Instance() {
         static Logger l;

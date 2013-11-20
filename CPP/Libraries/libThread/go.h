@@ -7,10 +7,31 @@
 #include <list>
 #include "task.h"
 
+// Create a new on-demand task
 #define GO(TYPE,CODE) \
-Task_Master::Schedule<TYPE> ( [=] (Channel<TYPE>& results) -> void { \
+Task_Master::Schedule<TYPE> ([=] (Channel<TYPE>& results) -> void { \
     CODE \
-});
+}, TASK_POLICY_ON_DEMAND)
+
+#define QUEUE(TYPE,CODE) \
+Task_Master::Schedule<TYPE> ([=] (Channel<TYPE>& results) -> void { \
+    CODE \
+}, TASK_POLICY_STANDARD)
+
+#define QUEUE_CAPTURE(TYPE, CODE) \
+Task_Master::Schedule<TYPE> ([&] (Channel<TYPE>& results) -> void { \
+    CODE \
+}, TASK_POLICY_STANDARD)
+
+#define RUN(TYPE,CODE) \
+Task_Master::Schedule<TYPE> ([=] (Channel<TYPE>& results) -> void { \
+    CODE \
+}, TASK_POLICY_IMMEDIATE)
+
+#define RUN_CAPTURE(TYPE, CODE) \
+Task_Master::Schedule<TYPE> ([&] (Channel<TYPE>& results) -> void { \
+    CODE \
+}, TASK_POLICY_IMMEDIATE)
 
 /*
  * Simple Task Scheduler 
@@ -27,12 +48,16 @@ public:
         theQueue(std::move(source.theQueue)),
         worker(std::move(source.worker)) {}
 
+    ~Task_Slave() {
+        delete worker;
+    }
+
     atomic_long& ThreadId () {
         return threadId;
     }
 
     void Wait() {
-        worker.join();
+        worker->join();
     }
 private:
     void DoWork();
@@ -40,7 +65,7 @@ private:
     void DoDedicated(Task_Ref t);
     shared_ptr<Channel<Task_Ref> >  theQueue;
     atomic_long                     threadId;
-    std::thread                     worker;
+    std::thread*                    worker;
 };
 
 
@@ -64,13 +89,14 @@ public:
 
    void AddThreads(size_t n);
 
-   // Default case:
-   //   - ON_DEMAND
-   //   - STANDARD
+   size_t FreeWorkers() {
+       return theQueue->BlockedReaders();
+   }
+
    template<class T>
-   static rTask<T,POLICY> Schedule( typename Task<T,POLICY>::F f,
-                                    TASK_POLICY policy = TASK_POLICY_ON_DEMAND,
-                                    size_t resultQueueSize =0 );
+   static rTask<T> Schedule( typename Task<T>::F f,
+                             TASK_POLICY policy = TASK_POLICY_ON_DEMAND,
+                             size_t resultQueueSize =0 );
 
 
    void Kill();
@@ -82,55 +108,6 @@ private:
    std::list<Task_Slave>   slaves;
    std::atomic_size_t      numThreads;
 };
-
-template<class T>
-rTask<T,POLICY> Task_Master::Schedule_NORMAL ( typename Task<T,POLICY>::F f,
-                                               size_t resultQueueSize) 
-{
-   rTask<T,POLICY> t(new Task<T,POLICY>(f,resultQueueSize));
-   Scheduler().Schedule(t);
-   return std::move(t);
-}
-
-// Dedicated: Always start a new thread
-template<class T>
-rTask<T,TASK_POLICY_DEDICATED> 
-Task_Master::Schedule<T,TASK_POLICY_DEDICATED>
-    ( typename Task<T,TASK_POLICY_DEDICATED>::F f,
-      size_t resultQueueSize) 
-{
-   rTask<T,TASK_POLICY_DEDICATED> 
-       t(new Task<T,TASK_POLICY_DEDICATED>(f,resultQueueSize));
-   //Scheduler().StartDedicated(t);
-   return std::move(t);
-}
-
-// Immediate: Start a new thread if none available
-template<class T>
-static rTask<T,TASK_POLICY_IMMEDIATE> 
-Task_Master::Schedule<T,TASK_POLICY_IMMEDIATE>
-     ( typename Task<T,TASK_POLICY_IMMEDIATE>::F f,
-       size_t resultQueueSize =0 ) 
-{
-   rTask<T,TASK_POLICY_IMMEDIATE> 
-       t(new Task<T,TASK_POLICY_IMMEDIATE>(f,resultQueueSize));
-
-   // This needs to be an atomic action
-   theQueue->Lock();
-   if ( theQueue->BlockedReaders() > 0 )  {
-       Promote(t);
-
-       // We had to hold the lock until we were head of the queue
-       theQueue->Unlock();
-   } else {
-       // No point locking, we're going to spawn a new 
-       // thread anyway
-       theQueue->Unlock();
-       StartDedicated(t);
-   }
-
-   return std::move(t);
-}
-
+#include "go.hpp"
 
 #endif

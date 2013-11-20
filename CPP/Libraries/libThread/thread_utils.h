@@ -4,6 +4,7 @@
 #include <thread>
 namespace Thread {
     long MyId();
+    void Sleep( long us);
 };
 
 #endif

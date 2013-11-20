@@ -56,7 +56,7 @@ static long ChannelId() {
 class Channel_Base {
 public:
     Channel_Base (): myId(ChannelId()) { }
-    long Id() {
+    std::atomic_long& Id() {
         return myId;
     }
 
@@ -64,7 +64,7 @@ public:
 
     virtual ~Channel_Base() {}
 private:
-    long   myId;
+    std::atomic_long   myId;
 };
 
 template <class T>
@@ -108,7 +108,11 @@ public:
     }
 
 private:
+    //  Uses MUTEX - Debug use only!
     std::string Context(std::string f) {
+        static std::mutex contextLock;
+        std::unique_lock<std::mutex> lock(contextLock);
+
         std::stringstream s;
         s << "Channel[" << Id() << "]::" << f;
         return s.str();

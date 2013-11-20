@@ -8,15 +8,19 @@
 
 Task_Slave::Task_Slave(shared_ptr<Channel<Task_Ref> >& workQueue):
     theQueue(workQueue),
-    threadId(Thread::MyId()),
-    worker{&Task_Slave::DoWork, this}
-{ }
+    threadId(Thread::MyId())
+
+{ 
+    // Move assign the thread
+    worker = new std::thread{&Task_Slave::DoWork,this};
+}
 
 Task_Slave::Task_Slave(Task_Ref t):
     theQueue(nullptr),
-    threadId(Thread::MyId()),
-    worker{&Task_Slave::DoDedicated, this, t}
-{ }
+    threadId(Thread::MyId())
+{ 
+    worker = new std::thread{&Task_Slave::DoWork,this};
+}
 
 void Task_Slave::DoDedicated(Task_Ref t) {
     ThreadId() = Thread::MyId();
@@ -38,6 +42,8 @@ void Task_Slave::DoWork() {
 
             t = theQueue->Get();
             DoTask(t);
+            // We don't need the task anymore
+            t = nullptr;
 
         }
     } catch ( ChannelDeadException& deadChan ) {
@@ -97,8 +103,6 @@ Task_Master::Task_Master(): theQueue(new Channel<Task_Ref>(0))
               << " threads"
               )
 
-    slaves.reserve(numThreads);
-
     // Starting at 1: We're already in one thread
     for ( size_t i=1; i< numThreads; i++ ) {
         slaves.emplace_back(theQueue);
@@ -127,7 +131,7 @@ void Task_Master::Schedule(Task_Ref t) {
                   << "( Thread: " << Thread::MyId() << ")"
                   )
 
-        (*theQueue) << std::move(t);
+        (*theQueue) << Task_Ref(t);
 
         SLOG_FROM( LOG_SCHEDULER, 
                   "Task_Master::Schedule",
@@ -139,7 +143,7 @@ void Task_Master::Schedule(Task_Ref t) {
 }
 
 void Task_Master::StartDedicated(Task_Ref t) {
-    if ( t.Started() ) {
+    if ( t->Started() ) {
         // If its already running we don't have to do anything
         return;
     }
@@ -147,16 +151,15 @@ void Task_Master::StartDedicated(Task_Ref t) {
 }
 
 void Task_Master::Promote(Task_Ref t) {
-    if ( t.Started() ) {
+    if ( t->Started() ) {
         // If its already running we don't have to do anything
         return;
     }
-    theQueue->Put(t,CHANNEL_LOC_FRONT);
+    theQueue->Put(std::move(t),CHANNEL_LOC_FRONT);
 }
 
 void Task_Master::AddThreads(size_t n) {
     // Add threads to the pool
-    slaves.reserve(slaves.size()+n);
     for(size_t i =0; i< n; i++) {
         slaves.emplace_back(theQueue);
     }

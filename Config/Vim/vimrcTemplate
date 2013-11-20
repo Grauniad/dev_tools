@@ -7,6 +7,14 @@ let g:valgrind_command = 'make'
 let g:valgrind_arguments = 'memtest'
 let g:valgrind_use_horizontal_window = 1
 
+command! Threadtest :call Helgrind()
+function Helgrind ()
+    let back_args = g:valgrind_arguments
+    let g:valgrind_arguments = 'threadtest'
+    exec "Memtest"
+    let g:valgrind_arguments = back_args
+endfunction
+
 
 " Add all the tags files in export/tags to the tags path
 let tagsDir=g:project_dir . "/exports/tags/"
