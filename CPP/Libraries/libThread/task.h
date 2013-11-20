@@ -194,7 +194,9 @@ public:
         }
 
         try {
-            Started() = true;
+            Lock();
+                Started() = true;
+            Unlock();
 
             SLOG_FROM( LOG_SCHEDULER, 
                       "Task::Complete",
@@ -243,6 +245,7 @@ private:
     std::once_flag     runFlag;
     TASK_POLICY        policy;
     std::mutex         runMutex;
+    std::mutex         infoMutex;
 };
 
 

@@ -71,7 +71,7 @@ void Task<T>::Lock() {
                         << " task " << Id()
               )
 
-    runMutex.lock();
+    infoMutex.lock();
 
     SLOG_FROM( LOG_LOCKS, 
               "Task::Lock",
@@ -83,7 +83,7 @@ void Task<T>::Lock() {
 
 template <class T>
 void Task<T>::Unlock() {
-    runMutex.unlock();
+    infoMutex.unlock();
 
     SLOG_FROM( LOG_LOCKS, 
               "Task::Unlock",
