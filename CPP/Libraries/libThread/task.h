@@ -55,6 +55,9 @@ public:
     Task_Ref(Task_Base* task): tsk(task) {}
 
     ~Task_Ref() {
+        /*
+         * Std library guarentees thread safety of the shared_ptr...
+         */
         tsk.reset();
     }
 

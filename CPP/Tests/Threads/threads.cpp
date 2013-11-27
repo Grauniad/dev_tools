@@ -14,7 +14,7 @@ int main(int argc, const char *argv[])
 {
     Test("Basic Task Healtch Check...",FireAndForget).RunTest();
     Test("Check a worker may cleanup task...",DeathInTask).RunTest();
-    //Test("Doing a dumb LCM algo in parallel...",IterateResults).RunTest();
+    Test("Doing a dumb LCM algo in parallel...",IterateResults).RunTest();
     //Test("Testing Run Immediately mechanism",RunImmediately).RunTest();
     //Test("Testing on-demand mechanism",RunOnDemand).RunTest();
     //Test("Testing Queue mechanism",QueueTasks).RunTest();
@@ -103,9 +103,13 @@ int QueueTasks (testLogger& log ) {
         ));
     }
 
-    for ( size_t i =0; i< 2*NUM_WORKERS; ++i ) {
+    for ( size_t i =0; i< 200*NUM_WORKERS; ++i ) {
         this_thread::yield();
         Thread::Sleep(100);
+
+        if ( go_flags.BlockedReaders() == NUM_WORKERS) {
+            break;
+        }
     }
 
     // Now the go_flags should have NUM_WORKERS waiting on it
@@ -279,17 +283,29 @@ int RunImmediately (testLogger& log ) {
         ));
     }
 
+    LOG( LOG_OVERVIEW, "Queued Up workers, waiting...")
 
-    for ( size_t i =0; i< 2*NUM_WORKERS; ++i ) {
+
+    for ( size_t i =0; i< 2000*NUM_WORKERS; ++i ) {
         this_thread::yield();
-        Thread::Sleep(100);
+
+        // Sleep for 10ms
+        Thread::Sleep(10000);
+
+        if ( go_flags.BlockedReaders() == 50 ) {
+            LOG( LOG_OVERVIEW, "Correct num workers, continuing...")
+            break;
+        }
     }
+
+    LOG( LOG_OVERVIEW, "Done Waiiting, doing checks")
 
     // Now the go_flags should have NUM_WORKERS waiting on it
     if ( go_flags.BlockedReaders() != 50 ) {
         log << "The scheduler has not started the correct number of jobs!";
         log << "NUM_WORKERS: " << NUM_WORKERS;
         log << "Jobs: " << go_flags.BlockedReaders();
+        LOG( LOG_OVERVIEW, "Invalid Blocked Readers, exiting...")
         return 1;
     }
 
@@ -297,13 +313,19 @@ int RunImmediately (testLogger& log ) {
         log << "The scheduler has failed to use all of its resources!";
         log << "Free Workers: " << Task_Master::Scheduler().FreeWorkers();
         log << "Jobs: " << go_flags.BlockedReaders();
+
+        LOG( LOG_OVERVIEW, "Invalid Free Workers, exiting...")
         return 1;
     }
+
+    LOG( LOG_OVERVIEW, "Fire!")
 
     // FIRE!
     for ( int i=0; i<50; ++i) {
         go_flags << true;
     }
+
+    LOG( LOG_OVERVIEW, "Collecting results...")
 
     // Collect the results
     for ( int i=0; i<50; i++ ) {
@@ -312,6 +334,8 @@ int RunImmediately (testLogger& log ) {
         log << "Got: " << j << " :(";
         got[j] = true;
     }
+
+    LOG( LOG_OVERVIEW, "Checking results...")
 
     // Did we get everything?
     for ( int i =0 ; i< 50; i++ ) {
