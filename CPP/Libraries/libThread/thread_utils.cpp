@@ -1,11 +1,17 @@
 #include "thread_utils.h"
 #include <unordered_map>
 #include <thread>
+#include <mutex>
+#include <chrono>
 
 using namespace std;
 
 
+static std::mutex idLock;
+
 long Thread::MyId() { 
+    std::unique_lock<std::mutex> lock(idLock);
+
     static unordered_map<std::thread::id,long> threadIds;
     static long nextId = 0;
 
@@ -19,4 +25,9 @@ long Thread::MyId() {
         ++nextId;
         return nextId-1;
     }
+}
+
+void Thread::Sleep(long us ) {
+    chrono::microseconds dura(us);
+    this_thread::sleep_for(dura);
 }

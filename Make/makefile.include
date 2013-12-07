@@ -179,6 +179,17 @@ ifndef VALGRIND_OPTIONS
     VALGRIND_OPTIONS+=--fullpath-after=
 endif
 
+ifndef HELGRIND_OPTIONS
+    # Use the tread-debugging tool
+    HELGRIND_OPTIONS=--tool=helgrind
+    # Report an error if thread 1 reads XXXX, thread 2 frees it, and no lock prevents a race
+    HELGRIND_OPTIONS+=--free-is-write=yes
+    # Should run silently for regression tests, only report errors
+    # For easy debugging
+    HELGRIND__OPTIONS+=--fullpath-after=
+endif
+
+
 ifndef GDB_OPTIONS
    # Use terminal user interface (display source code)
    GDB_OPTIONS=-tui 
@@ -324,6 +335,9 @@ ifdef BUILD_TIME_TESTS
    ifeq ($(findstring memtest,$(MAKECMDGOALS)),memtest)
 	   testCmd=VALGRIND_AUTO_TESTS
    endif
+   ifeq ($(findstring threadtest,$(MAKECMDGOALS)),threadtest)
+	   testCmd=HELGRIND_AUTO_TESTS
+   endif
    ifeq ($(findstring gdbtest,$(MAKECMDGOALS)),gdbtest)
 	   testCmd=GDB_AUTO_TESTS
    endif
@@ -411,6 +425,7 @@ endif
 
 all: $(BUILD_DEPS) $(TO_COPY) $(POST_BUILD_DEPS)
 memtest: all
+threadtest: all
 gdbtest: all
 cover: all 
 profile: all
@@ -475,6 +490,14 @@ VALGRIND_AUTO_TESTS: BUILD_AUTO_TESTS
 		echo "***********************************************************"; \
 		echo "Running auto test: $$test";\
 		    valgrind $(VALGRIND_OPTIONS) $$test || exit;\
+		echo "************************************************************"; \
+	done
+
+HELGRIND_AUTO_TESTS: BUILD_AUTO_TESTS
+	@for test in $(TESTS_TO_RUN); do \
+		echo "***********************************************************"; \
+		echo "Running auto test: $$test";\
+		    valgrind $(HELGRIND_OPTIONS) $$test || exit;\
 		echo "************************************************************"; \
 	done
 
@@ -604,6 +627,10 @@ usage:
 	@echo "    NO_LOG_VERBOSE:                >$(NO_LOG_VERBOSE)<"
 	@echo "    NO_LOG_VERY_VERBOSE:           >$(NO_LOG_VERY_VERBOSE)<"
 	@echo ""
+	@echo "        Thread Options"
+	@echo "    Starting Thread Pool Size:"
+	@echo "       TASK_MASTER_NUM_THREADS:      >$(TASK_MASTER_NUM_THREADS)<"
+	@echo ""
 	@echo "        Compiler Options"
 	@echo "MODE:              $(MODE)"
 	@echo "TOOL_CHAIN:        $(TOOL_CHAIN)"
@@ -636,6 +663,9 @@ usage:
 	@echo "tests defiend in the tests dicectory are exectuted automatically, every time the project is built"
 	@echo "There are some additional options when handling tests:"
 	@echo "   To valgrind tests: : make memtest"
+	@echo "       Works on an ordinary debug build, the build will fail if valgrind identifies any errors"
+	@echo ""
+	@echo "   To helgrind tests: : make threadtest"
 	@echo "       Works on an ordinary debug build, the build will fail if valgrind identifies any errors"
 	@echo ""
 	@echo "   To run gdb over the tests: make gdbtest"

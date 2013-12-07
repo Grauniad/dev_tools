@@ -46,12 +46,8 @@ enum CHANNEL_LOC {
     __NUM_CHANNEL_LOCS
 };
 
-static long ChannelId() {
-    static long nextId =0;
-    nextId +=1;
-    return nextId;
-}
 
+long ChannelId();
 
 class Channel_Base {
 public:
@@ -64,7 +60,7 @@ public:
 
     virtual ~Channel_Base() {}
 private:
-    long   myId;
+    std::atomic_long   myId;
 };
 
 template <class T>
@@ -95,6 +91,8 @@ public:
 
     void Kill();
 
+    bool Alive();
+
     virtual std::atomic_size_t& QueueSize() {
         return MAX_QUEUED;
     }
@@ -108,7 +106,11 @@ public:
     }
 
 private:
+    //  Uses MUTEX - Debug use only!
     std::string Context(std::string f) {
+        static std::mutex contextLock;
+        std::unique_lock<std::mutex> lock(contextLock);
+
         std::stringstream s;
         s << "Channel[" << Id() << "]::" << f;
         return s.str();

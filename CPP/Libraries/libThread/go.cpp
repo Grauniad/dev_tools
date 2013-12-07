@@ -8,15 +8,30 @@
 
 Task_Slave::Task_Slave(shared_ptr<Channel<Task_Ref> >& workQueue):
     theQueue(workQueue),
-    threadId(Thread::MyId()),
-    worker{&Task_Slave::DoWork, this}
-{ }
+    threadId(Thread::MyId())
+
+{ 
+    SLOG_FROM( LOG_SCHEDULER, 
+              "Task_Slave::Task_Slave",
+              "Thread (" << Thread::MyId() 
+                        << ") is going to create a new slave"
+              )
+    // Move assign the thread
+    worker = new std::thread{&Task_Slave::DoWork,this};
+}
 
 Task_Slave::Task_Slave(Task_Ref t):
     theQueue(nullptr),
-    threadId(Thread::MyId()),
-    worker{&Task_Slave::DoDedicated, this, t}
-{ }
+    threadId(Thread::MyId())
+{ 
+    SLOG_FROM( LOG_SCHEDULER, 
+              "Task_Slave::Task_Slave",
+              "Thread (" << Thread::MyId() 
+                        << ") is going to start a new thread"
+                        << " for a dedicated task"
+              )
+    worker = new std::thread{&Task_Slave::DoTask,this,t};
+}
 
 void Task_Slave::DoDedicated(Task_Ref t) {
     ThreadId() = Thread::MyId();
@@ -38,6 +53,8 @@ void Task_Slave::DoWork() {
 
             t = theQueue->Get();
             DoTask(t);
+            // We don't need the task anymore
+            t = nullptr;
 
         }
     } catch ( ChannelDeadException& deadChan ) {
@@ -60,18 +77,29 @@ void Task_Slave::DoWork() {
 
 
 void Task_Slave::DoTask(Task_Ref t) {
+    // Save some needless mutexes
+    long id = -1;
+    long thread_id = -1;
+
+    IF_LOG( LOG_SCHEDULER,
+        t->Lock();
+            id = t->Id();
+        t->Unlock();
+        thread_id = Thread::MyId();
+    )
+
     SLOG_FROM( LOG_SCHEDULER, 
               "Task_Slave::DoTask",
-              "Thread (" << Thread::MyId() 
-                        << ") Is doing work!"
+              "Thread (" << thread_id 
+                        << ") Is doing work on " << id
               )
 
     t->Complete();
 
     SLOG_FROM( LOG_SCHEDULER, 
               "Task_Slave::DoTask",
-              "Thread (" << Thread::MyId() 
-                        << ") Has finished its work!"
+              "Thread (" << thread_id 
+                        << ") Has finished its work on " << id
               )
 }
 
@@ -97,8 +125,6 @@ Task_Master::Task_Master(): theQueue(new Channel<Task_Ref>(0))
               << " threads"
               )
 
-    slaves.reserve(numThreads);
-
     // Starting at 1: We're already in one thread
     for ( size_t i=1; i< numThreads; i++ ) {
         slaves.emplace_back(theQueue);
@@ -123,15 +149,16 @@ void Task_Master::Schedule(Task_Ref t) {
     } else {
         SLOG_FROM( LOG_SCHEDULER, 
                   "Task_Master::Schedule",
-                  "Scheduling new task"
-                  << "( Thread: " << Thread::MyId() << ")"
+                  "Scheduling new task with channel "
+                  << t->Id()
+                  << " ( Thread: " << Thread::MyId() << ")"
                   )
 
-        (*theQueue) << std::move(t);
+        (*theQueue) << Task_Ref(t);
 
         SLOG_FROM( LOG_SCHEDULER, 
                   "Task_Master::Schedule",
-                  "New task scheduled, current queue size: "
+                  "New task (" << t->Id() << ") scheduled, current queue size: "
                   << theQueue->Size()
                   << " ( Thread: " << Thread::MyId() << ")"
                   )
@@ -139,7 +166,7 @@ void Task_Master::Schedule(Task_Ref t) {
 }
 
 void Task_Master::StartDedicated(Task_Ref t) {
-    if ( t.Started() ) {
+    if ( t->Started() ) {
         // If its already running we don't have to do anything
         return;
     }
@@ -147,16 +174,15 @@ void Task_Master::StartDedicated(Task_Ref t) {
 }
 
 void Task_Master::Promote(Task_Ref t) {
-    if ( t.Started() ) {
+    if ( t->Started() ) {
         // If its already running we don't have to do anything
         return;
     }
-    theQueue->Put(t,CHANNEL_LOC_FRONT);
+    theQueue->Put(std::move(t),CHANNEL_LOC_FRONT);
 }
 
 void Task_Master::AddThreads(size_t n) {
     // Add threads to the pool
-    slaves.reserve(slaves.size()+n);
     for(size_t i =0; i< n; i++) {
         slaves.emplace_back(theQueue);
     }

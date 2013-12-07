@@ -1,5 +1,11 @@
 #ifndef __DEV_TOOLS_LIBRARIES_THREADS_GO_TASKS_H
 #define __DEV_TOOLS_LIBRARIES_THREADS_GO_TASKS_H
+#include <atomic>
+#include <mutex>
+#include <memory>
+#include "channel.h"
+#include "logger.h"
+#include "thread_utils.h"
 
 /*
  * Common interface, so we can store in a homogenous array
@@ -11,19 +17,26 @@ public:
     virtual void Done() = 0;
     virtual ~Task_Base() {}
 
-    atomic_bool& Started() {
+    std::atomic_bool& Started() {
         return started;
     }
+
+    virtual long Id() = 0;
+
+    void Lock();
+
+    void Unlock();
 private:
-    atomic_bool    started;
+    std::atomic_bool    started;
+    std::mutex     infoMutex;
 };
+
 
 enum TASK_POLICY {
     TASK_POLICY_DEDICATED, /* Force the scheduler to create a new thread */
     TASK_POLICY_IMMEDIATE, /* Start immediately (create a new thread if existing pool is busy) */
     TASK_POLICY_ON_DEMAND, /* Queue the task, if it is not running at the time of first read, run it in a new thread*/
     TASK_POLICY_STANDARD,  /* FIFO semantics ** BEWARE DEADLOCKS! ** */
-    __NUM_TASK_POLICIES
 };
 
 /*
@@ -40,6 +53,13 @@ public:
 
     // Manages a new task
     Task_Ref(Task_Base* task): tsk(task) {}
+
+    ~Task_Ref() {
+        /*
+         * Std library guarentees thread safety of the shared_ptr...
+         */
+        tsk.reset();
+    }
 
     // Transfers ownership
     Task_Ref& operator=(Task_Ref&& rhs) {
@@ -66,52 +86,159 @@ public:
     Task_Base* operator-> () {
         return tsk.get();
     }
+
+
 protected:
-    shared_ptr<Task_Base>    tsk;
+    std::shared_ptr<Task_Base>    tsk;
 };
+
+template<class T>
+class rTask;
 
 /*
  * Templated Task implementation
  */
-template<class T, TASK_POLICY POLICY = TASK_POLICY_ON_DEMAND>
+template<class T>
 class Task: public Task_Base {
 public:
+    friend class rTask<T>;
     using F = std::function<void(Channel<T>&)>;
-    Task(F f, size_t bufferSize = 0) :
-        resultStream(bufferSize),
-        work(f)
-        { }
+    Task( F f, 
+          size_t bufferSize = 0, 
+          TASK_POLICY pol = TASK_POLICY_ON_DEMAND) :
+            resultStream(bufferSize),
+            work(f),
+            policy(pol)
+            { }
 
     virtual ~Task() {
-        // Release any blocking threads
+        SLOG_FROM( LOG_SCHEDULER, 
+                  "Task::~Task",
+                  "Thread (" << Thread::MyId() 
+                            << ") is killing task "
+                            << Id() 
+                            << ", declaring done..."
+                  )
+        /*
+         *  - Stop any new threads starting to wait
+         *  - Throws out the executing thread (if any)
+         */
         Done();
+
+        // Lock down the task...
+        std::unique_lock<std::mutex> runLock(runMutex);
+        Lock();
+
+        // No-one is executing us, and no one can start waiting, but
+        // we must wait for anyone currently waiting on the channel to
+        // receive the death signal
+        while (    resultStream.BlockedReaders() > 0 
+                || resultStream.BlockedWriters() > 0 ) 
+        {
+            SLOG_FROM( LOG_SCHEDULER, 
+                      "Task::~Task",
+                      "Thread (" << Thread::MyId() 
+                                << ") is yielind as there are still "
+                                << "blocked readers / writers on task "
+                                << Id() 
+                      )
+            this_thread::yield();
+        }
+
+        SLOG_FROM( LOG_SCHEDULER, 
+                  "Task::~Task",
+                  "Thread (" << Thread::MyId() 
+                            << ") is killing task "
+                            << Id() 
+                            << ", locking down results..."
+                  )
+
+        // no-one is still waiting on us (and no one can start)
+
+        // Finally, we lock the channel - When this returns we know
+        // the final thread must have left exeuction in the class
+        resultStream.Lock();
+
+        // No one has a reference to the class, no-one is in the
+        // class, and no-one is executing the work. We can now die!
+        resultStream.Unlock();
+
+        Unlock();
+
+        SLOG_FROM( LOG_SCHEDULER, 
+                  "Task::~Task",
+                  "Thread (" << Thread::MyId() 
+                            << ") has destroyed task "
+                            << Id() 
+                  )
+
     }
 
-    // Used by the task owner to get results in real
-    // time
-    // Will THROW if the resulsStream has been killed
-    Task& operator >> (T& item) {
-        resultStream >> item;
-        return *this;
-    }
 
     virtual void Done() {
-        resultStream.Kill();
+        Lock();
+            resultStream.Kill();
+        Unlock();
+        // Wait for a running application to release the task
+        std::unique_lock<std::mutex> runLock(runMutex);
     }
 
     virtual void Complete() {
+        // Make sure we are in so control of the task...
+        std::unique_lock<std::mutex> runLock(runMutex);
+
         if ( Started() ) {
+            SLOG_FROM( LOG_SCHEDULER, 
+                      "Task::Complete",
+                      "Thread (" << Thread::MyId() 
+                                << ") did not start task "
+                                << Id() 
+                                << " because it has already started"
+                      )
             // Prevent a double run
             return;
         }
 
+        // Make sure we haven't been "Done"
+        if ( !resultStream.Alive() ) {
+            SLOG_FROM( LOG_SCHEDULER, 
+                      "Task::Complete",
+                      "Thread (" << Thread::MyId() 
+                                << ") did not start task "
+                                << Id() 
+                                << " because the result stream is dead"
+                      )
+            // Prevent running a dead task
+            return;
+        }
+
         try {
-            Started() = true;
-            //TODO:
-            //std::call_once(runFlag,work, resultStream);
+            Lock();
+                Started() = true;
+            Unlock();
+
+            SLOG_FROM( LOG_SCHEDULER, 
+                      "Task::Complete",
+                      "Thread (" << Thread::MyId() 
+                                << ") started task "
+                                << Id() 
+                      )
             work(resultStream);
+
+            SLOG_FROM( LOG_SCHEDULER, 
+                      "Task::Complete",
+                      "Thread (" << Thread::MyId() 
+                                << ") completed task "
+                                << Id() 
+                      )
         } catch (ChannelDeadException& deadChan) {
             if ( deadChan.Id() == resultStream.Id() ) {
+                SLOG_FROM( LOG_SCHEDULER, 
+                          "Task::Complete",
+                          "Thread (" << Thread::MyId() 
+                                    << ") stopped - channel is dead"
+                                    << Id() 
+                          )
                 // Someone has killed the results stream - indicating no
                 // more work to do
                 return;
@@ -121,11 +248,20 @@ public:
             }
         }
     }
+
+    virtual long Id() {
+        return resultStream.Id();
+    }
+
+
 private:
     Channel<T>         resultStream;
     F                  work;
     std::once_flag     runFlag;
+    TASK_POLICY        policy;
+    std::mutex         runMutex;
 };
+
 
 // Specialise the Task_Ref
 template<class T>
@@ -154,11 +290,11 @@ public:
 
     // Takes ownership of a new Task
     rTask<T>& operator=(Task<T>* task) {
-        Task_Ref::operator=(static_cast<Task_Ref>(task));
+        Task_Ref::operator=(task);
         return *this;
     }
 
-    Task<>& operator* () {
+    Task<T>& operator* () {
         return *static_cast<Task<T>* >(tsk.get());
     }
 
@@ -169,6 +305,12 @@ public:
     Task<T>* operator-> () {
         return static_cast<Task<T>* >(tsk.get());
     }
-};
 
+    Channel<T>& Results(); 
+    
+    // Used by the task owner to get results in real
+    // time
+    // Will THROW if the resulsStream has been killed!
+    rTask& operator >> (T& item);
+};
 #endif

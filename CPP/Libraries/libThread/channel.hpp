@@ -23,11 +23,16 @@ void Channel<T>::Kill() {
                         << ") is killing me!"
               )
 
-    state = CHANNEL_STATE_DEAD;
+    // If we don't lock the channel it is possible for a thread to
+    // decide the channel is alive, but not start waiting until AFTER
+    // we've killed the channel - leaving it waiting forever
+    Lock();
+        state = CHANNEL_STATE_DEAD;
 
-    // Wake everyone up so they can handle the kill
-    queueReadFlag.notify_all();
-    queueWriteFlag.notify_all();
+        // Wake everyone up so they can handle the kill
+        queueReadFlag.notify_all();
+        queueWriteFlag.notify_all();
+    Unlock();
 
     SLOG_FROM( LOG_CHANNEL, 
               Context("Kill"),
@@ -140,7 +145,7 @@ void Channel<T>::Put( T&& item, CHANNEL_LOC loc) {
 
     // Move construct the item on the queue
     if ( loc == CHANNEL_LOC_BACK ) {
-        taskQueue.emplace_end(std::move(item));
+        taskQueue.emplace_back(std::move(item));
     } else {
         taskQueue.emplace_front(std::move(item));
     }
@@ -161,7 +166,6 @@ void Channel<T>::Put( T&& item, CHANNEL_LOC loc) {
                        << ") Is done with Channel, releasing lock..."
               )
 
-    return *this;
     // queue released when queueLock is unwound
 }
 
@@ -217,9 +221,9 @@ T Channel<T>::Get() {
         // the lock and wait for someonen to put some there...
         readers++;
             queueWriteFlag.wait(queueLock);
+            // NOTE: wait will have re-aquired the queue for us; we're 
+            //       back in sole control
         readers--;
-        // NOTE: wait will have re-aquired the queue for us; we're 
-        //       back in sole control
         SLOG_FROM( LOG_LOCKS, 
                   Context("Get"),
                   "Thread ("<< Thread::MyId() 
@@ -228,7 +232,7 @@ T Channel<T>::Get() {
     }
 
     // Move the item;
-    T item(std::move(taskQueue.front()));
+    T item(taskQueue.front());
 
     // Pop the queue
     taskQueue.pop_front();
@@ -249,7 +253,12 @@ T Channel<T>::Get() {
                        << ") Is done with Channel, releasing lock..."
               )
 
-    return std::move(item);
+    return item;
+}
+
+template <class T>
+bool Channel<T>::Alive() {
+    return state == CHANNEL_STATE_ALIVE;
 }
 
 #endif
