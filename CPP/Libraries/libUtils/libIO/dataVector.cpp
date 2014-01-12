@@ -87,3 +87,8 @@ void DataVector::Resize(long size)
     this->resize(size);
     this->Fill(fillStart,'\0',toFill);
 }
+
+
+const char * DataVector::StringData() const {
+     return reinterpret_cast<const char *>(this->data());
+}

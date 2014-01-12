@@ -29,7 +29,8 @@ public:
     // Utility Functions
     virtual void Resize(long size);
     virtual void ReserveAtLeast(long size);
-    virtual const unsigned char* RawData() { return this->data();}
+    virtual const unsigned char* RawData() const { return this->data();}
+    virtual const char* StringData() const;
     virtual void Clear() { this->clear(); }
 
     unsigned char& operator[](long idx) { 
