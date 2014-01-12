@@ -4,8 +4,6 @@
 #include <string>
 #include <sstream>
 #include <util_time.h>
-#include "channel.h"
-#include "channel.hpp"
 
 using namespace std;
 
@@ -90,7 +88,7 @@ void LogFactory::ClearBufs() {
 }
 
 std::stringstream& LogFactory::Buf() {
-    thread_local std::stringstream* p = NewBuf();
+    std::stringstream* p = NewBuf();
     p->str("");
     p->clear();
     return *p;

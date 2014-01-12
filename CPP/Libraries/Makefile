@@ -1,5 +1,4 @@
 MAKE_DIRS= libIOInterface\
-		   libThread \
 		   libUtils \
 		   libTest \
 		     \
