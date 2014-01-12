@@ -47,6 +47,12 @@ include $(DEV_TOOLS_DIR)/Make/makefile.COMMON.include
 ifndef TOOL_CHAIN
    TOOL_CHAIN=$(DEFAULT_TOOL_CHAIN)
 endif
+
+# Allow local override of the global tool-chain
+ifdef FORCE_TOOL_CHAIN
+   TOOL_CHAIN=$(FORCE_TOOL_CHAIN)
+endif
+
 include $(DEV_TOOLS_DIR)/Make/Compilers/makefile.$(TOOL_CHAIN).include
 
 include $(DEV_TOOLS_DIR)/Make/Languages/makefile.$(MODE).include
@@ -249,6 +255,10 @@ ifeq ($(ALL_WARNINGS),YES)
   COMP_FLAGS+=$(COMPILER_ALL_WARNINGS)
 endif
 
+ifdef SUPPRESSED_WARNINGS
+   COMP_FLAGS+=$(addprefix $(COMPILER_WARNING_SUPPRESSION_PREFIX),$(SUPPRESSED_WARNINGS))
+endif
+
 ifeq ($(DEBUG_ON),YES)
   COMP_FLAGS+=$(DEBUG_FLAGS)
 endif
@@ -260,7 +270,6 @@ endif
 ifeq ($(FAST_ON),YES)
   COMP_FLAGS+=$(FAST_FLAGS)
 endif
-
 
 
 ifeq ($(findstring cover,$(MAKECMDGOALS)),cover)
@@ -669,6 +678,7 @@ usage:
 	@echo "TOOL_CHAIN:        $(TOOL_CHAIN)"
 	@echo "COMPILER:          $(COMP)"
 	@echo "SOURCE_EXTENSION:  $(SOURCE_EXTENSION)"
+	@echo "COMPILER FLAGS:    $(COMP_FLAGS)"
 	@echo ""
 	@echo "ADDITIONAL_INCLUDE_FLAGS:  Add extra include directories - (), <$(ADDITIONAL_INCLUDE_FLAGS)>"
 	@echo "ADDITIONAL_TEST_COMP_FLAGS: Add extra flags used when compiling test binaries - (), <$(ADDITIONAL_INCLUDE_FLAGS)>"
@@ -685,6 +695,7 @@ usage:
 	@echo "PROFILE_SECS               Minimum time a test must run for when profiling - ($(DEFAULT_PROFILE_SECS)), <$(PROFILE_SECS)>"
 	@echo "RELEASE_FLAGS              Flags to $(CPP)when release build is enabled -  ($(DEFAULT_RELEASE_FLAGS)), <$(RELEASE_FLAGS)>"
 	@echo "RELEASE_ON:                Enable release optimizations - (NO), <$(RELEASE_ON)>"
+	@echo "SUPPRESSED_WARNINGS:       List of specific warnings to supress - () , <$(SUPPRESSED_WARNINGS)>"
 	@echo "USE_CPP11:                 To use the CPP11 std, set USE_CPP11=YES - (NO), <$(USE_CPP11)>"
 	@echo ""
 	@echo "        CTAGS"

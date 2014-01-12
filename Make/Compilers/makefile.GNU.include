@@ -9,6 +9,7 @@ COMPILER_CPP11=c++11
 COMPILER_ALL_WARNINGS=-Wall
 COMPILER_FATAL_WARNINGS=-Werror
 COMPILER_COVERAGE=--coverage
+COMPILER_WARNING_SUPPRESSION_PREFIX="-Wno-"
 
 PROFILE_COMMAND=gprof $$test > $(EXPORT_PROFILE_DIR)/$$(basename $$test).profile  || exit;
 PROFILE_GEN_COMMAND=$(SCRIPTS_DIR)/prof2html.py $(EXPORT_PROFILE_DIR)/$$(basename $$test).profile || exit;

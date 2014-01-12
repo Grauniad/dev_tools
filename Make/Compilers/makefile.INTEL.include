@@ -1,4 +1,5 @@
-DEFAULT_DEBUG_FLAGS=-debug all
+#TODO: Update when icc next updated...
+DEFAULT_DEBUG_FLAGS=-debug all -I/usr/include/c++/4.6/
 DEFAULT_RELEASE_FLAGS=-O2 -xHost
 DEFAULT_FAST_FLAGS=-fast -DDEV_TOOLS_NO_LOGGING
 DEFAULT_COMP_PROFILE_FLAGS=-profile-functions -profile-loops=all -profile-loops-report=2 -prof-dir $(EXPORT_PROFILE_DIR)
@@ -8,6 +9,7 @@ COMPILER_CPP11=c++11
 COMPILER_ALL_WARNINGS=-Wall -Wcheck
 COMPILER_FATAL_WARNINGS=-Werror
 COMPILER_COVERAGE=-prof-gen=srcpos -prof-dir $(EXPORT_COVER_DIR)
+COMPILER_WARNING_SUPPRESSION_PREFIX="-Wd"
 
 PROFILE_COMMAND=rm *.dump; mv loop_prof_*.xml $(EXPORT_PROFILE_DIR)/$$(basename $$test).profile; \
 PROFILE_GEN_COMMAND=
