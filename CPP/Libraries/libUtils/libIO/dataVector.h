@@ -28,6 +28,7 @@ public:
 
     // Utility Functions
     virtual void Resize(long size);
+    virtual void ReserveAtLeast(long size);
     virtual const unsigned char* RawData() { return this->data();}
     virtual void Clear() { this->clear(); }
 

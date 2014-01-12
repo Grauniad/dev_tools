@@ -69,6 +69,12 @@ long DataVector::Last( long offset, unsigned char c) const {
     return i;
 }
 
+void DataVector::ReserveAtLeast(long size) {
+    if ( this->Size() < size ) {
+        Resize(size);
+    }
+}
+
 void DataVector::Resize(long size)
 {
     long fillStart=0;

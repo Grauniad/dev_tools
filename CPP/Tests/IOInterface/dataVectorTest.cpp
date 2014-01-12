@@ -232,8 +232,34 @@ int validateResize( testLogger& log) {
     data.Resize(100);
     long large = 134136;
     data.Resize(large);
+
+    if ( data.Size() != large ) {
+        log << "Vector failed to resize..." << endl;
+        return 1;
+    }
+
     for (int i = 0; i < large; i++) {
         data[i] = 20;
     }
+
+    data.ReserveAtLeast(large/2);
+    if ( data.Size() != large ) {
+        log << "Vector incorrectly downsized from a reserver!" << endl;
+        return 1;
+    }
+
+    data.ReserveAtLeast(large+1);
+
+    if ( data.Size() != large +1 ) {
+        log << "Vector did not grow!" << endl;
+        return 1;
+    }
+    data.ReserveAtLeast(large*2);
+
+    if ( data.Size() != large*2 ) {
+        log << "Vector did not grow!" << endl;
+        return 1;
+    }
+
     return 0;
 }
