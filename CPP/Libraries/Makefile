@@ -4,4 +4,6 @@ MAKE_DIRS= libIOInterface\
 		     \
 		   
 
+MODE=CPP
+
 include ../../../makefile.include

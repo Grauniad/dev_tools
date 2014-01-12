@@ -1,7 +1,6 @@
 LINKED_LIBS= libUtils  \
 			 libIOInterface \
-			 libTest \
-			 libThread
+			 libTest
 
 BUILD_TIME_TESTS=binaryData 
 CPP_TAGS_FILE=utilTests-c++.tags

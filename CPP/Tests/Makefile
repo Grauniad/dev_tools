@@ -7,5 +7,7 @@ MAKE_DIRS= IOInterface\
 		     \
 		   
 
+MODE=CPP
+
 
 include ../../../makefile.include

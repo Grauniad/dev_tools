@@ -566,26 +566,44 @@ VIEW_COVER:
 	$(WEB_VIEWER) $(EXPORT_COVER_DIR)$(COVER_FILE)
 
 
+# TESTS
+#
+# Macro for building test binaries
+#
 $(EXPORT_TESTS_TO)%: %$(SOURCE_EXTENSION) $(LINKED_FILES)
 	$(COMP) $(COMP_FLAGS) $(TEST_COMP_FLAGS) -o $@ $+ $(LINKED_FILES) $(EXTERNAL_LIBS)
 
+# LIBRARIES
+#
 # Macro for building STATIC libraries
+#
 $(LIB_TO_BUILD): $(TO_BUILD)
 	$(AR) -cr $@ $(shell ls $(EXPORT_OBJS_DIR)/*)
 
+# INCLUDES
+# 
 # Macro for moving include files to the includes directory. 
+#
 $(EXPORTED_INCLUDES): $(EXPORT_INCLUDES_DIR)%: %
 	cp $+ $@
  
+# COVERAGE FILES
+#
 # Macro for copying source code when using coverage testing
+#
 $(EXPORT_OBJS_DIR)%$(SOURCE_EXTENSION): %$(SOURCE_EXTENSION)
 	cp $+ $@
 
+# COMPILE
+#
 # Macro for building object files
+#
 $(EXPORT_OBJS_DIR)%.o: %$(SOURCE_EXTENSION)
 	$(COMP)  $(COMP_FLAGS) -c -o $@ $+
 
 # TAGS
+#
+#
 ifneq ($(strip $(TAGS_TO_BUILD)),)
 #rebuild the tags file if anything has changed
 $(TAGS_TO_BUILD): $(EXPORT_INCLUDES) $(SOURCES)

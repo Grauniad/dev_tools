@@ -5,4 +5,6 @@ $(HOME)/.dev_tools/.vimrc: vimrcTemplate ../../../makefile.include $(PROJECT_ROO
 $(PROJECT_ROOT_DIR)/.gdb_breakpoints:
 	touch $(PROJECT_ROOT_DIR)/.gdb_breakpoints
 
+MODE=CPP
+
 include ../../../makefile.include
