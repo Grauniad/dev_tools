@@ -105,10 +105,13 @@ ifndef USE_BOOST
    USE_BOOST=NO
 endif
 
+ifndef USE_SQLITE
+    USE_SQLITE=NO
+endif
+
 ifndef USE_THREADS
     USE_THREADS=YES
 endif
-
 
 
 
@@ -371,6 +374,10 @@ else
 endif
 endif
 
+ifeq ($(USE_SQLITE),YES)
+    EXTERNAL_LIBS+=$(SQLITE_LINK_FLAGS)
+endif
+
 ifeq ($(USE_BOOST),YES)
 ifeq ($(USE_LOCAL_BOOST),YES)
     # Nothing - boost already on the include path
@@ -471,7 +478,7 @@ BUILD_FOLDERS :
 		echo "************************************************************"; \
 	done
 
-RUN_AUTO_TEST: BUILD_AUTO_TESTS
+RUN_AUTO_TEST: BUILD_AUTO_TESTS .TEST_SETUP
 	@ulimit -c $(CORE_SIZE); \
 	for test in $(TESTS_TO_RUN); do \
 		if [ -e core ]; then \
@@ -485,7 +492,7 @@ RUN_AUTO_TEST: BUILD_AUTO_TESTS
 		echo "************************************************************"; \
 	done
 
-VALGRIND_AUTO_TESTS: BUILD_AUTO_TESTS
+VALGRIND_AUTO_TESTS: BUILD_AUTO_TESTS .TEST_SETUP
 	@for test in $(TESTS_TO_RUN); do \
 		echo "***********************************************************"; \
 		echo "Running auto test: $$test";\
@@ -493,7 +500,7 @@ VALGRIND_AUTO_TESTS: BUILD_AUTO_TESTS
 		echo "************************************************************"; \
 	done
 
-HELGRIND_AUTO_TESTS: BUILD_AUTO_TESTS
+HELGRIND_AUTO_TESTS: BUILD_AUTO_TESTS .TEST_SETUP
 	@for test in $(TESTS_TO_RUN); do \
 		echo "***********************************************************"; \
 		echo "Running auto test: $$test";\
@@ -501,7 +508,7 @@ HELGRIND_AUTO_TESTS: BUILD_AUTO_TESTS
 		echo "************************************************************"; \
 	done
 
-GDB_AUTO_TESTS: BUILD_AUTO_TESTS
+GDB_AUTO_TESTS: BUILD_AUTO_TESTS .TEST_SETUP
 	@echo "***********************************************************"; \
 	echo "           Running auto tests under gdb                    "; \
         echo " Setup File:  $(PROJECT_ROOT_DIR)/.gdb_setup"; \
@@ -520,7 +527,7 @@ GDB_AUTO_TESTS: BUILD_AUTO_TESTS
 	done; \
 	echo "***********************************************************"; \
 
-PROFILE_TESTS: BUILD_AUTO_TESTS
+PROFILE_TESTS: BUILD_AUTO_TESTS .TEST_SETUP
 	@ulimit -c $(CORE_SIZE); \
 	for test in $(TESTS_TO_RUN); do\
 		echo "***********************************************************"; \
@@ -536,6 +543,13 @@ PROFILE_TESTS: BUILD_AUTO_TESTS
 		echo "************************************************************"; \
 		rm -f gmon.out; \
 	done
+
+#
+# Macro definition for any setup function the user has chossen not
+# to define
+#
+.%_SETUP:
+	echo "No $@ defined - skipping setup..."
 
 
 BUILD_PROFILE_PAGE: PROFILE_TESTS
@@ -613,6 +627,7 @@ usage:
 	@echo "USE_GSL:       $(USE_GSL)   ( LOCAL: $(USE_LOCAL_GSL))"
 	@echo "USE_BOOST:     $(USE_BOOST)   ( LOCAL: $(USE_LOCAL_BOOST))"
 	@echo "USE_PLPLOT:    $(USE_PLPLOT)   ( LOCAL: $(USE_LOCAL_PLPLOT))"
+	@echo "USE_SQLITE:    $(USE_SQLITE)"
 	@echo "LINKED_FILES:  $(LINKED_FILES)"
 	@echo "EXTERNAL_LIBS: $(EXTERNAL_LIBS)"
 	@echo ""

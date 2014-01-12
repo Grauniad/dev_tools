@@ -61,3 +61,7 @@ endif
 ifndef GSL_DEV_TOOLS_LINK_FLAGS
     $(error GSL_DEV_TOOLS_LINK_FLAGS Must be specified)
 endif
+ 
+ifndef SQLITE_LINK_FLAGS
+    $(error SQLITE_LINK_FLAGS Must be specified)
+endif
