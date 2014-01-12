@@ -1,4 +1,5 @@
 #include "OSTools.h"
+#include <cstring>
 
 #include <libgen.h>
 
@@ -11,19 +12,23 @@ string OS::Join(const string& path1, const string& path2) {
 string OS::Basename(const string& path) {
     /*
      * Blame the POSIX standard! 
-     *
-     * The GNU libc library will not modify the input parameter, so it is safe
-     * to cast away constness here.
      */
-    return basename((char *)path.c_str());
+    char * data = new char[path.length()];
+    strncpy(data,path.c_str(),path.length());
+    string fname(basename(data));
+
+    delete[] data;
+    return fname;
 }
 
 string OS::Dirname(const string& path) {
     /*
      * Blame the POSIX standard! 
-     *
-     * The GNU libc library will not modify the input parameter, so it is safe
-     * to cast away constness here.
      */
-    return dirname((char *)path.c_str());
+    char * data = new char[path.length()];
+    strncpy(data,path.c_str(),path.length());
+    string directory(dirname(data));
+
+    delete[] data;
+    return directory;
 }
