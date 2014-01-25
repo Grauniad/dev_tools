@@ -13,8 +13,8 @@ string OS::Basename(const string& path) {
     /*
      * Blame the POSIX standard! 
      */
-    char * data = new char[path.length()];
-    strncpy(data,path.c_str(),path.length());
+    char * data = new char[path.length()+1];
+    strncpy(data,path.c_str(),path.length()+1);
     string fname(basename(data));
 
     delete[] data;
@@ -25,8 +25,8 @@ string OS::Dirname(const string& path) {
     /*
      * Blame the POSIX standard! 
      */
-    char * data = new char[path.length()];
-    strncpy(data,path.c_str(),path.length());
+    char * data = new char[path.length()+1];
+    strncpy(data,path.c_str(),path.length()+1);
     string directory(dirname(data));
 
     delete[] data;

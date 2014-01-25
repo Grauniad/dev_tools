@@ -1,6 +1,7 @@
 #include "tester.h"
 #include "dataLump.h"
 #include "OSTools.h"
+#include "stdReader.h"
 #include "file.h"
 
 using namespace std;
@@ -51,5 +52,61 @@ int OpenDirs(testLogger& log) {
         return 3;
     }
 
+    if ( f->Type() != FileSystemObject::FILE_TYPE_DIRECTORY) {
+        log << "Invalid file type!" << endl;
+        return 4;
+    } else {
+        // Open the directory....
+        Directory& dir= static_cast<Directory&>(*f);
+        auto files = dir.Contents();
+
+        if ( files.size() != 2 ) {
+            log << "Invalid dir size!" << endl;
+            return 5;
+        }
+
+        for ( FilePointer& file : files) {
+            if ( file->Name() == "Documents") {
+                if ( file->Type() != FileSystemObject::FILE_TYPE_DIRECTORY ) {
+                    log << "Documents should have been a directory!" << endl;
+                    return 9;
+                } else {
+                    auto documents =static_cast<Directory&>(*file).Contents(); 
+
+                    if ( documents.size() != 2 ) {
+                        log << "Invalid documents size!: " << documents.size();
+                        return 5;
+                    }
+
+                    for ( FilePointer& doc : documents) {
+                        if (    doc->Name() != "doc1.txt" 
+                             && doc->Name() != "doc2.txt") 
+                        {
+                            log << "Invalid document name!: " << doc->Name();
+                            return 10;
+                        }
+                    }
+                }
+            } else if (file->Name() == ".testrc" ) {
+                if ( file->Type() != FileSystemObject::FILE_TYPE_FILE ) {
+                    log << ".testrc should be afile" << endl;
+                    return 7;
+                } else {
+                    File& testrc = static_cast<File&>(*file);
+                    IFStreamReader reader = testrc.Reader();
+                    char buffer[100];
+                    reader.Read(0,buffer,12);
+                    buffer[12] = '\0';
+                    if ( std::string(buffer) != "Hello World!") {
+                        log << "Inavlid file contents: " << buffer << endl;
+                        return 8;
+                    }
+                }
+            } else {
+                log << "Unexpected file: >" << file->Name() << "<" << endl;
+                return 6;
+            }
+        }
+    }
     return 0;
 }

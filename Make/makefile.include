@@ -224,6 +224,10 @@ ifeq ($(findstring full_log,$(MAKECMDGOALS)),full_log)
    export ELF_64_TEST_FULL_TEST_LOG=TRUE
 endif
 
+ifeq ($(findstring boost-help,$(MAKECMDGOALS)),boost-help)
+   export BOOST_HELP_MODULE=$(shell echo $(MAKECMDGOALS) | awk '{print $$2}')
+endif
+
 
 ###################################################################
 #                    System Configuration                         #
@@ -507,7 +511,20 @@ fast: all
 coverbuild: GEN_COVER
 coverview: VIEW_COVER
 full_log: all
+boost-list: PRINT_BOOST_MODULES
+boost-help: OPEN_BOOST_MODULE
 
+
+OPEN_BOOST_MODULE:
+	echo $(MAKECMDGOALS);
+	echo $(MAKECMDGOALS) | awk '{print $$2}';
+	echo $(BOOST_HELP_MODULE)
+	$(WEB_VIEWER) $(DEV_TOOLS_BOOST_MODULES_DIR)/$(BOOST_HELP_MODULE)/index.html
+
+PRINT_BOOST_MODULES:
+	for f in $$(find $(DEV_TOOLS_BOOST_MODULES_DIR) -maxdepth 1 -type d | sort); do \
+	    basename $$f; \
+	done
 
 profileview:
 	$(PROFILE_VIEWER)
@@ -718,10 +735,13 @@ usage:
 	@echo "Derived Options:"
 	@echo "  Boost Libs:           $(BOOST_LIBS)"
 	@echo "  Boost Link Flags:     $(BOOST_LINK_FLAGS)"
-	@echo ""
 	@echo "Setup Options (set in environment):"
-	@echo "  DEV_TOOLS_GCC_BOOST_DIR:   $(DEV_TOOLS_GCC_BOOST_DIR)"
-	@echo "  DEV_TOOLS_INTEL_BOOST_DIR: $(DEV_TOOLS_GCC_BOOST_DIR)"
+	@echo "  DEV_TOOLS_GCC_BOOST_DIR:                   $(DEV_TOOLS_GCC_BOOST_DIR)"
+	@echo "  DEV_TOOLS_INTEL_BOOST_DIR:                 $(DEV_TOOLS_INTEL_BOOST_DIR)"
+	@echo "  DEV_TOOLS_BOOST_MODULES_DIR (for help):    $(DEV_TOOLS_BOOST_MODULES_DIR)"
+	@echo "Boost related commands:"
+	@echo "  To see a list of modues:      >>  make boost-list"
+	@echo "  TO open a module's help page: >>  make bost-help <module>" 
 	@echo ""
 	@echo "        Test Options"
 	@echo "DEV_TOOLS_TEST_CAPTURE_FROM  (Cherry pick contexts to full_log):"
