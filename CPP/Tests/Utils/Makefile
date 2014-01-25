@@ -5,4 +5,6 @@ LINKED_LIBS= libUtils  \
 BUILD_TIME_TESTS=binaryData os
 CPP_TAGS_FILE=utilTests-c++.tags
 
+BOOST_MODULES+=filesystem system
+
 include ../makefile_tests.include

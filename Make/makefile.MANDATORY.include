@@ -69,3 +69,7 @@ endif
 ifndef SQLITE_LINK_FLAGS
     $(error SQLITE_LINK_FLAGS Must be specified)
 endif
+
+ifndef BOOST_DIR
+   $(error BOOST_DIR must be specified!)
+endif

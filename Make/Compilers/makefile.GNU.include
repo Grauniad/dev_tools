@@ -36,3 +36,5 @@ GEN_COVER:
 	lcov --capture --directory $(PROJECT_ROOT_DIR) --output-file $(EXPORT_COVER_DIR)test.info
 	genhtml -f --demangle-cpp  --legend --num-spaces 4 -s $(EXPORT_COVER_DIR)test.info --output-directory $(EXPORT_COVER_DIR)
 
+
+BOOST_DIR=$(DEV_TOOLS_GCC_BOOST_DIR)

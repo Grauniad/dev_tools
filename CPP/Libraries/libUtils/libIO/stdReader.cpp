@@ -50,3 +50,14 @@ IFStreamReader::IFStreamReader(const char *fname):
 				fileName(fname)
 {
 }
+
+/*
+ * TODO: This is working around a gcc bug - should improve when move
+ *       constructors are implemented
+ */
+IFStreamReader::IFStreamReader(IFStreamReader&& from )
+    : ifstream(from.fileName), 
+      StdReader( (ifstream& ) *this)
+{
+    std::swap(fileName,from.fileName);
+}

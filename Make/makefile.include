@@ -30,6 +30,7 @@ EXPORT_PROFILE_DIR=$(EXPORTS_DIR)profs/
 EXPORT_COVER_DIR=$(EXPORTS_DIR)coverage/
 
 EXTERNAL_INCLUDE_DIR=$(DEV_TOOLS_DIR)/EXTERNAL_INCLUDES/
+EXTERNAL_LIBS_DIR=$(DEV_TOOLS_DIR)/EXTERNAL_LIBS/
 
 INCLUDES_DIR:=$(EXPORT_INCLUDES_DIR)
 LIBS_DIR=$(EXPORT_LIB_DIR)
@@ -68,6 +69,9 @@ else
 endif
 
 
+###################################################################
+#                    System Defaults                              #
+###################################################################
 
 #
 #  CONFIGURE COMPILER
@@ -87,6 +91,31 @@ ifndef FAST_FLAGS
    FAST_FLAGS=$(DEFAULT_FAST_FLAGS)
 endif
 
+# Set to YES to enable
+ifndef DEBUG_ON
+    DEBUG_ON=YES
+endif
+
+# Set to YES to enable
+ifndef RELEASE_ON
+    RELEASE_ON=NO
+endif
+ifndef FAST_ON
+    RELEASE_ON=NO
+endif
+
+# If yes, build will if any warnings are raised
+ifndef FATAL_WARNINGS
+   FATAL_WARNINGS=YES
+endif
+
+ifndef ALL_WARNINGS
+   ALL_WARNINGS=YES
+endif
+
+#
+# External Libraries
+#
 ifndef USE_LOCAL_GSL
    USE_LOCAL_GSL=YES
 endif
@@ -118,53 +147,6 @@ endif
 ifndef USE_THREADS
     USE_THREADS=YES
 endif
-
-
-
-ifeq ($(findstring debug,$(MAKECMDGOALS)),debug)
-   DEBUG_ON=YES
-   RELEASE_ON=NO
-   FAST_ON=NO
-endif
-
-ifeq ($(findstring release,$(MAKECMDGOALS)),release)
-   DEBUG_ON=NO
-   RELEASE_ON=YES
-   FAST_ON=NO
-endif
-
-ifeq ($(findstring fast,$(MAKECMDGOALS)),fast)
-   DEBUG_ON=NO
-   RELEASE_ON=NO
-   FAST_ON=YES
-endif
-
-ifeq ($(findstring full_log,$(MAKECMDGOALS)),full_log)
-   export ELF_64_TEST_FULL_TEST_LOG=TRUE
-endif
-
-# Set to YES to enable
-ifndef DEBUG_ON
-    DEBUG_ON=YES
-endif
-
-# Set to YES to enable
-ifndef RELEASE_ON
-    RELEASE_ON=NO
-endif
-ifndef FAST_ON
-    RELEASE_ON=NO
-endif
-
-# If yes, build will if any warnings are raised
-ifndef FATAL_WARNINGS
-   FATAL_WARNINGS=YES
-endif
-
-ifndef ALL_WARNINGS
-   ALL_WARNINGS=YES
-endif
-
 
 #
 # Configure Debuggers
@@ -215,11 +197,43 @@ ifndef CORE_SIZE
    CORE_SIZE=$(DEFAULT_CORE_SIZE)
 endif
 
-#
-# Build up compiler flags
-# 
-# These should be configured above
-# DO NOT CHANGE THESE UNLESS YOU KNOW WHAT YOU ARE DOING
+###################################################################
+#                Target SpecificOverides                          #
+###################################################################
+
+
+ifeq ($(findstring debug,$(MAKECMDGOALS)),debug)
+   DEBUG_ON=YES
+   RELEASE_ON=NO
+   FAST_ON=NO
+endif
+
+ifeq ($(findstring release,$(MAKECMDGOALS)),release)
+   DEBUG_ON=NO
+   RELEASE_ON=YES
+   FAST_ON=NO
+endif
+
+ifeq ($(findstring fast,$(MAKECMDGOALS)),fast)
+   DEBUG_ON=NO
+   RELEASE_ON=NO
+   FAST_ON=YES
+endif
+
+ifeq ($(findstring full_log,$(MAKECMDGOALS)),full_log)
+   export ELF_64_TEST_FULL_TEST_LOG=TRUE
+endif
+
+
+###################################################################
+#                    System Configuration                         #
+###################################################################
+ifdef DEBUG_ON
+   EXTERNAL_LINK_TYPE=DEBUG
+else    
+   EXTERNAL_LINK_TYPE=RELEASE
+endif
+
 INCLUDE_FLAGS=-I$(EXPORT_INCLUDES_DIR) -I$(CURDIR)
 INCLUDE_FLAGS+=$(addprefix -I,$(ADDITIONAL_INCLUDE_FLAGS))
 
@@ -277,6 +291,10 @@ ifeq ($(findstring cover,$(MAKECMDGOALS)),cover)
 endif
 
 COMP_FLAGS+=-std=$(STD)
+
+###################################################################
+#                  Calculate Targets                              #
+###################################################################
 
 # calculate variables used for macros 
 # DO NOT CHANGE THESE UNLESS YOU KNOW WHAT YOU ARE DOING
@@ -373,7 +391,13 @@ ifdef LINKED_LIBS
    INCLUDE_FLAGS+=$(addprefix -I$(INCLUDES_DIR),$(addsuffix /,$(LINKED_LIBS)))
 endif
 
-# Foreign libraries
+###################################################################
+#                  Foreign libraries                              #
+###################################################################
+
+#
+# GSL Setup
+#
 ifeq ($(USE_GSL),YES)
 ifeq ($(USE_LOCAL_GSL),YES)
     EXTERNAL_LIBS+=$(GSL_LOCAL_LINK_FLAGS)
@@ -383,18 +407,38 @@ else
 endif
 endif
 
+#
+# SQL-LITE Setup
+#
 ifeq ($(USE_SQLITE),YES)
     EXTERNAL_LIBS+=$(SQLITE_LINK_FLAGS)
 endif
 
-ifeq ($(USE_BOOST),YES)
-ifeq ($(USE_LOCAL_BOOST),YES)
-    # Nothing - boost already on the include path
-else
-    INCLUDE_FLAGS+=-I$(EXTERNAL_INCLUDE_DIR)/BOOST
-endif
+#
+# Boost Setup
+#
+BOOST_LIBS=
+BOOST_LINK_FLAGS=
+
+ifneq ($(BOOST_MODULES),)
+   USE_BOOST=YES
 endif
 
+ifeq ($(USE_BOOST),YES)
+ifeq ($(USE_LOCAL_BOOST),YES)
+   BOOST_LIBS=$(addprefix -lboost_,$(BOOST_MODULES))
+   BOOST_LINK_FLAGS=$(BOOST_LIBS)
+else
+   BOOST_LIBS=$(addsuffix .a,$(addprefix libboost_,$(BOOST_MODULES)))
+   BOOST_LINK_FLAGS=$(addprefix $(BOOST_DIR)/$(EXTERNAL_LINK_TYPE)/lib/,$(BOOST_LIBS))
+   INCLUDE_FLAGS+=-I$(BOOST_DIR)/$(EXTERNAL_LINK_TYPE)/include
+endif
+   EXTERNAL_LIBS+=$(BOOST_LINK_FLAGS)
+endif
+
+#
+# PL-Plot
+#
 ifeq ($(USE_PLPLOT),YES)
 ifeq ($(USE_LOCAL_PLPLOT),YES)
     EXTERNAL_LIBS+=$(PLPLOT_LOCAL_LINK_FLAGS)
@@ -409,16 +453,24 @@ ifeq ($(USE_THREADS),YES)
 endif
 
 
-ifeq ($(strip $(FILES_TO_CLEAN)),)
-    CLEAN_CMD=@echo "nothing to clean"
-else
-    CLEAN_CMD=rm -f $(FILES_TO_CLEAN)
-endif
 
+###################################################################
+#                        Tags                                     #
+###################################################################
 ifdef TAGS_FILE
    $(shell mkdir -p $(EXPORT_TAGS_DIR))
    TAGS_TO_BUILD=$(EXPORT_TAGS_DIR)$(TAGS_FILE)
    BUILD_DEPS+=$(TAGS_TO_BUILD)
+endif
+
+
+###################################################################
+#                     Overrides                                   #
+###################################################################
+ifeq ($(strip $(FILES_TO_CLEAN)),)
+    CLEAN_CMD=@echo "nothing to clean"
+else
+    CLEAN_CMD=rm -f $(FILES_TO_CLEAN)
 endif
 
 # Allow shutting down a folder based on a TOOL_CHAIN
@@ -438,6 +490,9 @@ ifdef ONLY_MODES
    endif
 endif
 
+###################################################################
+#                  Build Instructions                             #
+###################################################################
 
 all: $(BUILD_DEPS) $(TO_COPY) $(POST_BUILD_DEPS)
 memtest: all
@@ -575,7 +630,6 @@ VIEW_COVER:
 	$(WEB_VIEWER) $(EXPORT_COVER_DIR)$(COVER_FILE)
 
 
-# TESTS
 #
 # Macro for building test binaries
 #
@@ -652,11 +706,22 @@ usage:
 	@echo "        Linker Options"
 	@echo "INCLUDES_DIR:  $(INCLUDES_DIR)"
 	@echo "USE_GSL:       $(USE_GSL)   ( LOCAL: $(USE_LOCAL_GSL))"
-	@echo "USE_BOOST:     $(USE_BOOST)   ( LOCAL: $(USE_LOCAL_BOOST))"
 	@echo "USE_PLPLOT:    $(USE_PLPLOT)   ( LOCAL: $(USE_LOCAL_PLPLOT))"
 	@echo "USE_SQLITE:    $(USE_SQLITE)"
 	@echo "LINKED_FILES:  $(LINKED_FILES)"
 	@echo "EXTERNAL_LIBS: $(EXTERNAL_LIBS)"
+	@echo ""
+	@echo "        Boost Options (Enabled: $(USE_BOOST))"
+	@echo "Build Options:"
+	@echo "  USE_LOCAL_BOOST:      $(USE_LOCAL_BOOST)"
+	@echo "  BOOST_MODULES:        $(BOOST_MODULES)"
+	@echo "Derived Options:"
+	@echo "  Boost Libs:           $(BOOST_LIBS)"
+	@echo "  Boost Link Flags:     $(BOOST_LINK_FLAGS)"
+	@echo ""
+	@echo "Setup Options (set in environment):"
+	@echo "  DEV_TOOLS_GCC_BOOST_DIR:   $(DEV_TOOLS_GCC_BOOST_DIR)"
+	@echo "  DEV_TOOLS_INTEL_BOOST_DIR: $(DEV_TOOLS_GCC_BOOST_DIR)"
 	@echo ""
 	@echo "        Test Options"
 	@echo "DEV_TOOLS_TEST_CAPTURE_FROM  (Cherry pick contexts to full_log):"

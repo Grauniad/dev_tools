@@ -25,6 +25,7 @@ public:
 
 	OFStreamWriter(const char *fname);
 	OFStreamWriter(const OFStreamWriter& rhs);
+	OFStreamWriter(OFStreamWriter&& from) = default;
 	string Fname() { return fileName;}
 	virtual ~OFStreamWriter() {
         this->close();

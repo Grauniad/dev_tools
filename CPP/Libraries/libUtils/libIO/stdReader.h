@@ -17,6 +17,8 @@ public:
     virtual long Size() const;
     virtual long Next( long offset, unsigned char c) const;
     virtual long Last( long offset, unsigned char c) const;
+
+    StdReader(StdReader&& from) = default;
 private:
     istream& file;
     long length;
@@ -26,6 +28,8 @@ class IFStreamReader: public ifstream, public StdReader {
 public:
     IFStreamReader(const char *fname); 
     string Fname() { return fileName;}
+
+    IFStreamReader(IFStreamReader&& from);
 private:
     string fileName;
 };
