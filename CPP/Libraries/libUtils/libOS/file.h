@@ -54,6 +54,8 @@ public:
        return FILE_TYPE_FILE;
    }
 
+   std::string Contents();
+
    // File Access
    OFStreamWriter Writer();
    IFStreamReader Reader();

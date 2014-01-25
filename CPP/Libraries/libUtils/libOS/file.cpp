@@ -119,6 +119,17 @@ File::File(const std::string& path, fs::path&& bpath)
 /*
 * File Access
 */
+std::string File::Contents() {
+    IFStreamReader f = Reader();
+    char * data = new char[f.Size()+1];
+
+    f.Read(0,data,f.Size());
+    data[f.Size()] = '\0';
+    std::string content(data);
+
+    delete [] data;
+    return std::move(content);
+}
 OFStreamWriter File::Writer() {
     return OFStreamWriter(path.c_str());
 }

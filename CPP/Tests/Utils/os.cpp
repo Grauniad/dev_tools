@@ -6,13 +6,14 @@
 
 using namespace std;
 
-int Paths(testLogger& log);
-
+int FileContents(testLogger& log);
 int OpenDirs(testLogger& log);
+int Paths(testLogger& log);
 
 int main(int argc, const char** argv) {
     Test("Check Path operations....", Paths).RunTest();
-    Test("Check Path operations....", OpenDirs).RunTest();
+    Test("Check Directory Iteration....", OpenDirs).RunTest();
+    Test("Check File contents read...", FileContents).RunTest();
     return 0;
 }
 
@@ -32,6 +33,19 @@ int Paths (testLogger& log) {
         return 1;
     }
 
+    return 0;
+}
+
+int FileContents(testLogger& log ) {
+    FilePointer f = FilePointer::Open("ROOT/home/test/.testrc");
+    File& file = static_cast<File&>(*f);
+
+    std::string content = file.Contents();
+    if ( content != "Hello World! \n") {
+        log << "Invalid file contents!" << endl;
+        log << ">" << content << "<" << endl;
+        return 1;
+    }
     return 0;
 }
 
