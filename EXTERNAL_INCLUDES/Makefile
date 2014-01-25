@@ -1,3 +1,3 @@
-MAKE_DIRS= GSL BOOST
+MAKE_DIRS= GSL 
 
 include ../../makefile.include
