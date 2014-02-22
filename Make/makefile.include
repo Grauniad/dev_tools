@@ -402,7 +402,30 @@ ifdef BUILD_TIME_TESTS
        FILES_TO_CLEAN+=$(shell ls *.gcda 2> /dev/null)
        FILES_TO_CLEAN+=$(shell ls *.gcno 2> /dev/null)
    endif
+endif
 
+ifdef TEST_SCRIPTS
+   $(shell mkdir -p $(EXPORT_TESTS_TO))
+   testCmd=RUN_AUTO_TEST
+   ifeq ($(findstring memtest,$(MAKECMDGOALS)),memtest)
+	   testCmd=VALGRIND_AUTO_TESTS
+   endif
+   ifeq ($(findstring threadtest,$(MAKECMDGOALS)),threadtest)
+	   testCmd=HELGRIND_AUTO_TESTS
+   endif
+   ifeq ($(findstring gdbtest,$(MAKECMDGOALS)),gdbtest)
+	   testCmd=GDB_AUTO_TESTS
+   endif
+   ifeq ($(findstring profile,$(MAKECMDGOALS)),profile)
+     $(shell mkdir -p $(EXPORT_PROFILE_DIR))
+     testCmd=BUILD_PROFILE_PAGE
+   endif
+   BUILD_DEPS+=$(testCmd)
+   ifneq ($(findstring notests,$(MAKECMDGOALS)),notests)
+       TESTS_TO_RUN=$(TEST_SCRIPTS)
+       FILES_TO_CLEAN+=$(shell ls *.gcda 2> /dev/null)
+       FILES_TO_CLEAN+=$(shell ls *.gcno 2> /dev/null)
+   endif
 endif
 
 ifdef LINKED_LIBS
@@ -745,6 +768,7 @@ usage:
 	@echo "USE_SQLITE:    $(USE_SQLITE)"
 	@echo "LINKED_FILES:  $(LINKED_FILES)"
 	@echo "EXTERNAL_LIBS: $(EXTERNAL_LIBS)"
+	@echo "USE_FPIC:      $(USE_FPIC)"
 	@echo ""
 	@echo "        Boost Options (Enabled: $(USE_BOOST))"
 	@echo "Build Options:"
