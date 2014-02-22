@@ -77,6 +77,10 @@ endif
 #  CONFIGURE COMPILER
 #
 
+ifndef USE_FPIC
+    USE_FPIC=NO
+endif
+
 # Compilation variables
 #
 ifndef DEBUG_FLAGS
@@ -252,6 +256,10 @@ else
     COMP_FLAGS=$(INCLUDE_FLAGS)
 endif
 
+ifeq ($(findstring YES,$(USE_FPIC)),YES)
+   COMP_FLAGS+=-fpic
+endif
+
 ifndef COMP_PROFILE_FLAGS
     COMP_PROFILE_FLAGS=$(DEFAULT_COMP_PROFILE_FLAGS)
 endif
@@ -312,6 +320,13 @@ LINKED_FILES=
 TO_COPY=
 SUB_FOLDER=
 
+ifdef TARGET_DYNAMIC_LIB
+   $(shell mkdir -p $(EXPORT_LIB_DIR))
+   DYNAMIC_LIB_TO_BUILD=$(addsuffix .so,$(EXPORT_LIB_DIR)$(TARGET_DYNAMIC_LIB))
+   BUILD_DEPS+=$(DYNAMIC_LIB_TO_BUILD)
+   FILES_TO_CLEAN+=$(DYNAMIC_LIB_TO_BUILD)
+   SUB_FOLDER=$(TARGET_DYNAMIC_LIB)
+endif
 
 ifdef TARGET_LIB
    $(shell mkdir -p $(EXPORT_LIB_DIR))
@@ -659,6 +674,9 @@ $(EXPORT_TESTS_TO)%: %$(SOURCE_EXTENSION) $(LINKED_FILES)
 #
 $(LIB_TO_BUILD): $(TO_BUILD)
 	$(AR) -cr $@ $(shell ls $(EXPORT_OBJS_DIR)/*)
+
+$(DYNAMIC_LIB_TO_BUILD): $(TO_BUILD) $(LINKED_FILES)
+	$(COMP) $(COMP_FLAGS) -shared -o $(DYNAMIC_LIB_TO_BUILD) $(TO_BUILD) $(LINKED_FILES) $(EXTERNAL_LIBS)
 
 # INCLUDES
 # 
