@@ -3,6 +3,7 @@
 #include <vector>
 #include <iostream>
 #include "dataVector.h"
+#include "dataLump.h"
 #include "binaryWriter.h"
 #include <sstream>
 #include <string>
@@ -15,7 +16,10 @@
  */ 
 
 const int DATA_SIZE=128;
+char c_data[DATA_SIZE];
+unsigned char io_lump[DATA_SIZE];
 DataVector data(DATA_SIZE);
+DataLump<DATA_SIZE> lump;
 
 class TestError {
 public:
@@ -36,28 +40,68 @@ private:
 int VerifyPositionFinders( testLogger& log);
 int VerifyAssignments( testLogger& log);
 int VerifyArithmetic( testLogger& log);
-int VerifyWrites( testLogger& log);
-int VerifyStringWrites( testLogger& log);
-int VerifyBoundraryFinder( testLogger& log);
-int VerifyStringPushes( testLogger& log);
-int VerifyPODPush( testLogger& log);
+
+int VerifyWrites_DataVector( testLogger& log);
+int VerifyWrites_DataLump( testLogger& log);
+int VerifyWrites_DataIO( testLogger& log);
+
+int VerifyStringWrites_DataVector( testLogger& log);
+int VerifyStringWrites_DataLump( testLogger& log);
+int VerifyStringWrites_DataIO( testLogger& log);
+
+int VerifyBoundraryFinder_DataVector( testLogger& log);
+int VerifyBoundraryFinder_DataLump( testLogger& log);
+int VerifyBoundraryFinder_DataIO( testLogger& log);
+
+int VerifyStringPushes_DataVector( testLogger& log);
+int VerifyStringPushes_DataLump( testLogger& log);
+int VerifyStringPushes_DataIO( testLogger& log);
+
+int VerifyPODPush_DataVector( testLogger& log);
+int VerifyPODPush_DataLump( testLogger& log);
+int VerifyPODPush_DataIO( testLogger& log);
 
 using namespace std;
 int main(int argc, const char *argv[])
 {
     // Set up the data vectory
     for (int i = 0; i < DATA_SIZE; i++) {
+        c_data[i] = char(i);
+        io_lump[i] = char(i);
         data[i] = char(i);
+        lump.Put(i,char(i));
     }
     Test("Return positions in file",  (loggedTest)VerifyPositionFinders).RunTest();
     Test("Verify Assignment Operators",  (loggedTest)VerifyAssignments).RunTest();
     Test("Verify Arithmetic Operators",  (loggedTest)VerifyArithmetic).RunTest();
-    Test("Verify Writes",  (loggedTest)VerifyWrites).RunTest();
-    Test("Verify String Writes",  (loggedTest)VerifyStringWrites).RunTest();
-    Test("Verify Alignment",  (loggedTest)VerifyBoundraryFinder).RunTest();
-    Test("Verify String Pushes",  (loggedTest)VerifyStringPushes).RunTest();
-    Test("Verify POD Pushes",  (loggedTest)VerifyPODPush).RunTest();
+
+    Test("Verify Writes (DataVector)",  (loggedTest)VerifyWrites_DataVector).RunTest();
+    Test("Verify Writes (DataLump)",  (loggedTest)VerifyWrites_DataLump).RunTest();
+    Test("Verify Writes (DataIO)",  (loggedTest)VerifyWrites_DataIO).RunTest();
+
+    Test("Verify String Writes (DataVector)",  (loggedTest)VerifyStringWrites_DataVector).RunTest();
+    Test("Verify String Writes (DataLump)",  (loggedTest)VerifyStringWrites_DataLump).RunTest();
+    Test("Verify String Writes (DataIO)",  (loggedTest)VerifyStringWrites_DataIO).RunTest();
+
+    Test("Verify Alignment (DataVector)",  (loggedTest)VerifyBoundraryFinder_DataVector).RunTest();
+    Test("Verify Alignment (DataLump)",  (loggedTest)VerifyBoundraryFinder_DataLump).RunTest();
+    Test("Verify Alignment (DataIO)",  (loggedTest)VerifyBoundraryFinder_DataIO).RunTest();
+
+    Test("Verify String Pushes (DataVector)",  (loggedTest)VerifyStringPushes_DataVector).RunTest();
+    Test("Verify String Pushes (DataLump)",  (loggedTest)VerifyStringPushes_DataLump).RunTest();
+    Test("Verify String Pushes (DataIO)",  (loggedTest)VerifyStringPushes_DataIO).RunTest();
+
+    Test("Verify POD Pushes (DataVector)",  (loggedTest)VerifyPODPush_DataVector).RunTest();
+    Test("Verify POD Pushes (DataLump)",  (loggedTest)VerifyPODPush_DataLump).RunTest();
+    Test("Verify POD Pushes (DataIO)",  (loggedTest)VerifyPODPush_DataIO).RunTest();
     return 0;
+}
+
+template<class T>
+void Filler(T& container, int size, char filler) {
+    for (int i = 0; i < size; i++) {
+        container.Put(i,filler);
+    }
 }
 
 long VerifyOffset(BinaryWriter& writer, long offset, 
@@ -203,6 +247,33 @@ long VerifyData(const char* d1, const char *d2, long size) {
     return 0;
 }
 
+long VerifyContents(FileLikeReader& d1, long start1, const char* data2, long size) {
+    char* data1 = new char[size];
+
+    d1.Read(start1,data1,size);
+
+    long ret =  VerifyData(data1,data2,size);
+
+    delete [] data1;
+
+    return ret;
+}
+
+long VerifyContents(FileLikeReader& d1, long start1, FileLikeReader& d2, long start2, long size) {
+    char* data1 = new char[size];
+    char* data2 = new char[size];
+
+    d1.Read(start1,data1,size);
+    d2.Read(start2,data2,size);
+
+    long ret =  VerifyData(data1,data2,size);
+
+    delete [] data1;
+    delete [] data2;
+
+    return ret;
+}
+
 long VerifyOffset(BinaryWriter& writer, long offset, string msg) {
     return VerifyOffset(writer,offset,msg,char(offset));
 }
@@ -227,7 +298,8 @@ int VerifyPositionFinders( testLogger& log) {
     return 0;
 }
 
-int VerifyBoundraryFinder( testLogger& log) {
+template<class OBJECT>
+int VerifyBoundraryFinder(OBJECT& data, testLogger& log) {
     BinaryWriter pos(data,50);
     if (   pos.NextBoundrary(10) != pos
         || pos.NextBoundrary(2) != pos
@@ -310,62 +382,65 @@ int VerifyArithmetic( testLogger& log) {
     return 0;
 }
 
-int VerifyWrites( testLogger& log) {
+template <class T> 
+int VerifyWrites(T& data, T& out, T& zeroes, T& twos, T& cs, testLogger& log) {
     try {
-        DataVector out(100);
-        DataVector zeroes(100);
-        DataVector twos(100);
-        DataVector cs(100);
-        FillContainer(zeroes,100,0);
-        FillContainer(twos,100,2);
-        FillContainer(cs,100,'c');
+        char c_zeroes[100];
+        char c_twos[100];
+        char c_cs[100];
+
+        Filler(zeroes,100,0);
+        Filler(twos,100,2);
+        Filler(cs,100,'c');
+        FillContainer(c_zeroes,100,0);
+        FillContainer(c_twos,100,2);
+        FillContainer(c_cs,100,'c');
 
         // Fill
         for (int i = 0; i < 100; i++) {
-            out[i] = data[i];
+            out.Put(i,data.Get(i));
         }
         BinaryWriter beg(out);
         BinaryWriter off = beg.operator+(50);
         BinaryWriter off2 = beg.operator+(75);
         beg.Fill(20);
         off.Fill(20,2);
-        off2.FillTo(off.Begin() + out.Reader().Find(95),'c');
+        off2.FillTo(off.Begin() + BinaryReader(out).Find(95),'c');
         
         log << "front" <<endl;
-        VerifyData((char *)out.RawData(),(char *)zeroes.RawData(),20);
+        VerifyContents(out,0,zeroes,0,20);
         log << "data" << endl;
-        VerifyData((char *)out.RawData()+20,(char *)data.RawData()+20,30);
+        VerifyContents(out,20,data,20,20);
         log << "twos" << endl;
-        VerifyData((char *)out.RawData()+50,(char *)twos.RawData(),20);
+        VerifyContents(out,50,twos,0,20);
         log << "padding" <<endl;
-        VerifyData((char *)out.RawData()+70,(char *)data.RawData()+70,5);
+        VerifyContents(out,70,data,70,5);
         log << "FillTo" <<endl;
-        VerifyData((char *)out.RawData()+75,(char *)cs.RawData()+75,20);
+        VerifyContents(out,75,cs,75,20);
         log << "back" <<endl;
-        VerifyData((char *)out.RawData()+95,(char *)data.RawData()+95,5);
-
+        VerifyContents(out,95,data,95,5);
 
         // Write
         for (int i = 0; i < 100; i++) {
-            out[i] = 0;
+            out.Put(i,0);
         }
         BinaryWriter wbeg(out);
         BinaryWriter woff = beg.operator+(50);
         BinaryWriter woff2 = beg.operator+(75);
 
 
-        wbeg.Write(data.RawData(),100);
-        woff.Write(zeroes.RawData(),20);
-        woff2.Write(cs.Reader().Begin(),20);
+        wbeg.Write(c_data,100);
+        woff.Write(c_zeroes,20);
+        woff2.Write(BinaryReader(cs).Begin(),20);
 
         log << "write" <<endl;
-        VerifyData((char *)out.RawData(),(char *)data.RawData(),50);
+        VerifyContents(out,0,c_data,50);
         log << "offset write" << endl;
-        VerifyData((char *)out.RawData()+50,(char *)zeroes.RawData(),20);
+        VerifyContents(out,50,c_zeroes,20);
         log << "Write reader" << endl;
-        VerifyData((char *)out.RawData()+75,(char *)cs.RawData(),20);
+        VerifyContents(out,75,c_cs,20);
         log << "back" << endl;
-        VerifyData((char *)out.RawData()+95,(char *)data.RawData()+95,5);
+        VerifyContents(out,95,c_data+95,5);
 
     } catch (TestError& e) {
         return e.Error(log);
@@ -373,17 +448,17 @@ int VerifyWrites( testLogger& log) {
     return 0;
 }
 
-int VerifyStringWrites(testLogger& log ) {
+
+template <class T>
+int VerifyStringWrites(T& data, T& out, T& out2, testLogger& log ) {
     try {
         char str[] = "Hello World!\0++IGNORED++";
         //don't forget the null char
         int len = strlen(str) + 1;
         string stds = "some other string";
-        DataVector out(100);
-        DataVector out2(100);
         for (int i = 0; i < 100; i++) {
-            out[i] = data[i];
-            out2[i] = data[i];
+            out.Put(i,data.Get(i));
+            out2.Put(i,data.Get(i));
         }
 
         BinaryWriter w(out);
@@ -393,27 +468,26 @@ int VerifyStringWrites(testLogger& log ) {
 
         w.WriteString(str);
         pos.WriteString(stds);
-        w2.WriteString(out.Reader().Pos(50));
+        w2.WriteString(BinaryReader(out).Pos(50));
 
         log << "array write" << endl;
-        VerifyData((char *)out.RawData(),str,len);
+        VerifyContents(out,0,str,len);
         log << "left alone" << endl;
-        VerifyData( (char *)out.RawData()+len, (char *)data.RawData() + len,
-                                            50-len);
+        VerifyContents(out,len,data,len,50-len);
         log << "string write" << endl;
-        VerifyData((char *)out.RawData()+50,stds.c_str(),stds.length()+1);
+        VerifyContents(out,50,stds.c_str(),stds.length()+1);
         log << "back" << endl;
-        VerifyData( (char *)out.RawData() + 50 + stds.length() + 1,
-                    (char* )data.RawData()+ 50 + stds.length() + 1,
-                    50 -1 - stds.length());
+        VerifyContents(out,50 +stds.length() +1,
+                       data,50 + stds.length() + 1,
+                       50 - 1 - stds.length());
         log << "skipped" << endl;
-        VerifyData((char *)out2.RawData(),(char *)data.RawData(),10);
+        VerifyContents(out2,0,data,0,10);
         log << "reader write" << endl;
-        VerifyData((char *)out2.RawData()+10,stds.c_str(),stds.length());
+        VerifyContents(out2,10,stds.c_str(),stds.length());
         log << "back (2) " << endl;
-        VerifyData( (char *)out2.RawData() + 10 + stds.length() + 1,
-                    (char *)data.RawData() + 10 + stds.length() + 1,
-                    100 - 10 - stds.length() -1 );
+        VerifyContents( out2, 10 + stds.length() + 1,
+                        data, 10 + stds.length() + 1,
+                        100 - 10 - stds.length() -1 );
 
     } catch (TestError& e) {
         return e.Error(log);
@@ -421,7 +495,8 @@ int VerifyStringWrites(testLogger& log ) {
     return 0;
 }
 
-int VerifyStringPushes(testLogger& log ) {
+template <class T>
+int VerifyStringPushes(T& out, T& out2, T& out3, testLogger& log ) {
     try {
         const char *str = "Hello World!\0++IGNORED++";
         //don't forget the null char
@@ -446,9 +521,9 @@ int VerifyStringPushes(testLogger& log ) {
         w3 << str << stds.c_str();
 
         log << "Checking separate pushes" << endl;
-        VerifyData((char*)out.RawData(),(char*)out2.RawData(),100);
+        VerifyContents(out,0,out2,0,100);
         log << "Checking single push" << endl;
-        VerifyData((char*)out.RawData(),(char*)out3.RawData(),100);
+        VerifyContents(out,0,out3,0,100);
 
     } catch (TestError& e) {
         return e.Error(log);
@@ -456,8 +531,8 @@ int VerifyStringPushes(testLogger& log ) {
     return 0;
 }
 
-int VerifyPODPush( testLogger& log) {
-    DataVector dv(100);
+template <class OBJECT>
+int VerifyPODPush( OBJECT& dv, testLogger& log) {
     
     dv.Fill(0,'*',100);
     BinaryWriter w(dv);
@@ -578,4 +653,87 @@ int VerifyPODPush( testLogger& log) {
     }
 
     return 0;
+}
+
+int VerifyWrites_DataVector(testLogger& log ) {
+    DataVector d1(100), d2(100), d3(100), d4(100);
+    return VerifyWrites(data,d1,d2,d3,d4,log);
+}
+int VerifyWrites_DataLump(testLogger& log ) {
+    DataLump<128> d1, d2, d3, d4;
+    return VerifyWrites(lump,d1,d2,d3,d4,log);
+}
+int VerifyWrites_DataIO(testLogger& log ) {
+    unsigned char d1[128], d2[128], d3[128], d4[128];
+
+    DataIO dio_lump(io_lump,128);
+    DataIO dio_1(d1,128);
+    DataIO dio_2(d2,128);
+    DataIO dio_3(d3,128);
+    DataIO dio_4(d4,128);
+
+    return VerifyWrites(dio_lump,dio_1,dio_2,dio_3,dio_4,log);
+}
+
+int VerifyStringWrites_DataVector(testLogger& log ) {
+    DataVector dv(100), dv2(100);
+    return VerifyStringWrites(data,dv,dv2,log);
+}
+int VerifyStringWrites_DataLump(testLogger& log ) {
+    DataLump<128> dl, dl2;
+    return VerifyStringWrites(lump,dl,dl2,log);
+}
+int VerifyStringWrites_DataIO(testLogger& log ) {
+    unsigned char d1[128], d2[128];
+
+    DataIO dio_lump(io_lump,128);
+    DataIO dio_1(d1,128);
+    DataIO dio_2(d2,128);
+
+    return VerifyStringWrites(dio_lump,dio_1,dio_2,log);
+}
+
+int VerifyBoundraryFinder_DataVector( testLogger& log) {
+    return VerifyBoundraryFinder(data,log);
+}
+int VerifyBoundraryFinder_DataLump( testLogger& log) {
+    return VerifyBoundraryFinder(lump,log);
+}
+int VerifyBoundraryFinder_DataIO( testLogger& log) {
+    DataIO dio_lump(io_lump,128);
+    return VerifyBoundraryFinder(dio_lump,log);
+}
+
+int VerifyStringPushes_DataVector( testLogger& log) {
+    DataVector dv1(100), dv2(100), dv3(100);
+    return VerifyStringPushes(dv1,dv2,dv3,log);
+}
+int VerifyStringPushes_DataLump( testLogger& log) {
+    DataLump<100> dl1, dl2, dl3;
+    return VerifyStringPushes(dl1,dl2,dl3,log);
+}
+int VerifyStringPushes_DataIO( testLogger& log) {
+    unsigned char d1[128], d2[128], d3[128];
+
+    DataIO dio_1(d1,128);
+    DataIO dio_2(d2,128);
+    DataIO dio_3(d3,128);
+
+    return VerifyStringPushes(dio_1,dio_2,dio_3,log);
+}
+
+int VerifyPODPush_DataVector(testLogger& log ) {
+    DataVector dv(100);
+    return VerifyPODPush(dv,log);
+}
+
+int VerifyPODPush_DataLump(testLogger& log ) {
+    DataLump<10000> dl;
+    return VerifyPODPush(dl,log);
+}
+int VerifyPODPush_DataIO(testLogger& log ) {
+    unsigned char d1[10000];
+
+    DataIO dio_1(d1,10000);
+    return VerifyPODPush(dio_1,log);
 }

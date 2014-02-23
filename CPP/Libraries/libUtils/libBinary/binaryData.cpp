@@ -10,6 +10,7 @@ Data::Data (const BinaryReader &p, long size):data(size) {
 }
 
 Data::Data(long size):data(size) {
+    data.Fill(0,'\0',size);
 }
 
 void Data::Resize(long size) {
