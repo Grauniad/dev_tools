@@ -18,6 +18,8 @@ public:
     virtual long Size() const =0;
     virtual long Next( long offset, unsigned char c) const =0;
     virtual long Last( long offset, unsigned char c) const =0;
+
+    virtual ~FileLikeReader() {};
 };
 
 class BinaryReader {
