@@ -2,7 +2,7 @@ LINKED_LIBS= libUtils  \
 			 libIOInterface \
 			 libTest
  
-BUILD_TIME_TESTS=binaryData 
+BUILD_TIME_TESTS=binaryData time
 CPP_TAGS_FILE=utilTests-c++.tags
 
 BOOST_MODULES+=filesystem system

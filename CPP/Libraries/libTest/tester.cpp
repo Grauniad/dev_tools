@@ -62,9 +62,9 @@ void DefaultTestLogger::Log( const string& message,
                              const Time& time,
                              LOG_LEVEL level) {
     if ( level == LOG_DEFAULT ) {
-        testoutput << message << std::endl;
-        overview_log << message << std::endl;
-        full_log << message << std::endl;
+        testoutput << message;
+        overview_log << message;
+        full_log << message;
 
     } else if (    level == LOG_ERROR
                 || level == LOG_WARNING
