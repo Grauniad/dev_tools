@@ -115,9 +115,9 @@ Logger::Logger() {
     enabled[LOG_WARNING]      = true;
     enabled[LOG_ERROR]        = true;
 
-    enabled[LOG_OVERVIEW]     = ENV::IsSet("ELF_64_LINK_LOG_OVERVIEW");
-    enabled[LOG_VERBOSE]      = ENV::IsSet("ELF_64_LINK_LOG_VERBOSE");
-    enabled[LOG_VERY_VERBOSE] = ENV::IsSet("ELF_64_LINK_LOG_VERY_VERBOSE");
+    enabled[LOG_OVERVIEW]     = ENV::IsSet("DEV_TOOLS_LOG_OVERVIEW");
+    enabled[LOG_VERBOSE]      = ENV::IsSet("DEV_TOOLS_LOG_VERBOSE");
+    enabled[LOG_VERY_VERBOSE] = ENV::IsSet("DEV_TOOLS_LOG_VERY_VERBOSE");
 
 
     RegisterLog(LogFactory::CLOG());
