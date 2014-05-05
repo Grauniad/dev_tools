@@ -3,12 +3,12 @@
 #include "logger.h"
 
 const string reftime = "20140403 10:11:02.294930";
-int CheckTime(testLogger& log, const Time& time);
-
+int CheckTime(testLogger& log, const Time& time); 
 int ReadFromTimestamp(testLogger& log);
 int Copy(testLogger& log);
 int DiffSeconds(testLogger& log);
 int DiffUSeconds(testLogger& log);
+int USecsEpoch (testLogger& log);
 
 int main(int argc, const char *argv[])
 {
@@ -16,6 +16,7 @@ int main(int argc, const char *argv[])
     Test("Copy Constructing...",Copy).RunTest();
     Test("Testing Diff in seconds",DiffSeconds).RunTest();
     Test("Testing Diff in useconds",DiffUSeconds).RunTest();
+    Test("Testing Epoch handling...",USecsEpoch).RunTest();
     return 0;
 }
 
@@ -129,4 +130,31 @@ int DiffUSeconds ( testLogger& log ) {
       return 1;
    }
    return 0;
+}
+
+int USecsEpoch( testLogger& log ) {
+    long secs = Time("20150504 11:11:03.294934").EpochSecs();
+    long expected_s = (1430737863L); 
+    if ( secs !=  expected_s ) {
+        log << "Invalid epoch time (s)! " << secs << endl;
+        log << "Expected: " << expected_s << endl;
+        return 1;
+    }
+
+    long usecs = Time("20150504 11:11:03.294934").EpochUSecs();
+    long expected = (1430737863L * 1e6L + 294934L); 
+    if ( usecs !=  expected ) {
+        log << "Invalid epoch time (us)! " << usecs << endl;
+        log << "Expected: " << expected << endl;
+        return 1;
+    }
+
+    Time time(1430737863L * 1e6L + 294934L);
+    if ( time.Timestamp() != "20150504 11:11:03.294934" ) {
+        log << "Failed to initialise from epoch usecs!" << endl; 
+        log << "expected: " <<  "20150504 11:11:03.294934" << endl;
+        log << "got: " << time.Timestamp() << endl;
+    }
+
+    return 0;
 }

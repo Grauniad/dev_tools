@@ -17,6 +17,27 @@ Time::Time(const std::string& timestamp) {
     (*this) = timestamp;
 }
 
+Time::Time(const struct timeval& tv) {
+    (*this) = tv;
+}
+
+Time::Time(const long& usecs) {
+    (*this) = usecs;
+}
+
+Time& Time::operator=(const struct timeval& tv) {
+    this->tv = tv;
+    SetTmFromTimeval();
+    return *this;
+}
+
+Time& Time::operator=(const long& usecs ) {
+    this->tv.tv_usec = usecs%1000000L;
+    this->tv.tv_sec = usecs / 1000000L;
+    SetTmFromTimeval();
+    return *this;
+}
+
 Time& Time::operator=(const Time& rhs) {
     this->tv = rhs.tv;
     this->time = rhs.time;
@@ -34,8 +55,8 @@ Time& Time::operator=(const std::string& timestamp) {
     epoch.tm_min = 0;
     epoch.tm_hour= 0;
     epoch.tm_mday= 1;
-    epoch.tm_mon=1;
-    epoch.tm_year=0;
+    epoch.tm_mon=0;
+    epoch.tm_year=70;
     epoch.tm_isdst=-1; // <0 = unknown
     //epoch.tm_wday: Not used by mktime
     //epoch.tm_yday: Not used by mktime
@@ -58,9 +79,9 @@ Time& Time::operator=(const std::string& timestamp) {
     YEAR >> time.tm_year; time.tm_year -=1900;
     MONTH >> time.tm_mon; --time.tm_mon;
     DAY >> time.tm_mday; 
-    HOUR >> time.tm_hour; --time.tm_hour;
-    MIN >> time.tm_min;   -- time.tm_min;
-    SEC >> time.tm_sec;   -- time.tm_sec;
+    HOUR >> time.tm_hour; 
+    MIN >> time.tm_min;  
+    SEC >> time.tm_sec; 
 
      /*
      * calculate timeval...
@@ -74,8 +95,12 @@ Time& Time::operator=(const std::string& timestamp) {
 
 Time& Time::SetNow() {
     gettimeofday(&tv,NULL);
-    localtime_r(&tv.tv_sec,&time);
+    SetTmFromTimeval();
     return *this;
+}
+
+void Time::SetTmFromTimeval()  {
+    localtime_r(&tv.tv_sec,&time);
 }
 
 string Time::Timestamp() const {
@@ -116,4 +141,12 @@ long Time::DiffUSecs(const Time& rhs) const {
                 )*1000000;
     diff+=(tv.tv_usec - rhs.tv.tv_usec);
     return diff;
+}
+
+long Time::EpochUSecs() const {
+    return tv.tv_usec + 1e6L* (long(tv.tv_sec));
+}
+
+int Time::EpochSecs() const {
+    return tv.tv_sec;
 }
