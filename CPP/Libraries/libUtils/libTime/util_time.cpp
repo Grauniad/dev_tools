@@ -18,8 +18,7 @@ Time::Time(const std::string& timestamp) {
     (*this) = timestamp;
 }
 
-Time::Time(const struct timeval& tv) {
-    (*this) = tv;
+Time::Time(const struct timeval& tv) { (*this) = tv;
 }
 
 Time::Time(const long& usecs) {
@@ -70,29 +69,35 @@ Time& Time::operator=(const std::string& timestamp) {
      *  Index:          012345678901234567890123
      *  (Until gcc 4.9 we can't regex our way out of this :( )
      */
-    // Get the string into a format where we can using a single stream...
-    stringstream working (
-        timestamp.substr(0,4) +  " " +  /*YEAR*/
-        timestamp.substr(4,2) +  " " +  /*MONTH*/
-        timestamp.substr(6,2) +  " " +  /*DAY*/
-        timestamp.substr(9,2) +  " " +  /*HOUR*/
-        timestamp.substr(12,2) +  " " + /*MIN*/
-        timestamp.substr(15,2) +  " " + /*SEC*/
-        timestamp.substr(18,6)        /*USEC*/
-    );
-    working >> time.tm_year; time.tm_year -=1900;
-    working >> time.tm_mon; --time.tm_mon;
-    working >> time.tm_mday; 
-    working >> time.tm_hour; 
-    working >> time.tm_min;  
-    working >> time.tm_sec; 
+
+    /*
+     * atoi (whilst nasty) is ok here since c_str() guarentees null termination
+     * and substr guarentess the number is short enough not to overflow
+     *
+     * In the case where they provide garbage, atoi will return 0, which is
+     * good enough to represent garbage data.
+     */
+    time.tm_year = atoi(timestamp.substr(0,4).c_str()); 
+    if ( time.tm_year != 0 ) {
+        time.tm_year -=1900;
+    }
+
+    time.tm_mon = atoi(timestamp.substr(4,2).c_str());  
+    if ( time.tm_mon != 0 ) {
+        --time.tm_mon;
+    }
+
+    time.tm_mday = atoi(timestamp.substr(6,2).c_str());
+    time.tm_hour = atoi(timestamp.substr(9,2).c_str());
+    time.tm_min  = atoi(timestamp.substr(12,2).c_str());
+    time.tm_sec  = atoi(timestamp.substr(15,2).c_str());
 
      /*
      * calculate timeval...
      * --------------------
      */   
      tv.tv_sec = difftime(mktime(&time),mktime(&epoch));
-     working >> tv.tv_usec;
+     tv.tv_usec =  atoi(timestamp.substr(18,6).c_str());
 
     return *this;
 }
