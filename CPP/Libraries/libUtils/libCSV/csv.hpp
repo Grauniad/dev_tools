@@ -58,7 +58,7 @@ template< int index>
 inline typename std::enable_if< index!=0,void>::type
 CSV<Types...>::AddCell(Tokeniser::iterator& it) {
     std::get<ncols-1-index>(this->columns).NewRow(*it);
-    it++;
+    ++it;
     this->AddCell<index -1>(it);
 }
 
