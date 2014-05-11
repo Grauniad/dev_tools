@@ -20,8 +20,12 @@ public:
 
     StdReader(StdReader&& from) = default;
 private:
+    void UpdatePosition(int add) const;
+    void Seek(int offset) const;
+
     istream& file;
     long length;
+    mutable int  pos;
 };
 
 class IFStreamReader: public ifstream, public StdReader {

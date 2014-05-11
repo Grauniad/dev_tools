@@ -5,32 +5,47 @@ StdReader::StdReader(istream&f ): file(f) {
     length = file.tellg();
     file.seekg(file.end, file.beg);
     file.clear();
+    pos = file.tellg();
 }
 void StdReader::Read(long offset, void *dest, long size) const {
-    file.seekg(offset, ios_base::beg);
+    Seek(offset);
     file.read((char *)dest,size);
+    UpdatePosition(size);
 }
 void StdReader::ReadString(long offset, std::string& dest) const {
-    file.seekg(offset,ios_base::beg);
+    Seek(offset);
+
     getline(file,dest,'\0');
+
+    // Don't know where position is, we'll have to manually look it up next time...
+    pos = -1;
 }
 unsigned char StdReader::Get(long offset) const {
-    this->file.seekg(offset, ios_base::beg);
-    return static_cast<unsigned char>(file.get());
+    Seek(offset);
+
+    unsigned char c = static_cast<unsigned char>(file.get());
+    UpdatePosition(1);
+
+    return c;
 }
 
 long StdReader::Size() const {
     return length;
 }
+
 long StdReader::Next( long offset, unsigned char c) const {
-    this->file.seekg(offset, file.beg);
+    Seek(offset); 
+
     for (long i=offset; file.good(); i++) {
         unsigned char got = static_cast<unsigned char>(file.get());
         if (file.good() && got==c ) {
+            pos = offset + i;
             return i;
         }
     }
+    pos = -1;
     file.clear();
+
     return Size();
 }
 long StdReader::Last( long offset, unsigned char c) const {
@@ -39,9 +54,27 @@ long StdReader::Last( long offset, unsigned char c) const {
             this->file.seekg(i, ios_base::beg);
             unsigned char got = static_cast<unsigned char>(file.get());
             if ( got == c ) 
+                pos = offset - i;
                 return i;
     }
+
+    pos = -1;
     return -1;
+}
+
+void StdReader::UpdatePosition(int add) const {
+    if ( pos != -1 && file.good() ) {
+        pos+=add;
+    } else {
+        pos = -1; // Something's gone wrong - we need to manually seek next time
+    }
+}
+
+void StdReader::Seek(int offset) const {
+    if ( pos != offset ) {
+        this->file.seekg(offset, ios_base::beg);
+        pos = offset;
+    }
 }
 
 IFStreamReader::IFStreamReader(const char *fname): 
@@ -61,3 +94,4 @@ IFStreamReader::IFStreamReader(IFStreamReader&& from )
 {
     std::swap(fileName,from.fileName);
 }
+
