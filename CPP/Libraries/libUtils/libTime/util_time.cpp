@@ -2,6 +2,7 @@
 #include <ctime>
 #include <sstream>
 #include <iomanip>
+#include <algorithm>
 
 using namespace std;
 
@@ -69,26 +70,29 @@ Time& Time::operator=(const std::string& timestamp) {
      *  Index:          012345678901234567890123
      *  (Until gcc 4.9 we can't regex our way out of this :( )
      */
-    std::stringstream YEAR(timestamp.substr(0,4), ios_base::in);
-    std::stringstream MONTH(timestamp.substr(4,2), ios_base::in);
-    std::stringstream DAY(timestamp.substr(6,2), ios_base::in);
-    std::stringstream HOUR(timestamp.substr(9,2), ios_base::in);
-    std::stringstream MIN(timestamp.substr(12,2), ios_base::in);
-    std::stringstream SEC(timestamp.substr(15,2), ios_base::in);
-    std::stringstream USEC(timestamp.substr(18,6), ios_base::in);
-    YEAR >> time.tm_year; time.tm_year -=1900;
-    MONTH >> time.tm_mon; --time.tm_mon;
-    DAY >> time.tm_mday; 
-    HOUR >> time.tm_hour; 
-    MIN >> time.tm_min;  
-    SEC >> time.tm_sec; 
+    // Get the string into a format where we can using a single stream...
+    stringstream working (
+        timestamp.substr(0,4) +  " " +  /*YEAR*/
+        timestamp.substr(4,2) +  " " +  /*MONTH*/
+        timestamp.substr(6,2) +  " " +  /*DAY*/
+        timestamp.substr(9,2) +  " " +  /*HOUR*/
+        timestamp.substr(12,2) +  " " + /*MIN*/
+        timestamp.substr(15,2) +  " " + /*SEC*/
+        timestamp.substr(18,6)        /*USEC*/
+    );
+    working >> time.tm_year; time.tm_year -=1900;
+    working >> time.tm_mon; --time.tm_mon;
+    working >> time.tm_mday; 
+    working >> time.tm_hour; 
+    working >> time.tm_min;  
+    working >> time.tm_sec; 
 
      /*
      * calculate timeval...
      * --------------------
      */   
      tv.tv_sec = difftime(mktime(&time),mktime(&epoch));
-     USEC >> tv.tv_usec;
+     working >> tv.tv_usec;
 
     return *this;
 }
