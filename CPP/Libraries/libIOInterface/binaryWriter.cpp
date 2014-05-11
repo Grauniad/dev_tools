@@ -30,9 +30,10 @@ void BinaryWriter::Write(const void *src, long size) {
 }
 
 void BinaryWriter::Write(const BinaryReader& pos, long size) {
-    for (long i = 0; i < size; i++) {
-        file.Put(offset+i,(pos +i).Get());
-    }
+    unsigned char * buf = new unsigned char[size];
+    pos.Read(buf,size);
+    file.Write(offset,reinterpret_cast<void *>(buf),size);
+    delete [] buf;
 }
 
 void BinaryWriter::Fill(long size) {
