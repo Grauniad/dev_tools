@@ -36,17 +36,22 @@ long StdReader::Size() const {
 long StdReader::Next( long offset, unsigned char c) const {
     Seek(offset); 
 
-    for (long i=offset; file.good(); i++) {
-        unsigned char got = static_cast<unsigned char>(file.get());
-        if (file.good() && got==c ) {
-            pos = offset + i;
-            return i;
-        }
-    }
-    pos = -1;
-    file.clear();
+    char buf[1024];
+    unsigned char current = file.peek();
 
-    return Size();
+    while ( current != c && file.good() ) {
+        file.get(buf,1024,c);
+        UpdatePosition(file.gcount());
+        current = file.peek();
+    }
+
+    file.clear();
+    
+    if ( current == c ) {
+        return pos;
+    } else {
+        return Size();
+    }
 }
 long StdReader::Last( long offset, unsigned char c) const {
     for (long i=offset; i>=0; i--) {
