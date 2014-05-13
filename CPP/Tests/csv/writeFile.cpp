@@ -23,6 +23,7 @@ int RemoveRows(testLogger& log);
 
 int WriteFile(testLogger& log);
 int ReadFile(testLogger& log);
+int FastReadFile(testLogger& log);
 const int rows = 1000;
 
 using DataFile = CSV<double,float,int,long>;
@@ -39,6 +40,7 @@ int main(int argc, const char *argv[]) {
 
     Test("Writing data file...",WriteFile).RunTest();
     Test("Loading Data...",ReadFile).RunTest();
+    Test("Loading Data...",FastReadFile).RunTest();
 
     return 0;
 }
@@ -352,6 +354,30 @@ int ReadFile (testLogger& log ) {
     DataFile csv(DataFile::LoadCSV(in_f));
     // Allow room for floating point errors
     for (int row=0; row<rows; row++) {
+        if ( fabs(csv.GetCell<0>(row) - row*double(0.13)) > 0.000000000001 ) {
+            SPRINT("(Row: " << row << ") Expected csv<d>(row) = " << double(row*0.13) << " but got: " << csv.GetCell<0>(row)) 
+            return 1;
+        } else if ( fabs(csv.GetCell<1>(row) - row*float(0.79) ) > 0.00001 ) {
+            SPRINT("(Row: " << setprecision(15) << row << ") Expected csv<f>(row) = " << float(row*0.79) << " but got: " << csv.GetCell<1>(row)) 
+            return 1;
+        } else if ( csv.GetCell<2>(row) != row*row) {
+            SPRINT("(Row: " << row << ") Expected csv<i>(row) = " << row*row << " but got: " << csv.GetCell<2>(row)) 
+            return 1;
+        } else if ( csv.GetCell<3>(row) != row*row*row ) {
+            SPRINT("(Row: " << row << ") Expected csv<l>(row) = " << row*row*row << " but got: " << csv.GetCell<3>(row)) 
+            return 1;
+        }
+    }
+    return 0;
+}
+int FastReadFile (testLogger& log ) {
+    OFStreamWriter f("test.data");
+    GetCSV().WriteCSV(f);
+    f.close();
+    IFStreamReader in_f("test.data");
+    DataFile csv(DataFile::FastLoadCSV(in_f,','));
+    // Allow room for floating point errors
+      for (int row=0; row<rows; row++) {
         if ( fabs(csv.GetCell<0>(row) - row*double(0.13)) > 0.000000000001 ) {
             SPRINT("(Row: " << row << ") Expected csv<d>(row) = " << double(row*0.13) << " but got: " << csv.GetCell<0>(row)) 
             return 1;

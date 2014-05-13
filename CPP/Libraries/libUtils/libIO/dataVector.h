@@ -45,6 +45,8 @@ public:
     // Expose the iterators
     using vector<unsigned char>::begin;
     using vector<unsigned char>::end;
+    using vector<unsigned char>::cbegin;
+    using vector<unsigned char>::cend;
 };
 
 #endif

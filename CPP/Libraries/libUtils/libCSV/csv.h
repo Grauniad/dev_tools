@@ -94,7 +94,20 @@ public:
         return std::get<col>(columns)[row];
     }
 
+    /*
+     * Read the CSV in a line at a time, and get the boost iterator
+     * to properlly parse it for escaped quotes / commas etc...
+     */
     static CSV<Types...> LoadCSV(BinaryReader reader);
+
+    /*
+     * Read in each line, and just search for the delim...
+     *
+     * The input file is assumed to be perfect, Loo the the caller who gives it 
+     * bad date...
+     */
+    static CSV<Types...> FastLoadCSV(BinaryReader reader, char delim);
+
     void WriteCSV(BinaryWriter writer);
 
 private:
@@ -110,13 +123,13 @@ private:
     //*********************************
     // template to add from tokens
     //*********************************
-    template<int index>
+    template<int index, class IT>
     inline typename std::enable_if< index!=0,void>::type
-    AddCell(Tokeniser::iterator& it);
+    AddCell(IT& it);
 
-    template<int index>
+    template<int index, class IT>
     inline typename std::enable_if< index==0,void>::type
-    AddCell(Tokeniser::iterator& it);
+    AddCell(IT& it);
     //*********************************
       
     //*********************************

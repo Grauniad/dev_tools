@@ -44,28 +44,62 @@ CSV<Types...> CSV<Types...>::LoadCSV(BinaryReader reader) {
     return std::move(csv);
 }
 
+template<class...Types>
+CSV<Types...> CSV<Types...>::FastLoadCSV(BinaryReader reader, char delim) {
+    CSV<Types...> csv;
+
+    DataVector buf(1024);
+    BinaryWriter w(buf);
+    BinaryReader r(buf);
+    std::array<std::string, sizeof...(Types)> tokens;
+    while ( reader.Offset() < reader.End() ) {
+        buf.Clear();
+        BinaryReader next = reader.Find('\n');
+        // Extract the line
+        buf.ReserveAtLeast(next - reader+ 1);
+        reader.Read(w,next-reader+1);
+
+        BinaryReader tokenStart(buf), tokenEnd(buf);
+
+        for ( size_t i = 1; i < ncols; ++i ) {
+            tokenEnd = tokenStart.Find(delim).Offset();
+
+            tokens[i-1] = std::string(buf.cbegin()+tokenStart,buf.cbegin()+tokenEnd);
+
+            tokenStart = tokenEnd.Offset() + 1;
+        }
+        tokens[ncols-1] = std::string(buf.cbegin()+tokenStart,buf.cend());
+
+        auto it = tokens.begin();
+        csv.AddCell<ncols-1>(it);
+
+        reader = next.Offset()+1;
+    }
+    return std::move(csv);
+}
+
 //*********************************
 // template to add from tokens
 //*********************************
 template<class...Types>
 void CSV<Types...>::NewRow(const Tokeniser& tok) {
-    Tokeniser::iterator it = tok.begin();
+    auto it = tok.begin();
     AddCell<ncols-1>(it);
 }
 
 template<class...Types>
-template< int index>
+template< int index, class IT>
 inline typename std::enable_if< index!=0,void>::type
-CSV<Types...>::AddCell(Tokeniser::iterator& it) {
+CSV<Types...>::AddCell(IT& it) {
     std::get<ncols-1-index>(this->columns).NewRow(*it);
     ++it;
     this->AddCell<index -1>(it);
 }
 
 template<class...Types>
-template< int index>
+template< int index, class IT>
 inline typename std::enable_if< index==0,void>::type
-CSV<Types...>::AddCell(Tokeniser::iterator& it) {
+CSV<Types...>::AddCell(IT& it) {
     std::get<ncols-1>(this->columns).NewRow(*it);
 }
 //*********************************
