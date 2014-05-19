@@ -4,6 +4,8 @@ MAKE_DIRS= libLog \
            libCSV\
            libOS\
            libTime\
-           libMisc
+           libMisc \
+		   libRegex
+
 
 include ../makefiles_libaries.include
