@@ -1,5 +1,7 @@
 # DEV_TOOLS requries c++11
-USE_CPP11=YES
+ifndef USE_CPP11
+    USE_CPP11=YES
+endif
 USE_THREADS=YES
 
 
