@@ -43,21 +43,21 @@
 
 #define SPRINT(text) \
     if ( Logger::Instance().LogEnabled(LOG_DEFAULT) ) { \
-        std::stringstream& __s__ = LogFactory::Buf(); \
+        std::stringstream __s__; \
         __s__ << text; \
         Logger::Instance().LogMessage(__s__.str(), LOG_DEFAULT); \
     }
 
 #define SLOG(level, text) \
     if ( Logger::Instance().LogEnabled(level) ) { \
-        std::stringstream& __s__ = LogFactory::Buf(); \
+        std::stringstream __s__; \
         __s__ << text; \
         Logger::Instance().LogMessage(__s__.str(), level); \
    }
 
 #define SLOG_FROM(level, context, text) \
     if ( Logger::Instance().LogEnabled(level) ) { \
-        std::stringstream& __s__ = LogFactory::Buf(); \
+        std::stringstream __s__; \
         __s__ << text; \
         Logger::Instance().LogMessage(__s__.str(), level, context); \
     }

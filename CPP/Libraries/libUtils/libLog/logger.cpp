@@ -58,8 +58,6 @@ class LogDevice_CLOG: public LogDevice {
     }
 } _CLOG;
 
-list<std::stringstream*>  LogFactory::bufs;
-
 LogDevice& LogFactory::COUT() {
     static LogDevice_COUT _cout;
     return _cout;
@@ -73,25 +71,6 @@ LogDevice& LogFactory::CERR() {
 LogDevice& LogFactory::CLOG() {
     static LogDevice_CLOG _clog;
     return _clog;
-}
-
-std::stringstream* LogFactory::NewBuf() {
-    std::stringstream* p = new std::stringstream();
-    bufs.insert(bufs.begin(),p);
-    return p;
-}
-
-void LogFactory::ClearBufs() {
-    for ( auto p: bufs ) {
-        delete p;
-    }
-}
-
-std::stringstream& LogFactory::Buf() {
-    std::stringstream* p = NewBuf();
-    p->str("");
-    p->clear();
-    return *p;
 }
 
 /*
