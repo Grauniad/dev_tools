@@ -58,7 +58,7 @@ Screen::Screen():
     cbreak();
 
     // User input is echoed to the screen
-    echo();
+    noecho();
 
     /* Cursor visibility
      *    0: Invisible
@@ -428,7 +428,6 @@ void Terminal::PutString(const std::string& text) {
         int len = next - last;
         if ( len > info.cols -2 ) {
             len = info.cols-2;
-            SPRINT ("Limited output to length : " << len << endl)
         }
 
         output.emplace_back(text.substr(last,len) + "\n");
@@ -523,11 +522,24 @@ std::string Terminal::GetLine(const std::string& prompt) {
             more = false;
             PutString("\n");
             break;
+        case KEY_BACKSPACE:
+        case 127: // [DEL]
+            // Move us back a char
+            int y, x;
+            getyx(win,y,x);
+            if ( x > 0 ) { // Check for someone trying to be a nuisance
+                mvwdelch(win,y,x-1);
+                wmove(win,y,x-1);
+            }
+            command = command.substr(0,command.length()-1);
+            break;
         default:
             // Let's restrict ourselves to ascii behaviour for the timebeing
             if ( c >=1 && 255 ) {
                 char ch = static_cast<char>(c);
                 command += ch;
+                putchar(ch);
+                Refresh();
             }
         }
         SLOG_FROM(LOG_VERY_VERBOSE, "Window::GetLine",
