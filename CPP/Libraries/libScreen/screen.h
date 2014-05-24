@@ -81,6 +81,32 @@ public:
      */
     bool SetTopBarHeight(int lines);
 
+    /*********************************
+     *          Side Bar
+     ********************************/
+
+    /*
+     * Return the side bar object
+     *
+     * If the sidebar isn't currently active it is initialised
+     */
+    Terminal& SideBar();
+
+    // Is the topbar in use?
+    bool SideBarShowing() {
+        return sidebar != nullptr;
+    }
+
+    /*
+     * Destroy the top bar window 
+     */
+    void KillSideBar();
+
+    /*
+     * Resize the topbar
+     */
+    bool SetSideBarWidth(int cols);
+
 
 
     /*********************************
@@ -98,6 +124,11 @@ private:
      */
     void ShowTopBar();
 
+    /*
+     * Initialise the side bar
+     */
+    void ShowSideBar();
+
     Terminal& GetEventOwner(MEVENT& event);
 
     /*
@@ -114,6 +145,7 @@ private:
      */
     Terminal*  main;
     Terminal*  topbar;
+    Terminal*  sidebar;
 
     /*
      * Screen properties
@@ -121,6 +153,7 @@ private:
     int height;
     int width; 
     int topbar_height;
+    int sidebar_width;
 
     /*
      * Helper Objects

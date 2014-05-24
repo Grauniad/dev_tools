@@ -84,6 +84,9 @@ Screen::Screen():
              newwin(height,width,0,0),
              {width,height,0,0});
 
+    topbar_height = 0.45 * height;
+    sidebar_width = 0.45 * width;
+
     // Now we have a main window, start logging...
     logger = new ScreenLogger();
 }
@@ -123,6 +126,12 @@ Screen::~Screen() {
  }
 
 Terminal& Screen::GetEventOwner(MEVENT& event) {
+    if ( sidebar && event.x > (width - sidebar_width) ) {
+        return *sidebar;
+    }
+    /*
+     * Now know it can't belong to the sidebar...
+     */
     if ( !TopBarShowing() ) {
         // Easy - must be in main
         return *main;
@@ -153,17 +162,20 @@ void Screen::ShowTopBar() {
      * and startup the top window
      */
     if ( !topbar ) {
+        int top_width  = width;
+        if ( sidebar ) {
+            top_width = width -sidebar_width;
+        }
+
         // Shrink the main window
-        main->Resize(width,height-topbar_height);
+        main->Resize(top_width,height-topbar_height);
 
         // Move the main window out of the way
         main->Move(0,topbar_height);
-
         // Create the topbar in the new space
-
         topbar = new Terminal(
-             newwin(topbar_height,width,0,0),
-             {width,topbar_height,0});
+             newwin(topbar_height,top_width,0,0),
+             {top_width,topbar_height,0});
         topbar->Boxed(true);
         topbar->Refresh();
 
@@ -202,17 +214,96 @@ bool Screen::SetTopBarHeight(int lines) {
         SLOG_FROM(LOG_ERROR,"Screen::SetTopBarHeight",
                 "Can not resize topbar, invalid height!: " << lines)
     } else if (topbar) {
+        int top_width  = width;
+        if ( sidebar ) {
+            top_width = width -sidebar_width;
+        }
         // Shrink the main window
-        ok = main->Resize(width,height-topbar_height);
+        ok = main->Resize(top_width,height-topbar_height);
 
         // Move the main window out of the way
         ok &= main->Move(0,topbar_height);
 
-        ok &= topbar->Resize(width,topbar_height);
+        // Grow the topbar
+        ok &= topbar->Resize(top_width,topbar_height);
     }
 
     return ok;
 }
+
+/*****************************************************
+ *               SCREEN - Side Bar
+ ****************************************************/
+Terminal& Screen::SideBar() {
+    ShowSideBar();
+    return *sidebar;
+}
+
+/*
+ * Initialise the side bar
+ */
+void Screen::ShowSideBar() {
+    /*
+     * Push the main and top window across 
+     * and startup the side window
+     */
+    if ( !sidebar ) {
+        // Shrink the main window leftwards, no change in height
+        main->Resize(main->Width() - sidebar_width,main->Height());
+
+        // Create the sidebar in the new space
+        sidebar = new Terminal(
+             newwin(height,sidebar_width,0,width-sidebar_width),
+             {sidebar_width,height,0});
+        sidebar->Boxed(true);
+        sidebar->Refresh();
+
+        SLOG_FROM(LOG_VERBOSE,"Screen::ShowSideBar()",
+           "Enabled side bar: " << endl
+           << "Main: " << main->Height() << ", " << main->Width() << endl
+           << "Side: " << sidebar->Height() << ", " << sidebar->Width() << endl
+           << "Config: " << height << " , " << topbar_height )
+
+
+
+    } else {
+        // top bar already visible...
+    }
+}
+
+void Screen::KillSideBar() {
+    if ( sidebar ) {
+        // Remove the topbar
+        delete sidebar;
+        sidebar = nullptr;
+
+        // Grow Main to re-fill the space...
+        main->Resize(width,main->Height());
+    }
+}
+
+bool Screen::SetSideBarWidth(int cols) {
+    bool ok = false;
+    sidebar_width = cols;
+
+    if ( cols < 1 || cols > (width-1) ) {
+        SLOG_FROM(LOG_ERROR,"Screen::SetSideBarWidth",
+                "Can not resize topbar, invalid width!: " << cols)
+    } else if (sidebar) {
+        // Shrink the main window
+        ok = main->Resize(width-sidebar_width,main->Height());
+
+        // Move it across
+        ok &= sidebar->Move(width - sidebar_width,0);
+
+        // Grow the sidebar...
+        ok &= sidebar->Resize(sidebar_width,height);
+
+    }
+    return ok;
+}
+
+
 
 /*****************************************************
  *                      WINDOW 
