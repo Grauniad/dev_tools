@@ -2,7 +2,8 @@ MAKE_DIRS= libIOInterface\
 		   libUtils \
 		   libTest \
 		     \
-		   
+		      \
+		   libScreen
 
 MODE=CPP
 

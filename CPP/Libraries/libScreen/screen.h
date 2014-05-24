@@ -10,6 +10,8 @@ class Window;
 // terminal based input..
 class Terminal;
 
+class ScreenLogger;
+
 /*
  * A simplistic wrapper around ncurses which can 
  * be used to drive a basic application with a main
@@ -17,8 +19,10 @@ class Terminal;
  */
 class Screen {
 public:
-    /*
-     * Return the ncurses instance
+    /*********************************
+     *          C'tor / D'tor
+     ********************************/
+    /* * Return the ncurses instance
      */
     static Screen& Instance() {
         static Screen instance;
@@ -31,6 +35,10 @@ public:
      */
     virtual ~Screen();
     
+    /*********************************
+     *          Main
+     ********************************/
+
     /*
      * Return the "main" terminal
      */
@@ -38,9 +46,42 @@ public:
         return *main;
     }
 
+    /*********************************
+     *          Top Bar
+     ********************************/
+
+    /*
+     * Return the top bar object
+     *
+     * If the topbar isn't currently active it is initialised
+     */
+    Terminal& TopBar();
+
+    // Is the topbar in use?
+    bool TopBarShowing() {
+        return topbar != nullptr;
+    }
+
+    /*
+     * Destroy the top bar window 
+     */
+    void KillTopBar();
+
+    /*********************************
+     *          Data Access
+     ********************************/
+
+    /*
+     * Access fundamental properties of the screen
+     */
     int Height() const { return height; }
     int Width() const { return width; }
 private:
+    /*
+     * Initialise the top bar
+     */
+    void ShowTopBar();
+
     /*
      * Initialise the ncurses library.
      *
@@ -54,11 +95,19 @@ private:
      * Sub-windows
      */
     Terminal*  main;
+    Terminal*  topbar;
+
     /*
      * Screen properties
      */
     int height;
     int width; 
+    int topbar_height;
+
+    /*
+     * Helper Objects
+     */
+    ScreenLogger* logger;
 };
 
 
@@ -73,6 +122,10 @@ public:
         int start_col;
         int start_line;
     };
+
+    /*********************************
+     *          C'tor / D'tor
+     ********************************/
     /*
      * Take ownership of the window _win.
      *
@@ -81,20 +134,54 @@ public:
     Window(WINDOW* _win,const Window::WIN_INFO& info);
 
     /*
-     * Place the string at the position.
-     *
-     * Behaviour is undefined if x,y is not within the window bounds
-     */
-    void PutString(int x, int y, const std::string& line);
-
-    /*
      * Delete the window, and release all related resources...
      */
     virtual ~Window();
 
+    /*********************************
+     *          Output
+     ********************************/
+
+     /*
+      * Refresh the Window();
+      */
+     virtual void Refresh();
+
+    /*
+     * Place the string at the position.
+     *
+     * Behaviour is undefined if x,y is not within the window bounds
+     */
+    virtual void PutString(int x, int y, const std::string& line);
+
+    /*
+     * Clear down the screen
+     */
+    virtual void Clear();
+
+    /*********************************
+     *          Move Commands
+     ********************************/
+
+    /*
+     * Move the window to X, Y
+     */
+    bool Move( int x, int y);
+
+    /*
+     * Move the window to X, Y
+     */
+    bool Resize( int cols, int lines);
+
+    void Boxed(bool yesno) {
+        boxed = yesno;
+    }
+
+
 protected:
     WINDOW* win;
     WIN_INFO info;
+    bool boxed;
 };
 
 /*
@@ -109,8 +196,12 @@ public:
      */
     std::string GetLine(const std::string& prompt);
 
+    /*
+     * Put a new line of output...
+     */
+    void PutString(const std::string& text);
+
 private:
-    std::vector<std::string> history;
 };
 
 
