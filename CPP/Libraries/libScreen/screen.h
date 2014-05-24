@@ -34,6 +34,15 @@ public:
      * resources
      */
     virtual ~Screen();
+
+    /*********************************
+     *          Mouse
+     ********************************/
+     /*
+      * Triggered when an input device detects a queued mouse
+      * event
+      */
+     virtual void OnMouseEvent();
     
     /*********************************
      *          Main
@@ -67,6 +76,13 @@ public:
      */
     void KillTopBar();
 
+    /*
+     * Resize the topbar
+     */
+    bool SetTopBarHeight(int lines);
+
+
+
     /*********************************
      *          Data Access
      ********************************/
@@ -81,6 +97,8 @@ private:
      * Initialise the top bar
      */
     void ShowTopBar();
+
+    Terminal& GetEventOwner(MEVENT& event);
 
     /*
      * Initialise the ncurses library.
@@ -159,6 +177,13 @@ public:
      */
     virtual void Clear();
 
+
+    /*********************************
+     *          Scrolling
+     ********************************/
+    virtual void ScrollUp(int lines);
+    virtual void ScrollDown(int lines);
+
     /*********************************
      *          Move Commands
      ********************************/
@@ -177,6 +202,12 @@ public:
         boxed = yesno;
     }
 
+    /*********************************
+     *          Data
+     ********************************/
+
+     int Height() const { return info.lines; }
+     int Width() const { return info.cols; }
 
 protected:
     WINDOW* win;
@@ -201,7 +232,27 @@ public:
      */
     void PutString(const std::string& text);
 
+    /*
+     * Clear down the screen
+     */
+    virtual void Clear();
+
+    /*
+     * Feed the next n lines from the buffer
+     */
+    void FeedLines(int n);
+
+    /*
+     * Push all of the remaing lines to the buffer
+     */
+    void FeedAll();
+
+    virtual void ScrollUp(int lines);
+    virtual void ScrollDown(int lines);
+
 private:
+    std::vector<std::string> output;
+    size_t last_line;
 };
 
 

@@ -13,12 +13,12 @@ class ScreenLogger: public LogDevice {
 public:
     ScreenLogger()
     {
-        Logger::Instance().RegisterLog(*this);
+        //Logger::Instance().RegisterLog(*this);
 
         // Prevent Logging directly to stdout / stderr
         Logger::Instance().RemoveLog(LogFactory::CERR());
-        Logger::Instance().RemoveLog(LogFactory::CLOG());
-        Logger::Instance().RemoveLog(LogFactory::COUT());
+       // Logger::Instance().RemoveLog(LogFactory::CLOG());
+        //Logger::Instance().RemoveLog(LogFactory::COUT());
     }
 
     virtual void Log( const string& message,
@@ -41,6 +41,12 @@ public:
  *                       SCREEN
  ****************************************************/
 
+/*
+ * Known mouse events...
+ */
+const int MOUSE_WHEEL_UP   = BUTTON4_PRESSED;
+const int MOUSE_WHEEL_DOWN = BUTTON2_PRESSED;
+
 Screen::Screen():
    main(nullptr), topbar(nullptr), topbar_height(20)
 {
@@ -61,6 +67,13 @@ Screen::Screen():
      */
     curs_set(1);
 
+    // Don't care about double clicks, just tell us about the event
+    mouseinterval(0);
+
+    // Register an interest in mouse clicks...
+    mmask_t    oldMask;
+    mousemask(MOUSE_WHEEL_UP | MOUSE_WHEEL_DOWN, &oldMask);
+
     // get our maximum window dimensions
     getmaxyx(stdscr, height, width);
 
@@ -69,7 +82,7 @@ Screen::Screen():
      */
     main = new Terminal(
              newwin(height,width,0,0),
-             {height,width,0,0});
+             {width,height,0,0});
 
     // Now we have a main window, start logging...
     logger = new ScreenLogger();
@@ -85,12 +98,52 @@ Screen::~Screen() {
 }
 
 /*****************************************************
+ *            Screen - Mouse
+ ****************************************************/
+ void Screen::OnMouseEvent() {
+     // Pick the event of the queue
+     MEVENT event;
+
+     getmouse(&event);
+     Terminal& term = GetEventOwner(event);
+     switch ( event.bstate ) {
+     case MOUSE_WHEEL_UP:
+         LOG_FROM(LOG_VERY_VERBOSE,"Screen::OnMouseEvent","Received Mouse UP")
+         term.ScrollUp(1);
+         break;
+     case MOUSE_WHEEL_DOWN:
+         LOG_FROM(LOG_VERY_VERBOSE,"Screen::OnMouseEvent","Received Mouse DOWN")
+         term.ScrollDown(1);
+         break;
+     default:
+        SLOG_FROM(LOG_ERROR,"Screen::OnMouseEvent()",
+               "Unknown mouse event: " << event.bstate)
+        break;
+     }
+ }
+
+Terminal& Screen::GetEventOwner(MEVENT& event) {
+    if ( !TopBarShowing() ) {
+        // Easy - must be in main
+        return *main;
+    } else {
+        // Check which half we are in...
+        if ( event.y < topbar_height ) {
+            return *topbar;
+        } else {
+            return *main;
+        }
+    }
+}
+
+/*****************************************************
  *               SCREEN - Top Bar
  ****************************************************/
 Terminal& Screen::TopBar() {
     ShowTopBar();
     return *topbar;
 }
+
 /*
  * Initialise the top bar
  */
@@ -110,9 +163,16 @@ void Screen::ShowTopBar() {
 
         topbar = new Terminal(
              newwin(topbar_height,width,0,0),
-             {topbar_height,width,0,0});
+             {width,topbar_height,0});
         topbar->Boxed(true);
         topbar->Refresh();
+
+        SLOG_FROM(LOG_VERBOSE,"Screen::ShowTopBar()",
+           "Enabled top bar: " << endl
+           << "Main: " << main->Height() << ", " << main->Width() << endl
+           << "Top: " << topbar->Height() << ", " << topbar->Width() << endl
+           << "Config: " << height << " , " << topbar_height )
+
 
 
     } else {
@@ -134,6 +194,26 @@ void Screen::KillTopBar() {
     }
 }
 
+bool Screen::SetTopBarHeight(int lines) {
+    bool ok = false;
+    topbar_height = lines;
+
+    if ( lines < 1 || lines > (height-1) ) {
+        SLOG_FROM(LOG_ERROR,"Screen::SetTopBarHeight",
+                "Can not resize topbar, invalid height!: " << lines)
+    } else if (topbar) {
+        // Shrink the main window
+        ok = main->Resize(width,height-topbar_height);
+
+        // Move the main window out of the way
+        ok &= main->Move(0,topbar_height);
+
+        ok &= topbar->Resize(width,topbar_height);
+    }
+
+    return ok;
+}
+
 /*****************************************************
  *                      WINDOW 
  ****************************************************/
@@ -141,11 +221,14 @@ void Screen::KillTopBar() {
 Window::Window(WINDOW* _win, const Window::WIN_INFO& _info) 
     : win(_win), info(_info), boxed(false)
 {
+     SLOG_FROM(LOG_OVERVIEW, "Window::Window",
+          "Window Created: " << info.cols << " , " << info.lines << endl)
 }
 
 Window::~Window() {
     delwin(win);
 }
+
 
 /*****************************************************
  *            WINDOW - Output
@@ -178,7 +261,18 @@ void Window::PutString(int x, int y, const std::string& line) {
         // Push the buffer to scren...
         Refresh();
     }
-}
+} /*****************************************************
+ *            WINDOW - Scrolling
+ ****************************************************/
+ void Window::ScrollUp(int lines ) {
+     wscrl(win,lines);
+     Refresh();
+ }
+
+ void Window::ScrollDown(int lines ) {
+     wscrl(win,-1*lines);
+     Refresh();
+ }
 
 /*****************************************************
  *            WINDOW - Move
@@ -216,36 +310,190 @@ void Window::PutString(int x, int y, const std::string& line) {
  ****************************************************/
 
 Terminal::Terminal(WINDOW* _win, const Window::WIN_INFO& info) 
-    : Window(_win, info)
+    : Window(_win, info), last_line(0)
 {
+
     // Enable scrolling behaviour
-    scrollok(_win,true);
+    scrollok(win,true);
+
+    // Let curses calculate arrows keys etc for us
+    keypad(win,true);
+
+    // Let curses interpret newline (carriage return) for us
+    nonl();
 }
 
 void Terminal::PutString(const std::string& text) {
-    wprintw(win,text.c_str());
-    Refresh();
+    stringstream feed(text);
+
+    /*
+     * ncurses doesn't buffer this for us :(
+     */
+    size_t last = 0, next = 0;
+    for (next = text.find_first_of("\n",last);
+         next != string::npos;
+         next = text.find_first_of("\n",last) )
+    {
+        int len = next - last;
+        if ( len > info.cols -2 ) {
+            len = info.cols-2;
+            SPRINT ("Limited output to length : " << len << endl)
+        }
+
+        output.emplace_back(text.substr(last,len) + "\n");
+        last = next+1;
+    }
+    if ( last < text.length() ) {
+        // More data left in string
+        if ( output.size() > 0 && last != 0 ) {
+            // Final line didn't end in a newline:
+            *(output.end()-1) += text.substr(last);
+        } else {
+            // There was only one line, and it didn't have a new line
+            int len = text.length() - last;
+            if ( len > info.cols -2 ) {
+                len = info.cols -2;
+            }
+            output.emplace_back(text.substr(last,len));
+        }
+    }
+
+    SLOG_FROM(LOG_VERY_VERBOSE,"Terminal::PutString",
+           "Pushed lines to terminal buffer, now " << output.size() << " in buffer"
+           << "Source Line: " << text )
+    FeedAll();
+}
+
+void Terminal::FeedAll() {
+    Window::Clear();
+    if ( output.size() < static_cast<size_t>(info.lines)) { 
+        // Have room for the full buffer
+        last_line = 0;
+    } else {
+        // OK, only print the last n...
+        last_line = output.size() - info.lines;
+    }
+    SLOG_FROM(LOG_VERY_VERBOSE,"Terminal::FeedAll",
+           "Starting at : " << last_line << endl
+           << "lines left in buffer: " << output.size() << endl
+           << "screen height: " << info.lines );
+
+    // Feedllines will do the refresh
+    FeedLines(info.lines);
+}
+void Terminal::FeedLines(int n) {
+    if ( last_line < output.size() ) {
+        /*
+         * Check we actually have that many lines to feed
+         */
+        if ( (last_line + (size_t)n) >= output.size() ) {
+            n = output.size() - last_line - 1;
+        }
+
+        /*
+         * Feed each line...
+         */
+        for ( size_t stopLine = last_line + static_cast<size_t>(n); 
+              last_line <= stopLine; 
+              ++last_line ) 
+        {
+            const string& s = output[last_line];
+            wprintw(win,s.c_str());
+        }
+        SLOG_FROM(LOG_VERY_VERBOSE,"Terminal::Feedllines",
+               "Pushed " << n << " out of " << output.size() << " lines to terminal")
+        Refresh();
+    } else {
+        // no more lines left in the buffer...  
+        SLOG_FROM(LOG_VERY_VERBOSE,"Terminal::Feedllines", 
+              "No lines left to push!" << endl
+              << "last_line: " << last_line << endl
+              << "Buffered lines: " << output.size() )
+    }
 }
 
 std::string Terminal::GetLine(const std::string& prompt) {
-    const int BUF_SIZE = 20480;
     PutString(prompt);
-    // This is not very elegant, nor efficient, but lets assume
-    // that getting input from the user is not going to be part
-    // of a tight loop...
-    unique_ptr<array<char,BUF_SIZE>> buffer(new array<char,20480>());
 
+    string command = "";
     /*
-     * wgetnstr's man page does not specify it gives us a null 
-     * termination :(
+     * Listen to user input and build up the command...
      */
-    int read = wgetnstr(win,buffer->data(),BUF_SIZE-1);
-
-    if ( read == OK ) {
-        return string(buffer->data());
-    } else {
-        LOG_FROM(LOG_ERROR,"Terminal::GetLine", "Failed to read line")
-        return "";
+    bool more = true;
+    while ( more ) {
+        int c = wgetch(win);
+        switch ( c ) {
+        case KEY_MOUSE:
+            // Notify the screen of queued mouse event
+            Screen::Instance().OnMouseEvent();
+            break;
+        case 10: // new line
+        case 13: // carraige return
+            more = false;
+            PutString("\n");
+            break;
+        default:
+            // Let's restrict ourselves to ascii behaviour for the timebeing
+            if ( c >=1 && 255 ) {
+                char ch = static_cast<char>(c);
+                command += ch;
+            }
+        }
+        SLOG_FROM(LOG_VERY_VERBOSE, "Window::GetLine",
+              "Read " << c << ", command is now: " << command)
     }
-    // buffer goes out of scope...
+
+    return command;
+}
+
+void Terminal::Clear () {
+    output.clear();
+    last_line = 0;
+    SLOG_FROM(LOG_VERY_VERBOSE, "Terminal::Clear",
+              "Cleared the output buffer, now " << output.size() << " lines in buffer")
+    Window::Clear();
+}
+
+/*
+ * Currently last_line points to the next line to be printed
+ *
+ * We wish to roll this back screen_size + lines:
+ *   screen_size: Rolling back this much results in as printing the same again
+ *   lines: Further rolling back by lines, results in as print previous lines
+ *
+ */
+void Terminal::ScrollUp(int lines ) {
+     Window::Clear();
+     if ( info.lines + lines >= (int)last_line ) {
+         // We're back at the start...
+         last_line = 0;
+     } else {
+         // Rollback to the relevant line
+         last_line-=lines + 1+info.lines;
+     }
+    SLOG_FROM(LOG_VERY_VERBOSE, "Terminal::ScrollUp",
+              "Scrolling up, " << lines << endl
+              << "last_line is now " << last_line << endl
+              << "Lines in buffer: " << output.size()
+              << "Terminal Height: " << info.lines)
+     FeedLines(info.lines);
+}
+
+void Terminal::ScrollDown(int lines ) {
+     Window::Clear();
+     if ( info.lines + lines > ((int)output.size() - info.lines)  ) {
+         // Last line, no fruther to go down...
+         last_line = output.size() -1 - info.lines;
+     } else {
+         // reset to write position
+         last_line-=info.lines+1;
+         // Now advance the write position
+         last_line+=lines;
+     }
+     SLOG_FROM(LOG_VERY_VERBOSE, "Terminal::ScrollDown",
+              "Scrolling Down, " << lines << endl
+              << "last_line is now " << last_line << endl
+              << "Lines in buffer: " << output.size()
+              << "Terminal Height: " << info.lines)
+     FeedLines(info.lines);
 }
