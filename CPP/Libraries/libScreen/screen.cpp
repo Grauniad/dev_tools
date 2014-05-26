@@ -550,6 +550,10 @@ void Terminal::FeedAll() {
     // and the end of the output...
     int linesRemaining = output.size() - last_line;
 
+
+    // Vector has been changed - reload the search cache...
+    searcher.UpdateCache();
+
     switch (feed_mode) {
         case AUTO_SCROLL:
             // We have to feed everything...
@@ -761,7 +765,7 @@ void Terminal::Less(int start) {
             SPRINT("Got: " << c)
             break;
         }
-        if ( ( static_cast<int>(last_line) - info.lines ) < start ) {
+        if ( more && ( static_cast<int>(last_line) - info.lines ) < start ) {
             last_line = start -1;
             FeedLines(info.lines);
         }
@@ -830,4 +834,8 @@ void Terminal::FindPrev() {
             }
         }
     }
+}
+
+void Terminal::SearchOff() {
+    searcher.Reset();
 }

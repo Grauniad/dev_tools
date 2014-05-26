@@ -330,6 +330,7 @@ public:
      bool Search(const std::string& pattern);
      void FindNext();
      void FindPrev();
+     void SearchOff();
 
 private:
     FEED_MODE        feed_mode;

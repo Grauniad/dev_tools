@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <set>
+#include "regex.h"
 
 class Searcher {
 public:
@@ -14,6 +15,11 @@ public:
     bool IsMatch(const IT& toTest);
 
     void Reset();
+
+    /*
+     * re-compute the cache between these bounds
+     */
+    bool UpdateCache();
 
     /*
      * Get results
@@ -31,6 +37,7 @@ public:
 private:
     const std::vector<std::string>&  strings;
     std::set<IT> matches;
+    RegPattern*  pattern;
 };
 
 #endif

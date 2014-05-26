@@ -1,28 +1,30 @@
 #include "search.h"
-#include "regex.h"
 #include "logger.h"
 using namespace std;
 
 Searcher::Searcher(const vector<string>& source) 
-    : strings(source)
+    : strings(source), pattern(nullptr)
 {
 }
 
-bool Searcher::Search(const std::string& pattern) {
+bool Searcher::Search(const std::string& stringPattern) {
     bool match = false;
     Reset();
+    delete pattern;
+
     try {
-        RegPattern reg(pattern);
+        pattern = new RegPattern(stringPattern);
         for ( IT it = strings.begin(); it < strings.end(); ++it) {
             const string& s = *it;
 
-            if ( reg.Search(s) ) {
+            if ( pattern->Search(s) ) {
                 matches.insert(it);
                 match = true;
             }
         }
     } catch (RegError& e ) {
         match = false;
+        pattern = nullptr;
     }
     return match;
 }
@@ -95,4 +97,21 @@ bool Searcher::IsMatch(const IT& totest) {
 
 void Searcher::Reset() {
     matches.clear();
+    delete pattern;
+    pattern = nullptr;
+}
+
+bool Searcher::UpdateCache() {
+    bool match = false;
+    matches.clear();
+    if ( pattern ) {
+        for ( IT it = strings.begin(); it < strings.end(); ++it) {
+            const string& s = *it;
+            if ( pattern->Search(s) ) {
+                matches.insert(it);
+                match = true;
+            }
+        }
+    }
+    return match;
 }
