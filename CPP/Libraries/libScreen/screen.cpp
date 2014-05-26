@@ -2,8 +2,15 @@
 #include "logger.h"
 #include <memory>
 #include <array>
+#include <iterator>
 
 using namespace std;
+/* TODO:
+ *   - Optimize upwards scrolling
+ *   - Draw lock?
+ *   - Forward Search
+ *   - Backwards Search
+ */
 
 /*
  * When running in screen mode we want to prevent cout 
@@ -84,6 +91,7 @@ Screen::Screen():
              newwin(height,width,0,0),
              {width,height,0,0});
 
+    main->StartLessScroll();
     topbar_height = 0.45 * height;
     sidebar_width = 0.45 * width;
 
@@ -177,6 +185,7 @@ void Screen::ShowTopBar() {
              newwin(topbar_height,top_width,0,0),
              {top_width,topbar_height,0});
         topbar->Boxed(true);
+        topbar->StartNoAutoScroll();
         topbar->Refresh();
 
         SLOG_FROM(LOG_VERBOSE,"Screen::ShowTopBar()",
@@ -256,6 +265,7 @@ void Screen::ShowSideBar() {
              newwin(height,sidebar_width,0,width-sidebar_width),
              {sidebar_width,height,0});
         sidebar->Boxed(true);
+        sidebar->StartNoAutoScroll();
         sidebar->Refresh();
 
         SLOG_FROM(LOG_VERBOSE,"Screen::ShowSideBar()",
@@ -401,7 +411,7 @@ void Window::PutString(int x, int y, const std::string& line) {
  ****************************************************/
 
 Terminal::Terminal(WINDOW* _win, const Window::WIN_INFO& info) 
-    : Window(_win, info), last_line(0)
+    : Window(_win, info), feed_mode(AUTO_SCROLL), last_line(0), searcher(output)
 {
 
     // Enable scrolling behaviour
@@ -414,6 +424,10 @@ Terminal::Terminal(WINDOW* _win, const Window::WIN_INFO& info)
     nonl();
 }
 
+/*****************************************************
+ *             TERMINAL - Printing
+ ****************************************************/
+
 void Terminal::PutString(const std::string& text) {
     stringstream feed(text);
 
@@ -421,6 +435,7 @@ void Terminal::PutString(const std::string& text) {
      * ncurses doesn't buffer this for us :(
      */
     size_t last = 0, next = 0;
+    int count = 0;
     for (next = text.find_first_of("\n",last);
          next != string::npos;
          next = text.find_first_of("\n",last) )
@@ -432,6 +447,7 @@ void Terminal::PutString(const std::string& text) {
 
         output.emplace_back(text.substr(last,len) + "\n");
         last = next+1;
+        ++count;
     }
     if ( last < text.length() ) {
         // More data left in string
@@ -445,6 +461,7 @@ void Terminal::PutString(const std::string& text) {
                 len = info.cols -2;
             }
             output.emplace_back(text.substr(last,len));
+            ++count;
         }
     }
 
@@ -454,56 +471,14 @@ void Terminal::PutString(const std::string& text) {
     FeedAll();
 }
 
-void Terminal::FeedAll() {
-    Window::Clear();
-    if ( output.size() < static_cast<size_t>(info.lines)) { 
-        // Have room for the full buffer
-        last_line = 0;
+std::string Terminal::GetLine(const std::string& prompt, bool storePrompt) {
+    if ( storePrompt ) {
+        PutString(prompt);
     } else {
-        // OK, only print the last n...
-        last_line = output.size() - info.lines;
+        // temorarily clear the current line...
+        wclrtoeol(win);
+        wprintw(win,prompt.c_str());
     }
-    SLOG_FROM(LOG_VERY_VERBOSE,"Terminal::FeedAll",
-           "Starting at : " << last_line << endl
-           << "lines left in buffer: " << output.size() << endl
-           << "screen height: " << info.lines );
-
-    // Feedllines will do the refresh
-    FeedLines(info.lines);
-}
-void Terminal::FeedLines(int n) {
-    if ( last_line < output.size() ) {
-        /*
-         * Check we actually have that many lines to feed
-         */
-        if ( (last_line + (size_t)n) >= output.size() ) {
-            n = output.size() - last_line - 1;
-        }
-
-        /*
-         * Feed each line...
-         */
-        for ( size_t stopLine = last_line + static_cast<size_t>(n); 
-              last_line <= stopLine; 
-              ++last_line ) 
-        {
-            const string& s = output[last_line];
-            wprintw(win,s.c_str());
-        }
-        SLOG_FROM(LOG_VERY_VERBOSE,"Terminal::Feedllines",
-               "Pushed " << n << " out of " << output.size() << " lines to terminal")
-        Refresh();
-    } else {
-        // no more lines left in the buffer...  
-        SLOG_FROM(LOG_VERY_VERBOSE,"Terminal::Feedllines", 
-              "No lines left to push!" << endl
-              << "last_line: " << last_line << endl
-              << "Buffered lines: " << output.size() )
-    }
-}
-
-std::string Terminal::GetLine(const std::string& prompt) {
-    PutString(prompt);
 
     string command = "";
     /*
@@ -520,7 +495,9 @@ std::string Terminal::GetLine(const std::string& prompt) {
         case 10: // new line
         case 13: // carraige return
             more = false;
-            PutString("\n");
+            if ( storePrompt ) {
+                PutString("\n");
+            }
             break;
         case KEY_BACKSPACE:
         case 127: // [DEL]
@@ -549,6 +526,10 @@ std::string Terminal::GetLine(const std::string& prompt) {
     return command;
 }
 
+/*****************************************************
+ *             TERMINAL - Screen Manipulation
+ ****************************************************/
+
 void Terminal::Clear () {
     output.clear();
     last_line = 0;
@@ -557,8 +538,117 @@ void Terminal::Clear () {
     Window::Clear();
 }
 
-/*
- * Currently last_line points to the next line to be printed
+void Terminal::Redraw() {
+    last_line-= info.lines +1;
+    FeedLines(info.lines);
+}
+
+void Terminal::FeedAll() {
+    int to_feed = 0;
+
+    // How many lines between the the current line 
+    // and the end of the output...
+    int linesRemaining = output.size() - last_line;
+
+    switch (feed_mode) {
+        case AUTO_SCROLL:
+            // We have to feed everything...
+            to_feed = linesRemaining;
+            break;
+        case LESS:
+            /*
+             * Each time we auto scroll, but if the input would go off the 
+             * screen we provide less functionality on that output.
+             *
+             * Since we always feed everything, linesRemaining is the number
+             * of lines added before this feed.
+             */
+            to_feed = linesRemaining;
+
+            if ( linesRemaining > info.lines ) {
+                /* Trigger less
+                 * NOTE: We feed "nothing" because Less will do the feed for us when
+                 *       the user leaves Less mode...
+                 */
+                to_feed = 0;
+                Less(last_line);
+            }
+            break;
+        case NO_AUTO_SCROLL:
+            // Only the user is allowed to change last_line...
+            if ( static_cast<int>(output.size()) < info.lines ) {
+                // enough room, just feed it
+                to_feed = linesRemaining;
+            } else {
+                // Buffer is full, just make sure everything 
+                // we can has been printed
+                if ( static_cast<int>(last_line) < info.lines ) {
+                    to_feed = info.lines - last_line;
+                }
+            }
+            break;
+        default:
+            break;
+    }
+    SLOG_FROM(LOG_VERY_VERBOSE,"Terminal::FeedAll",
+           "Starting at : " << last_line << endl
+           << "lines left in buffer: " << output.size() << endl
+           << "screen height: " << info.lines );
+
+    // Feedllines will do the refresh
+    FeedLines(to_feed);
+}
+
+void Terminal::FeedLines(int n) {
+    if ( last_line < output.size() ) {
+        /*
+         * Check we actually have that many lines to feed
+         */
+        if ( (last_line + (size_t)n) >= output.size() ) {
+            n = output.size() - last_line - 1;
+        }
+
+        /*
+         * Feed each line...
+         */
+        for ( size_t stopLine = last_line + static_cast<size_t>(n); 
+              last_line <= stopLine; 
+              ++last_line ) 
+        {
+            const string& s = output[last_line];
+            if ( searcher.IsMatch(output.begin() + last_line) ) {
+                // Do highlighting...
+                wattron(win,A_REVERSE);
+                SLOG_FROM(LOG_VERY_VERBOSE,"Terminal::Feedllines",
+                      "Reversing: " << s)
+            } else {
+                SLOG_FROM(LOG_VERY_VERBOSE,"Terminal::Feedllines",
+                      "Not Reversing: " << s)
+            }
+
+            wprintw(win,s.c_str());
+
+            // Reset the terminal colour
+            wattroff(win,A_REVERSE);
+        }
+        SLOG_FROM(LOG_VERY_VERBOSE,"Terminal::Feedllines",
+               "Pushed " << n << " out of " << output.size() << " lines to terminal")
+        Refresh();
+    } else {
+        // no more lines left in the buffer...  
+        SLOG_FROM(LOG_VERY_VERBOSE,"Terminal::Feedllines", 
+              "No lines left to push!" << endl
+              << "last_line: " << last_line << endl
+              << "Buffered lines: " << output.size() )
+    }
+}
+
+/*****************************************************
+ *             TERMINAL - Scrolling
+ ****************************************************/
+
+
+/* * Currently last_line points to the next line to be printed
  *
  * We wish to roll this back screen_size + lines:
  *   screen_size: Rolling back this much results in as printing the same again
@@ -583,20 +673,161 @@ void Terminal::ScrollUp(int lines ) {
 }
 
 void Terminal::ScrollDown(int lines ) {
-     Window::Clear();
-     if ( info.lines + lines > ((int)output.size() - info.lines)  ) {
-         // Last line, no fruther to go down...
-         last_line = output.size() -1 - info.lines;
-     } else {
-         // reset to write position
-         last_line-=info.lines+1;
-         // Now advance the write position
-         last_line+=lines;
-     }
-     SLOG_FROM(LOG_VERY_VERBOSE, "Terminal::ScrollDown",
-              "Scrolling Down, " << lines << endl
-              << "last_line is now " << last_line << endl
-              << "Lines in buffer: " << output.size()
-              << "Terminal Height: " << info.lines)
-     FeedLines(info.lines);
+    /*
+     * Scrolling down is essentially just feeding lines...
+     */
+     FeedLines(lines);
+}
+
+void Terminal::Less(int start) {
+    last_line = start -1;
+    FeedLines(info.lines);
+    bool more = true;
+    int gcount = 0;
+    bool forwardSearch = true;
+    while ( more ) {
+        int c = wgetch(win);
+        if ( c != 'g' ) {
+            gcount = 0;
+        }
+        switch ( c ) {
+        case KEY_END: // End
+        case 'G': 
+            last_line = output.size() - info.lines;
+            FeedLines(info.lines);
+            break;
+        case 'g': 
+            ++gcount;
+            if ( gcount != 2 ) {
+                break;
+            } else {
+                // FALL THROUGH TO KEY_HOME
+            }
+        case KEY_HOME:
+            last_line = start -1;
+            FeedLines(info.lines);
+            break;
+        case KEY_PPAGE: //Page up
+            ScrollUp(info.lines);
+            break;
+        case KEY_NPAGE: //Page down
+            ScrollDown(info.lines);
+            break;
+        case KEY_MOUSE:
+            // Notify the screen of queued mouse event
+            Screen::Instance().OnMouseEvent();
+            break;
+        case '/':
+            forwardSearch = true;
+            if ( Search(GetLine("/",false)) ) {
+                FindNext();
+            }
+            break;
+        case '?':
+            forwardSearch = false;
+            if ( Search(GetLine("?",false)) ) {
+                FindPrev();
+            }
+            break;
+        case 'n':
+            if ( forwardSearch ) {
+                FindNext();
+            } else {
+                FindPrev();
+            }
+            break;
+        case 'N':
+            if ( forwardSearch ) {
+                FindPrev();
+            } else {
+                FindNext();
+            }
+            break;
+        case KEY_UP:
+        case 'k':
+             if (  ( static_cast<int>(last_line) - info.lines) > start ) {
+                 ScrollUp(1);
+             }
+             break;
+        case 13:  // carraige return
+        case KEY_DOWN:
+        case 'j': 
+             ScrollDown(1);
+             break;
+        case 'q':
+            more = false;
+            break;
+        default:
+            SPRINT("Got: " << c)
+            break;
+        }
+        if ( ( static_cast<int>(last_line) - info.lines ) < start ) {
+            last_line = start -1;
+            FeedLines(info.lines);
+        }
+    }
+
+    // All Done, reset the window back to its previous state...
+    last_line = output.size() - info.lines;
+    FeedLines(info.lines);
+}
+
+/*****************************************************
+ *             TERMINAL - Searching
+ ****************************************************/
+bool Terminal::Search(const string& pattern) {
+    bool match = searcher.Search(pattern);
+    if ( match ) {
+        SLOG_FROM(LOG_VERBOSE,"Terminal::Search",
+                  "Found matches for: " << pattern)
+    } else {
+        SLOG_FROM(LOG_VERBOSE,"Terminal::Search",
+                  "Found no matches for: " << pattern)
+    }
+    return match;
+}
+
+void Terminal::FindNext() {
+    // If we don't have enough to fill the screen, we can't move
+    if ( static_cast<int>(output.size()) > info.lines ) {
+        int topOfWin = last_line - info.lines;
+        int distanceToEnd = output.size() - topOfWin;
+        // We can't scroll past the end
+        if ( distanceToEnd > info.lines ) {
+            auto it = searcher.Next(output.begin() + topOfWin + 1);
+
+            // Check there is actualyl a result
+            if ( it != searcher.NoPos() ) {
+                // last_line points to the next line which will be printed
+                // Bottom of the screen will be used for input
+                last_line = std::distance(output.cbegin(),it) -2;
+                if ( last_line < 0 ) {
+                    last_line = 0;
+                }
+                FeedLines(info.lines);
+            }
+        }
+    }
+}
+
+void Terminal::FindPrev() {
+    // If we don't have enough to fill the screen, we can't move
+    if ( static_cast<int>(output.size()) > info.lines ) {
+        int topOfWin = last_line - info.lines;
+        // Check we actually have room to go backwards
+        if ( topOfWin > 0 ) {
+            auto it = searcher.Prev(output.begin() + topOfWin);
+
+            // Check there is actualy a result
+            if ( it != searcher.NoPos() ) {
+                // last_line points to the next line which will be printed
+                // Bottom of the screen will be used for input
+                last_line = std::distance(output.cbegin(),it) -2;
+                if ( last_line < 0 ) {
+                    last_line = 0;
+                }
+                FeedLines(info.lines);
+            }
+        }
+    }
 }

@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <ncurses.h>
+#include "search.h"
 
 // A pane inside the Screen
 class Window;
@@ -253,17 +254,32 @@ protected:
  */
 class Terminal : public Window {
 public:
+
     Terminal(WINDOW* _win, const Window::WIN_INFO& info);
+
+    /*********************************
+     *          Printing
+     ********************************/
 
     /*
      * Get a line from the user...
+     *
+     *   prompt: Text to display to the user before getting the input...
+     *   storePrompt: If this is set to true, prompt is added to the output buffer,
+     *                oterwise it will be cleared away when next time the screen is
+     *                refreshed...
      */
-    std::string GetLine(const std::string& prompt);
+    std::string GetLine(const std::string& prompt,
+                        bool storePrompt = true);
 
     /*
      * Put a new line of output...
      */
     void PutString(const std::string& text);
+
+    /*********************************
+     *     Screen Manipulation
+     ********************************/
 
     /*
      * Clear down the screen
@@ -280,12 +296,46 @@ public:
      */
     void FeedAll();
 
+    void Redraw();
+
+    /*********************************
+     *          Scrolling
+     ********************************/
+
+    /*
+     * Start a less on the output, starting at line <start>
+     */
+    void Less(int start);
+
     virtual void ScrollUp(int lines);
     virtual void ScrollDown(int lines);
 
+    /* Configure the scrolling behaviour....
+     *
+     *  Defines the behaviour when the number of lines in a
+     *  string provided to print excedes the number of lines 
+     *  available to the terminal...
+     */
+    enum FEED_MODE { NO_AUTO_SCROLL,  // Stop printing when the screen is full
+                     AUTO_SCROLL,     // Print all lines, pushing old lines of the screen
+                     LESS };          // Stop printing when the screen is full and engage less mode
+    void StartAutoScroll () { feed_mode = AUTO_SCROLL;}
+    void StartNoAutoScroll () { feed_mode = NO_AUTO_SCROLL; }
+    void StartLessScroll () { feed_mode = LESS; }
+
+    /*********************************
+     *          Searching
+     ********************************/
+
+     bool Search(const std::string& pattern);
+     void FindNext();
+     void FindPrev();
+
 private:
+    FEED_MODE        feed_mode;
     std::vector<std::string> output;
-    size_t last_line;
+    size_t           last_line;
+    Searcher         searcher;
 };
 
 
