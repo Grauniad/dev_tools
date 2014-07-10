@@ -7,6 +7,10 @@ Searcher::Searcher(const vector<string>& source)
 {
 }
 
+Searcher::~Searcher() {
+    delete pattern;
+}
+
 bool Searcher::Search(const std::string& stringPattern) {
     bool match = false;
     Reset();

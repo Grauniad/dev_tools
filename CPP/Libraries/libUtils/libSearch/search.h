@@ -10,6 +10,8 @@ public:
     using IT = std::vector<std::string>::const_iterator;
     Searcher(const std::vector<std::string>& source );
 
+    virtual ~Searcher();
+
     bool Search(const std::string& pattern);
 
     bool IsMatch(const IT& toTest);
