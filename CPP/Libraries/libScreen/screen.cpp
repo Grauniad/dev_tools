@@ -660,20 +660,20 @@ void Terminal::FeedLines(int n) {
  *
  */
 void Terminal::ScrollUp(int lines ) {
-     Window::Clear();
-     if ( info.lines + lines >= (int)last_line ) {
-         // We're back at the start...
-         last_line = 0;
-     } else {
-         // Rollback to the relevant line
-         last_line-=lines + 1+info.lines;
-     }
+     
+    if ( info.lines + lines >= (int)last_line ) {
+        // We're back at the start...
+        last_line = 0;
+    } else {
+        // Rollback to the relevant line
+        last_line-=lines + 1+info.lines;
+    }
     SLOG_FROM(LOG_VERY_VERBOSE, "Terminal::ScrollUp",
-              "Scrolling up, " << lines << endl
-              << "last_line is now " << last_line << endl
-              << "Lines in buffer: " << output.size()
-              << "Terminal Height: " << info.lines)
-     FeedLines(info.lines);
+             "Scrolling up, " << lines << endl
+             << "last_line is now " << last_line << endl
+             << "Lines in buffer: " << output.size()
+             << "Terminal Height: " << info.lines)
+    FeedLines(info.lines);
 }
 
 void Terminal::ScrollDown(int lines ) {
