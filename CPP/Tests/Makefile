@@ -6,7 +6,8 @@ MAKE_DIRS= IOInterface\
 		   csv \
 		     \
 		      \
-		   
+		    \
+		   commands
 
 MODE=CPP
 
