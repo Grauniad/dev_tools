@@ -4,12 +4,14 @@
 int EmptyString(testLogger& log);
 int Numbers(testLogger& log);
 int Strings(testLogger& log);
+int InvalidOutput(testLogger& log);
 using namespace std;
 
 int main (void) {
     Test("Tokenizing a blank string...",EmptyString).RunTest();
     Test("Tokenizing a string with  numbers...",Numbers).RunTest();
     Test("Tokenizing a string with  sub strings...",Strings).RunTest();
+    Test("Tokenizing a string with  invalid output...",InvalidOutput).RunTest();
     return 0;
 }
 
@@ -117,6 +119,53 @@ int Strings(testLogger& log ) {
 
     if ( g1 != "password: let me in" ) {
         log << "Invalid get 2: " << tokens[1];
+        return 1;
+    }
+
+    return 0;
+}
+
+int InvalidOutput(testLogger& log ) {
+    Tokens tokens( "one two_point_three four");
+    int i;
+    float f;
+    string s;
+    bool reti = tokens.Get(0,i);
+    bool retf = tokens.Get(1,f);
+    bool rets = tokens.Get(2,s);
+
+    if ( reti ) {
+        log << "Get failed to report fail for int pull!";
+        return 1;
+    }
+
+    if ( retf ) {
+        log << "Get failed to report fail for float pull!";
+        return 1;
+    }
+
+    if ( !rets ) {
+        log << "Get reported error on string pull!";
+        return 1;
+    }
+
+    Tokens numbers("1 2.3 4");
+    reti = numbers.Get(0,i);
+    retf = numbers.Get(1,f);
+    rets = numbers.Get(2,s);
+
+    if ( !reti ) {
+        log << "Get reported fail for int pull!";
+        return 1;
+    }
+
+    if ( !retf ) {
+        log << "Get reported fail for float pull!";
+        return 1;
+    }
+
+    if ( !rets ) {
+        log << "Get reported error on string pull!";
         return 1;
     }
 

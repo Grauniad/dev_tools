@@ -30,9 +30,10 @@ public:
    }
 
    template<class T> 
-   void Get(size_t idx, T& out) {
+   bool Get(size_t idx, T& out) {
        std::stringstream buf((*this)[idx]);
        buf >> out;
+       return !buf.fail();
    }
 
    /*
@@ -41,8 +42,9 @@ public:
    const std::string& Get( size_t idx) {
        return (*this)[idx];
    }
-   void Get(size_t idx, std::string& out) {
+   bool Get(size_t idx, std::string& out) {
        out = (*this)[idx];
+       return true;
    }
 
    using std::vector<std::string>::begin;
