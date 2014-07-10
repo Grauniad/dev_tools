@@ -3,7 +3,7 @@
 
 #include <tuple>
 #include <string>
-#include <sstream>
+#include "tokenizor.h"
 
 namespace TupleForEach {
 
@@ -13,11 +13,10 @@ namespace TupleForEach {
     template<size_t N, class...Tn> 
     class TupleForEach {
     public:
-        static int Loop(std::stringstream& input, std::tuple<Tn...>& data) {
+        static int Loop(Tokens& input, std::tuple<Tn...>& data) {
             int ret = TupleForEach<N-1,Tn...>::Loop(input,data);
             if ( ret == 1 ) {
-                input >> std::get<N>(data);
-                ret = !input.fail();
+                ret = input.Get(N,std::get<N>(data));
             }
             return ret;
         }
@@ -26,14 +25,13 @@ namespace TupleForEach {
     template<class...Tn> 
     class TupleForEach<0,Tn...> {
     public:
-        static int Loop(std::stringstream& input, std::tuple<Tn...>& data) {
-            input >> std::get<0>(data);
-            return !input.fail();
+        static int Loop(Tokens& input, std::tuple<Tn...>& data) {
+            return input.Get(0,std::get<0>(data));
         }
     };
 
     template<class...Tn> 
-    int PopulateTuple(std::stringstream& input, std::tuple<Tn...>& data) {
+    int PopulateTuple(Tokens& input, std::tuple<Tn...>& data) {
         return TupleForEach<sizeof...(Tn)-1,Tn...>::Loop(input,data);
     }
 }

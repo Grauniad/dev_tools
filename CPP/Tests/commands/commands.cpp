@@ -44,16 +44,15 @@ int main(void) {
     Test("Constructing a wrapper around a an int function...",Function_OneArg).RunTest();
     Test("Adding a no-args function to commands...",Commands_NoArgs).RunTest();
     Test("Adding an int function to commands...",Commands_OneArg).RunTest();
-    // Known failure - fixed once tokenizor is written...
-    //Test("Adding an strings function to commands...",Commands_StringArgs).RunTest();
+    Test("Adding an strings function to commands...",Commands_StringArgs).RunTest();
     return 0;
 }
 
 int Function_NoArgs(testLogger& log) {
     Function<> f(One);
     stringstream input;
-    if ( f.Execute(input) != 1 ) {
-        log << "One did not return 1! " << f.Execute(input);
+    if ( f.Execute(input.str()) != 1 ) {
+        log << "One did not return 1! " << f.Execute(input.str());
         return 1;
     }
     return 0;
@@ -63,7 +62,7 @@ int Function_OneArg(testLogger& log) {
     Function<int> f(Double);
     stringstream input;
     input << 2;
-    int result = f.Execute(input);
+    int result = f.Execute(input.str());
     if (  result != 4 ) {
         log << "Double 2 was not 4! " << result;
         return 1;
@@ -117,7 +116,7 @@ int Commands_StringArgs(testLogger& log ) {
     dispatcher.AddCommand("connect",Basic_Authenticate);
     dispatcher.AddCommand("login",Authenticate);
     int ret = dispatcher.Execute("connect Torajiro Shusaku");
-    int ret2 = dispatcher.Execute("login 'Kuwabara Torajiro' Shusaku");
+    int ret2 = dispatcher.Execute("login \"Kuwabara Torajiro\" Shusaku");
 
     if ( ret != 0 ) {
         log << " Failed to connect: " << ret;

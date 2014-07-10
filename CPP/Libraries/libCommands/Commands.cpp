@@ -2,17 +2,12 @@
 
 using namespace std;
 
-int Func::Execute(const std::string& args) {
-    stringstream input(args);
-    return Execute(input);
-}
-
 Function<>::Function(int (*fptr)() ) 
     : proc (fptr)
 {
 }
 
-int Function<>::Execute(std::stringstream& input ) {
+int Function<>::Execute(const std::string& input ) {
     return proc();
 }
 
@@ -43,9 +38,10 @@ int Commands::Execute(const std::string& command) {
     string procName;
     stringstream input(command);
     input >> procName;
+    string args = input.str().substr(input.str().find(procName) + procName.length());
     auto it = procs.find(procName);
     if ( it != procs.end() ) {
-        ret = it->second->Execute(input);
+        ret = it->second->Execute(args);
     } else {
         throw "NOT YET IMPLEMENTED!";
     }

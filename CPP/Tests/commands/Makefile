@@ -1,5 +1,6 @@
 LINKED_LIBS= libCommands \
              libMeta \
+             libString \
              libIOInterface\
              libUtils\
 			 libTest

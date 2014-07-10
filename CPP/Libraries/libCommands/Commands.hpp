@@ -5,7 +5,7 @@
 #include <type_traits>
 #include <tuple>
 
-#include "populate_tuple_from_stream.hpp"
+#include "populate_tuple_from_tokens.hpp"
 #include "call_from_tupple.hpp"
 
 template<class ...T>
@@ -15,10 +15,11 @@ Function<T...>::Function(int (*fptr)(T...))
 }
 
 template<class ...T>
-int Function<T...>::Execute(std::stringstream& input ) {
+int Function<T...>::Execute(const std::string& input ) {
+    Tokens tokens(input);
     std::tuple<T...> args;
     int ret = 0;
-    ret = TupleForEach::PopulateTuple<T...>(input,args);
+    ret = TupleForEach::PopulateTuple<T...>(tokens,args);
 
     if ( ret ) {
         ret = CallFromTuple::CallFromTuple(&proc,args); 

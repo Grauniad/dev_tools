@@ -1,12 +1,12 @@
 MAKE_DIRS= libIOInterface\
+		   libString \
 		   libUtils \
 		   libTest \
 		     \
 		      \
 		   libScreen \
 		   libMeta \
-		   libCommands \
-		   libString
+		   libCommands
 
 MODE=CPP
 

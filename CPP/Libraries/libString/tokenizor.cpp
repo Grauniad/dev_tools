@@ -10,14 +10,15 @@ Tokens::Tokens(const string& input)
     : empty("")
 {
     string buf(input);
+    string working(input);
     boost::algorithm::trim(buf);
 
     Tokeniser tokeniser(buf,Separator('\\', ' '));
     for ( auto it = tokeniser.begin(); it!=tokeniser.end(); ++it) {
         // Skip blank values...
-        buf = *it;
-        boost::algorithm::trim(buf);
-        if ( buf != "" ) {
+        working = *it;
+        boost::algorithm::trim(working);
+        if ( working != "" ) {
             push_back(*it);
         }
     }

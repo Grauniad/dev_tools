@@ -3,13 +3,11 @@
 #include <string>
 #include <functional>
 #include <map>
-#include <sstream>
 
 
 class Func {
 public:
-   int Execute (const std::string& args);
-   virtual int Execute(std::stringstream& args) = 0;
+   virtual int Execute(const std::string& args) = 0;
 
    virtual ~Func() {}
 
@@ -25,7 +23,7 @@ public:
     // C'tors
     Function ( int (*fptr)(T...) );
 
-    virtual int Execute(std::stringstream& args);
+    virtual int Execute(const std::string& args);
 private:
     std::function<int(T...)> proc;
 };
@@ -35,7 +33,7 @@ class Function<>: public Func {
 public:
     Function (int (*fptr)() );
 
-    virtual int Execute(std::stringstream& args);
+    virtual int Execute(const std::string& args);
 private:
     std::function<int()> proc;
 };
