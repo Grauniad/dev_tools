@@ -4,14 +4,16 @@
 int EmptyString(testLogger& log);
 int Numbers(testLogger& log);
 int Strings(testLogger& log);
+int CustomSep(testLogger& log);
 int InvalidOutput(testLogger& log);
 using namespace std;
 
 int main (void) {
     Test("Tokenizing a blank string...",EmptyString).RunTest();
-    Test("Tokenizing a string with  numbers...",Numbers).RunTest();
-    Test("Tokenizing a string with  sub strings...",Strings).RunTest();
-    Test("Tokenizing a string with  invalid output...",InvalidOutput).RunTest();
+    Test("Tokenizing a string with numbers...",Numbers).RunTest();
+    Test("Tokenizing a string with sub strings...",Strings).RunTest();
+    Test("Tokenizing a string with invalid output...",InvalidOutput).RunTest();
+    Test("Tokenizing a string with a custom separator...",CustomSep).RunTest();
     return 0;
 }
 
@@ -169,5 +171,25 @@ int InvalidOutput(testLogger& log ) {
         return 1;
     }
 
+    return 0;
+}
+
+int CustomSep(testLogger& log ) {
+    Tokens tokens("   ;\"userName: Grauniad\";   ;\"password: let me in\";",';');
+
+    if ( tokens.size() != 2 ) {
+        log << "Wrong # of tokens!: " << tokens.size();
+        return 1;
+    }
+
+    if (tokens[0] != "userName: Grauniad" ) {
+        log << "Invalid token 1: " << tokens[0];
+        return 1;
+    }
+
+    if (tokens[1] != "password: let me in" ) {
+        log << "Invalid token 2: " << tokens[1];
+        return 1;
+    }
     return 0;
 }

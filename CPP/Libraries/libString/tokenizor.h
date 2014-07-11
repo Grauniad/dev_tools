@@ -11,7 +11,7 @@ public:
     *
     * Break up the string into tokens
     */
-   Tokens(const std::string& input);
+   Tokens(const std::string& input, char sep = ' ');
 
    /*
     * Access without converstion 
