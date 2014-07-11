@@ -49,9 +49,10 @@ public:
 
     void AddCommand( const std::string& name, int (*fptr)() );
 
-    int Execute(const std::string& command);
+    int Execute(const std::string& input);
 
 private:
+    int ExecuteSingleCommand(const std::string& command);
     std::map<std::string,Func*> procs;
 };
 
