@@ -5,9 +5,19 @@
 using namespace std;
 
 typedef boost::escaped_list_separator<char>  Separator;
+typedef boost::char_separator<char>  Splitter;
 typedef boost::tokenizer<Separator> Tokeniser;
+typedef boost::tokenizer<Splitter> Divider;
+
+const std::string& StringParts::operator[](size_t idx) {
+    if ( idx >= size() ) {
+        return empty;
+    } else {
+        return vector<string>::operator[](idx);
+    }
+}
+
 Tokens::Tokens(const string& input, char sep)
-    : empty("")
 {
     string buf(input);
     string working(input);
@@ -24,10 +34,15 @@ Tokens::Tokens(const string& input, char sep)
     }
 }
 
-const std::string& Tokens::operator[](size_t idx) {
-    if ( idx >= size() ) {
-        return empty;
-    } else {
-        return vector<string>::operator[](idx);
+Parts::Parts(const string& input, const string& sep_chars)
+{
+    string buf(input);
+    string working(input);
+    boost::algorithm::trim(buf);
+
+    Divider tokeniser(buf,Splitter(sep_chars.c_str()));
+    for ( auto it = tokeniser.begin(); it!=tokeniser.end(); ++it) {
+        push_back(*it);
     }
 }
+

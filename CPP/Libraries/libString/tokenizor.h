@@ -5,14 +5,9 @@
 #include <vector>
 #include <sstream>
 
-class Tokens: private std::vector<std::string> {
+class StringParts: private std::vector<std::string>  {
 public:
-   /* C'tor
-    *
-    * Break up the string into tokens
-    */
-   Tokens(const std::string& input, char sep = ' ');
-
+    StringParts() : empty("") {}
    /*
     * Access without converstion 
     */
@@ -52,7 +47,28 @@ public:
    using std::vector<std::string>::end;
    using std::vector<std::string>::cend;
    using std::vector<std::string>::size;
+protected:
+   using std::vector<std::string>::push_back;
 private:
    std::string empty;
+};
+
+class Parts: public StringParts {
+public:
+   /* C'tor
+    *
+    * Break up the string by 
+    */
+   Parts(const std::string& input, 
+          const std::string& sep_chars = " ");
+};
+
+class Tokens: public StringParts {
+public:
+   /* C'tor
+    *
+    * Break up the string into tokens
+    */
+   Tokens(const std::string& input, char sep = ' ');
 };
 #endif

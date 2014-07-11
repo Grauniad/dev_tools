@@ -6,6 +6,7 @@ int Numbers(testLogger& log);
 int Strings(testLogger& log);
 int CustomSep(testLogger& log);
 int InvalidOutput(testLogger& log);
+int StringToParts(testLogger& log);
 using namespace std;
 
 int main (void) {
@@ -14,6 +15,7 @@ int main (void) {
     Test("Tokenizing a string with sub strings...",Strings).RunTest();
     Test("Tokenizing a string with invalid output...",InvalidOutput).RunTest();
     Test("Tokenizing a string with a custom separator...",CustomSep).RunTest();
+    Test("Splitting a string into parts...",StringToParts).RunTest();
     return 0;
 }
 
@@ -189,6 +191,27 @@ int CustomSep(testLogger& log ) {
 
     if (tokens[1] != "password: let me in" ) {
         log << "Invalid token 2: " << tokens[1];
+        return 1;
+    }
+    return 0;
+}
+
+int StringToParts(testLogger& log) {
+    Parts parts("string 1; string 2 \"has a sub string\"|string 3", ";|");
+    if ( parts.size() != 3 ) {
+        log << " Parts did not split into 3!: " << parts.size();
+        return 1;
+    }
+    if ( parts[0] != "string 1" ) {
+        log << " Invalid string 1: " << parts [0];
+        return 1;
+    }
+    if ( parts[1] != " string 2 \"has a sub string\"" ) {
+        log << " Invalid string 2: " << parts [1];
+        return 1;
+    }
+    if ( parts[2] != "string 3" ) {
+        log << " Invalid string 3: " << parts [2];
         return 1;
     }
     return 0;
