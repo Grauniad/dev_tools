@@ -15,7 +15,7 @@ using namespace std;
 class ArgToken {
 public:
    ArgToken(const std::string& input)
-     : matched(false), n(-1), processed(""), data(input)
+     : matched(false), wild(false), quoted(false), n(-1), processed(""), data(input)
    {
        Next();
    }
@@ -30,6 +30,8 @@ public:
        if ( matched) {
            stringstream s(argPattern.Group(data,1));
            s >> n;
+           wild = argPattern.Group(data,2) != "";
+           quoted = argPattern.Group(data,2) == "@";
        } else {
            n = -1;
        }
@@ -63,8 +65,31 @@ public:
        return n;
    }
 
-   void Replace(const std::string& arg) {
-       processed += arg;
+   bool IsWildCard() {
+       return wild;
+   }
+
+   bool IsQuote() {
+       return quoted;
+   }
+
+   void Replace(const Tokens& args) {
+       if ( !wild ) {
+           processed += args[ArgNumber()-1];
+       } else {
+           for (size_t i = ArgNumber()-1; i< args.size(); ++i) {
+               if ( i != static_cast<size_t>(ArgNumber()) -1 ) {
+                   processed += " ";
+               }
+               if ( quoted) {
+                   processed += "\"";
+               }
+               processed += args[i];
+               if ( quoted) {
+                   processed += "\"";
+               }
+           }
+       }
        token = "";
    }
 
@@ -74,13 +99,15 @@ public:
 private:
    static RegPattern argPattern;
    bool matched;
+   bool wild;
+   bool quoted;
    int n;
    string processed;
    string data;
    string token;
 };
 
-RegPattern ArgToken::argPattern("\\$\\{([1-9][0-9]*)\\}");
+RegPattern ArgToken::argPattern("\\$\\{([1-9][0-9]*)([*@]?)\\}");
 
 std::string StringUtils::Substitute(
                 const std::string& skeleton, 
@@ -89,7 +116,7 @@ std::string StringUtils::Substitute(
     Tokens argTokens(input);
     ArgToken arg(skeleton);
     for ( ; arg.Matched(); arg.Next() ) {
-        arg.Replace(argTokens[arg.ArgNumber()-1]);
+        arg.Replace(argTokens);
     }
     return arg.Result();
 }

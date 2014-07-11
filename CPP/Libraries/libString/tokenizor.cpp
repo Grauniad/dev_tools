@@ -9,7 +9,7 @@ typedef boost::char_separator<char>  Splitter;
 typedef boost::tokenizer<Separator> Tokeniser;
 typedef boost::tokenizer<Splitter> Divider;
 
-const std::string& StringParts::operator[](size_t idx) {
+const std::string& StringParts::operator[](size_t idx) const {
     if ( idx >= size() ) {
         return empty;
     } else {

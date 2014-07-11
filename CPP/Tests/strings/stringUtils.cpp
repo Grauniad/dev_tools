@@ -6,11 +6,13 @@ using namespace std;
 int NoSubstitute(testLogger& log);
 int SingleArgSubstitutions(testLogger& log);
 int MultiArgSubs(testLogger& log);
+int QuotedArgSubs(testLogger& log);
 
 int main (void) {
     Test("Applying a substitution with no match...",NoSubstitute).RunTest();
     Test("Applying a substitution with single args...",SingleArgSubstitutions).RunTest();
     Test("Applying a substitution with multiple args...",MultiArgSubs).RunTest();
+    Test("Applying a substitution with quoted multiple args...",QuotedArgSubs).RunTest();
     return 0;
 }
 
@@ -45,6 +47,27 @@ int SingleArgSubstitutions(testLogger& log) {
 
 
 int MultiArgSubs(testLogger& log) {
+    string input = "pushd ${1}; ${2*}; popd";
+    string result = StringUtils::Substitute(input , "ROOT sl 20 \"^Node::Node(const std\"");
+    string expected = "pushd ROOT; sl 20 ^Node::Node(const std; popd"; 
+    if ( result != expected ) {
+        log << " Bad substs: >" << result << "<" << endl;
+        log << " Execpted:   >" << expected << "<" << endl;
+        return 1;
+    }
+    // Not yet implemented...
+    return 0;
+}
+
+int QuotedArgSubs(testLogger& log) {
+    string input = "pushd \"${1}\"; ${2@}; popd";
+    string result = StringUtils::Substitute(input , "ROOT sl 20 \"^Node::Node(const std\"");
+    string expected = "pushd \"ROOT\"; \"sl\" \"20\" \"^Node::Node(const std\"; popd"; 
+    if ( result != expected ) {
+        log << " Bad substs: >" << result << "<" << endl;
+        log << " Execpted:   >" << expected << "<" << endl;
+        return 1;
+    }
     // Not yet implemented...
     return 0;
 }

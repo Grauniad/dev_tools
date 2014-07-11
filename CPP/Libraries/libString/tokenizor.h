@@ -11,7 +11,7 @@ public:
    /*
     * Access without converstion 
     */
-   const std::string& operator[](size_t idx);
+   const std::string& operator[](size_t idx) const;
 
    /*
     * Access with type conversion
