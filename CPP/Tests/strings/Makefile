@@ -3,7 +3,7 @@ LINKED_LIBS= libString\
              libUtils\
 			 libTest
 
-BUILD_TIME_TESTS=tokens
+BUILD_TIME_TESTS=tokens stringUtils
 CPP_TAGS_FILE=dev_tools_test_strings-c++.tags
 MODE=CPP
 

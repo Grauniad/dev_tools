@@ -30,6 +30,14 @@ public:
     ~RegPattern();
     
     bool Search(const std::string& haystack) const;
+
+    std::string Replace(const std::string& haystack, 
+                 const std::string& newNeedle) const;
+
+
+
+    // Returns the nth capture
+    std::string Group(const std::string& haystack, size_t n) const;
 private:
     void* pattern;
     

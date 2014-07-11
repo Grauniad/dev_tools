@@ -7,7 +7,9 @@ MAKE_DIRS= IOInterface\
 		     \
 		      \
 		    \
-		   commands
+		   commands \
+		   regex \
+		   strings 
 
 MODE=CPP
 
