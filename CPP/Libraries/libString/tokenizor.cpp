@@ -1,10 +1,10 @@
 #include "tokenizor.h"
-#include<boost/tokenizer.hpp>
+#include<boost/tokenizer2.hpp>
 #include <boost/algorithm/string/trim.hpp>
 
 using namespace std;
 
-typedef boost::escaped_list_separator<char>  Separator;
+typedef boost::escaped_list_separator2<char>  Separator;
 typedef boost::char_separator<char>  Splitter;
 typedef boost::tokenizer<Separator> Tokeniser;
 typedef boost::tokenizer<Splitter> Divider;

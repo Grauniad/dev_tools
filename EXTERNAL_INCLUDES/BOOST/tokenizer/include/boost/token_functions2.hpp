@@ -76,7 +76,7 @@ namespace std{
 
 namespace boost{
   //===========================================================================
-  // The escaped_list_separator class. Which is a model of TokenizerFunction
+  // The escaped_list_separator2 class. Which is a model of TokenizerFunction
   // An escaped list is a super-set of what is commonly known as a comma
   // separated value (csv) list.It is separated into fields by a comma or
   // other character. If the delimiting character is inside quotes, then it is
@@ -94,7 +94,7 @@ namespace boost{
 // MSVC does not like the following typename
   template <class Char,
     class Traits = BOOST_DEDUCED_TYPENAME std::basic_string<Char>::traits_type >
-  class escaped_list_separator {
+  class escaped_list_separator2 {
 
   private:
     typedef std::basic_string<Char,Traits> string_type;
@@ -149,13 +149,13 @@ namespace boost{
 
     public:
 
-    explicit escaped_list_separator(Char  e = '\\',
+    explicit escaped_list_separator2(Char  e = '\\',
                                     Char c = ',',
                                     Char  q = '\"',
                                     bool keepQuotes = false)
       : escape_(1,e), c_(1,c), quote_(1,q), last_(false), keepQuotes_(keepQuotes) { }
 
-    escaped_list_separator(string_type e, string_type c, 
+    escaped_list_separator2(string_type e, string_type c, 
                                           string_type q, 
                                           bool keepQuotes = false)
       : escape_(e), c_(c), quote_(q), last_(false), keepQuotes_(keepQuotes) { }

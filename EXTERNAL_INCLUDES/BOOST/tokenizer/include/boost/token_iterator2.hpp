@@ -21,7 +21,7 @@
 #include<boost/assert.hpp>
 #include<boost/iterator/iterator_adaptor.hpp>
 #include<boost/iterator/detail/minimum_category.hpp>
-#include<boost/token_functions.hpp>
+#include<boost/token_functions2.hpp>
 #include<utility>
 
 namespace boost
