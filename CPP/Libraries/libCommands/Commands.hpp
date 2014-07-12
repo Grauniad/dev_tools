@@ -14,6 +14,12 @@ Function<T...>::Function(int (*fptr)(T...))
 }
 
 template<class ...T>
+Function<T...>::Function(const std::function<int(T...)>& f)
+    : proc (f)
+{
+}
+
+template<class ...T>
 int Function<T...>::Execute(const std::string& input ) {
     Tokens tokens(input);
     std::tuple<T...> args;
@@ -26,6 +32,20 @@ int Function<T...>::Execute(const std::string& input ) {
         throw ExecutionError("Failed to parse arguments");
     }
     return ret;
+}
+
+template<class ...T>
+void Commands::AddCommand(const std::string& name, const std::function<int(T...)>& f) {
+
+    auto it = procs.find(name);
+    if ( it != procs.end() ) {
+        // Already exists - update the pointer
+        delete it->second;
+        it->second = new Function<T...>(f);
+    } else {
+        // New function, create the map:
+        procs.emplace(name, new Function<T...>(f));
+    }
 }
 
 template<class ...T>

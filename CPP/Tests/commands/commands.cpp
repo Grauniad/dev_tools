@@ -13,6 +13,7 @@ int MultiCalls(testLogger& log);
 int CheckingAliases(testLogger& log);
 int ExpandingAliases(testLogger& log);
 int CommandAliases(testLogger& log);
+int CommandAliasesWithStdFunction(testLogger& log);
 
 int main(void) {
     Test("Constructing a wrapper around a no args function...",Function_NoArgs).RunTest();
@@ -24,6 +25,7 @@ int main(void) {
     Test("Adding and checking aliases...",CheckingAliases).RunTest();
     Test("Adding and using aliases...",ExpandingAliases).RunTest();
     Test("Defining and using aliases as commands...",CommandAliases).RunTest();
+    Test("Using std::function rather than pointers...",CommandAliasesWithStdFunction).RunTest();
     return 0;
 }
 
@@ -240,6 +242,30 @@ int CommandAliases(testLogger& log) {
     dispatcher.AddCommand("set",Thing::Set);
     dispatcher.AddCommand("get",Thing::Get);
     dispatcher.AddCommand("reset",Thing::Reset);
+    dispatcher.Execute("alias \"double\" \"${1*}; ${1@}\"");
+    dispatcher.Execute("reset");
+    dispatcher.Execute("double set 25");
+
+    if ( Thing::Count() != 2 ) {
+        log << "Invalid call count: " << Thing::Count();
+        return 1;
+    }
+
+    if ( dispatcher.Execute("get") != 25 ) {
+        log << "Invalid value: " << dispatcher.Execute("get");
+        return 1;
+    }
+    return 0;
+}
+
+int CommandAliasesWithStdFunction(testLogger& log) {
+    std::function<int(int)> set(Thing::Set);
+    std::function<int()> get(Thing::Get);
+    std::function<int()> reset(Thing::Reset);
+    Commands dispatcher;
+    dispatcher.AddCommand("set",set);
+    dispatcher.AddCommand("get",get);
+    dispatcher.AddCommand("reset",reset);
     dispatcher.Execute("alias \"double\" \"${1*}; ${1@}\"");
     dispatcher.Execute("reset");
     dispatcher.Execute("double set 25");

@@ -10,6 +10,11 @@ Function<>::Function(int (*fptr)() )
 {
 }
 
+Function<>::Function(const function<int()>& f)
+    : proc (f)
+{
+}
+
 int Function<>::Execute(const std::string& input ) {
     return proc();
 }
@@ -43,8 +48,7 @@ std::string Aliases::Expand(const std::string& name,
     }
 }
 
-void Commands::AddCommand(const std::string& name, int (*fptr)() ) {
-
+void Commands::AddCommand(const std::string& name, int(*fptr)()) {
     auto it = procs.find(name);
     if ( it != procs.end() ) {
         // Already exists - update the pointer
@@ -53,6 +57,18 @@ void Commands::AddCommand(const std::string& name, int (*fptr)() ) {
     } else {
         // New function, create the map:
         procs.emplace(name, new Function<>(fptr));
+    }
+}
+
+void Commands::AddCommand(const std::string& name, const std::function<int()>& f) {
+    auto it = procs.find(name);
+    if ( it != procs.end() ) {
+        // Already exists - update the pointer
+        delete it->second;
+        it->second = new Function<>(f);
+    } else {
+        // New function, create the map:
+        procs.emplace(name, new Function<>(f));
     }
 }
 

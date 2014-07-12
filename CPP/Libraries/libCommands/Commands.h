@@ -24,6 +24,7 @@ class Function: public Func {
 public:
     // C'tors
     Function ( int (*fptr)(T...) );
+    Function (const std::function<int(T...)>& f);
 
     virtual int Execute(const std::string& args);
 private:
@@ -34,6 +35,7 @@ template <>
 class Function<>: public Func {
 public:
     Function (int (*fptr)() );
+    Function (const std::function<int()>& f);
 
     virtual int Execute(const std::string& args);
 private:
@@ -65,8 +67,11 @@ public:
 
     template<class ...T>
     void AddCommand( const std::string& name, int (*fptr)(T... args ) );
+    template<class ...T>
+    void AddCommand( const std::string& name, const std::function<int(T...)>& f);
 
-    void AddCommand( const std::string& name, int (*fptr)() );
+    void AddCommand( const std::string& name, const std::function<int()>& f);
+    void AddCommand(const std::string& name, int(*fptr)());
 
     /* 
      * Entry point for handling a command line from the user.
