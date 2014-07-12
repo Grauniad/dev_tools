@@ -1,6 +1,6 @@
 MAKE_DIRS= libIOInterface\
-		   libString \
 		   libUtils \
+		   libString \
 		   libTest \
 		     \
 		      \

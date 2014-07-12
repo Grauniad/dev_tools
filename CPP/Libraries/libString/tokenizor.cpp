@@ -17,13 +17,18 @@ const std::string& StringParts::operator[](size_t idx) const {
     }
 }
 
-Tokens::Tokens(const string& input, char sep)
+Tokens::Tokens(const string& input, char sep, 
+                                    bool keep_quote)
 {
     string buf(input);
     string working(input);
     boost::algorithm::trim(buf);
 
-    Tokeniser tokeniser(buf,Separator('\\', sep));
+    Tokeniser tokeniser(buf,
+                        Separator('\\', 
+                        sep,
+                        '"',
+                        keep_quote));
     for ( auto it = tokeniser.begin(); it!=tokeniser.end(); ++it) {
         // Skip blank values...
         working = *it;

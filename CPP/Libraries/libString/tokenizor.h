@@ -69,6 +69,8 @@ public:
     *
     * Break up the string into tokens
     */
-   Tokens(const std::string& input, char sep = ' ');
+   Tokens(const std::string& input, 
+          char sep = ' ',
+          bool keep_quote = false);
 };
 #endif

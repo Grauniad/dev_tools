@@ -10,6 +10,9 @@ int Commands_NoArgs(testLogger& log);
 int Commands_OneArg(testLogger& log);
 int Commands_StringArgs(testLogger& log);
 int MultiCalls(testLogger& log);
+int CheckingAliases(testLogger& log);
+int ExpandingAliases(testLogger& log);
+int CommandAliases(testLogger& log);
 
 int main(void) {
     Test("Constructing a wrapper around a no args function...",Function_NoArgs).RunTest();
@@ -18,6 +21,9 @@ int main(void) {
     Test("Adding an int function to commands...",Commands_OneArg).RunTest();
     Test("Adding an strings function to commands...",Commands_StringArgs).RunTest();
     Test("Running multiple commands...",MultiCalls).RunTest();
+    Test("Adding and checking aliases...",CheckingAliases).RunTest();
+    Test("Adding and using aliases...",ExpandingAliases).RunTest();
+    Test("Defining and using aliases as commands...",CommandAliases).RunTest();
     return 0;
 }
 
@@ -52,12 +58,16 @@ int Authenticate ( string user, string password) {
 
 class Thing {
 public: 
-   static int Set(int newVal) { return val = newVal; }
+   static int Set(int newVal) { ++sets; return val = newVal; }
    static int Get() { return val; }
+   static int Reset () { return sets = 0; }
+   static int Count() { return sets; }
 private:
    static int val;
+   static int sets;
 };
 int Thing::val = 0;
+int Thing::sets = 0;
 
 
 int Function_NoArgs(testLogger& log) {
@@ -171,5 +181,77 @@ int MultiCalls(testLogger& log) {
         return 1;
     }
 
+    return 0;
+}
+
+int CheckingAliases(testLogger& log) {
+    Aliases aliasTable;
+    aliasTable.AddAlias("root","pushd ROOT; ${1@}; popd");
+    aliasTable.AddAlias("..","cd ..");
+    if ( !aliasTable.IsAlias("root") ) {
+        log << "Failed to find root in alias table!";
+        return 1;
+    }
+
+    if ( !aliasTable.IsAlias("..") ) {
+        log << "Failed to find .. in alias table!";
+        return 1;
+    }
+
+    if ( aliasTable.IsAlias(".") ) {
+        log << "Found . in alias table!";
+        return 1;
+    }
+    return 0;
+}
+
+
+int ExpandingAliases(testLogger& log) {
+    Aliases aliasTable;
+    aliasTable.AddAlias("root","pushd ROOT; ${1@}; popd");
+    aliasTable.AddAlias("..","cd ..");
+    aliasTable.AddAlias("twice","${1*}; ${1@}");
+    string res1 = aliasTable.Expand("..","");
+    string res2 = aliasTable.Expand("root","ls 20");
+    string res3 = aliasTable.Expand("root","sl \"Node::Node(const std\"");
+    string res4 = aliasTable.Expand("twice","echo hello world");
+    if ( res1 != "cd .." ) {
+        log << " Failed to expand ..: " << res1;
+        return 1;
+    }
+    if ( res2 != "pushd ROOT; \"ls\" \"20\"; popd" ) {
+        log << " Failed to expand ls 20: " << res2;
+        return 1;
+    }
+    if ( res3 != "pushd ROOT; \"sl\" \"Node::Node(const std\"; popd" ) {
+        log << " Failed to expand sl command: " << res3;
+        return 1;
+    }
+    if ( res4 != "echo hello world; \"echo\" \"hello\" \"world\"" ) {
+        log << " Failed to expand twice command: " << res4;
+        return 1;
+    }
+
+    return 0;
+}
+
+int CommandAliases(testLogger& log) {
+    Commands dispatcher;
+    dispatcher.AddCommand("set",Thing::Set);
+    dispatcher.AddCommand("get",Thing::Get);
+    dispatcher.AddCommand("reset",Thing::Reset);
+    dispatcher.Execute("alias \"double\" \"${1*}; ${1@}\"");
+    dispatcher.Execute("reset");
+    dispatcher.Execute("double set 25");
+
+    if ( Thing::Count() != 2 ) {
+        log << "Invalid call count: " << Thing::Count();
+        return 1;
+    }
+
+    if ( dispatcher.Execute("get") != 25 ) {
+        log << "Invalid value: " << dispatcher.Execute("get");
+        return 1;
+    }
     return 0;
 }

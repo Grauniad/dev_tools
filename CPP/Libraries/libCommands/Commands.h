@@ -4,6 +4,8 @@
 #include <functional>
 #include <map>
 
+class Tokens;
+
 
 class Func {
 public:
@@ -38,6 +40,23 @@ private:
     std::function<int()> proc;
 };
 
+class Aliases {
+public:
+    Aliases() = default;
+
+    void AddAlias(const std::string& name, 
+                  const std::string& skeleton);
+
+    std::string Expand(const std::string& name, 
+                       const std::string& args);
+    bool IsAlias(const std::string& name);
+private:
+    std::map<std::string,std::string> aliases;
+};
+
+/*
+ * Map command strings to function calls
+ */
 class Commands {
 public: 
     Commands();
@@ -49,11 +68,28 @@ public:
 
     void AddCommand( const std::string& name, int (*fptr)() );
 
+    /* 
+     * Entry point for handling a command line from the user.
+     *
+     * splits up the string into individual commands and then forwards to 
+     * ExecuteSingleCommand
+     */ 
     int Execute(const std::string& input);
 
 private:
+
+    /*
+     *
+     */
     int ExecuteSingleCommand(const std::string& command);
+
+    /*
+     * Handler to install a new alias, triggered by an "alias" command given to Exxecute
+     */
+    int ExecuteAliasCommand(const Tokens& args);
+
     std::map<std::string,Func*> procs;
+    Aliases aliasTable;
 };
 
 #include "Commands.hpp"
