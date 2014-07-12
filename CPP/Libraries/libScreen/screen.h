@@ -4,6 +4,7 @@
 #include <vector>
 #include <ncurses.h>
 #include "search.h"
+#include "outputTerminal.h"
 
 // A pane inside the Screen
 class Window;
@@ -252,7 +253,7 @@ protected:
 /*
  * Enhance Window with terminal based actions
  */
-class Terminal : public Window {
+class Terminal : public Window, public OutputTerminal {
 public:
 
     Terminal(WINDOW* _win, const Window::WIN_INFO& info);
