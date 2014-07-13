@@ -2,6 +2,7 @@
 #include <cstring>
 
 #include <libgen.h>
+#include <sys/stat.h>
 
 using namespace std;
 
@@ -31,4 +32,14 @@ string OS::Dirname(const string& path) {
 
     delete[] data;
     return directory;
+}
+
+bool OS::Exists(const std::string& filename)
+{
+    struct stat buf;
+    if (stat(filename.c_str(), &buf) != -1)
+    {
+        return true;
+    }
+    return false;
 }

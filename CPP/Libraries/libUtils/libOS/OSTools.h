@@ -8,6 +8,8 @@ namespace OS {
 
     std::string Basename(const std::string& path);
     std::string Dirname(const std::string& path);
+
+    bool Exists(const std::string& path);
 };
 
 #endif
