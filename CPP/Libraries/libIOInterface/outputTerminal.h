@@ -12,6 +12,22 @@
 class OutputTerminal{
 public:
     virtual void PutString(const std::string& line) = 0;
+
+    /*
+     * Get a line from the user...
+     *
+     *   prompt: Text to display to the user before getting the input...
+     *   storePrompt: If this is set to true, prompt is added to the output buffer,
+     *                oterwise it will be cleared away when next time the screen is
+     *                refreshed...
+     */
+    virtual std::string GetLine(const std::string& prompt, 
+                                bool storePrompt = true) = 0;
+
+    /*
+     * Clear down the screen
+     */
+    virtual void Clear() = 0;
 };
 
 /*
@@ -21,6 +37,10 @@ public:
 class TestTerminal: public OutputTerminal {
 public:
     virtual void PutString(const std::string& output);
+    virtual std::string GetLine(const std::string& prompt, bool storePrompt = true) {
+        return "";
+    }
+    virtual void Clear () { }
 
     /*
      * Expose the output buffer for validation

@@ -29,14 +29,17 @@ int Function<T...>::Execute(const std::string& input ) {
     if ( ret ) {
         ret = CallFromTuple::CallFromTuple(&proc,args); 
     } else {
-        throw ExecutionError("Failed to parse arguments");
+        throw ExecutionError("Invalid function arguments");
     }
     return ret;
 }
 
 template<class ...T>
-void Commands::AddCommand(const std::string& name, const std::function<int(T...)>& f) {
+void Commands::AddCommand(const std::string& name, 
+                          const std::function<int(T...)>& f,
+                          const std::string& useText) {
 
+    usage[name] = useText;
     auto it = procs.find(name);
     if ( it != procs.end() ) {
         // Already exists - update the pointer
@@ -49,8 +52,11 @@ void Commands::AddCommand(const std::string& name, const std::function<int(T...)
 }
 
 template<class ...T>
-void Commands::AddCommand(const std::string& name, int (*fptr)(T...) ) {
+void Commands::AddCommand(const std::string& name, 
+                          int (*fptr)(T...),
+                          const std::string& useText) {
 
+    usage[name] = useText;
     auto it = procs.find(name);
     if ( it != procs.end() ) {
         // Already exists - update the pointer

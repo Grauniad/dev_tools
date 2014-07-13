@@ -121,9 +121,18 @@ int Commands::ExecuteSingleCommand(const std::string& command) {
 
             // TODO: we're parsing the string twice here. In most case
             //       refactor if it becomes a bottle neck.
-            ret = it->second->Execute(args);
+            try  {
+                ret = it->second->Execute(args);
+            } catch ( Func::ExecutionError& e ) {
+                string err = e.msg;
+                string use = usage[procName];
+                if ( use != "" ) {
+                    err += "\nusage: " + use;
+                }
+                throw Commands::ExecutionError(err);
+            }
         } else {
-            throw "NOT YET IMPLEMENTED!";
+            throw Commands::ExecutionError("No such comamnd: " + procName);
         }
     }
     return ret;
@@ -137,4 +146,19 @@ int Commands::ExecuteAliasCommand(const Tokens& args) {
         aliasTable.AddAlias(name,skel);
     }
     return 0;
+}
+
+string Commands::Usage() {
+    stringstream useText;
+    useText << "Commands: " << endl;
+    for (auto it : procs ) {
+        string procName = it.first;
+        string procUsage = usage[procName];
+        useText << "  " << procName;
+        if (procUsage != "" ) {
+            useText << ": " << endl << "  " << procUsage;
+        }
+        useText << endl;
+    }
+    return useText.str();
 }

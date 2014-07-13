@@ -66,9 +66,13 @@ public:
     virtual ~Commands();
 
     template<class ...T>
-    void AddCommand( const std::string& name, int (*fptr)(T... args ) );
+    void AddCommand( const std::string& name, 
+                     int (*fptr)(T... args ),
+                     const std::string& useText = "");
     template<class ...T>
-    void AddCommand( const std::string& name, const std::function<int(T...)>& f);
+    void AddCommand( const std::string& name, 
+                     const std::function<int(T...)>& f,
+                     const std::string& useText = "");
 
     void AddCommand( const std::string& name, const std::function<int()>& f);
     void AddCommand(const std::string& name, int(*fptr)());
@@ -80,6 +84,13 @@ public:
      * ExecuteSingleCommand
      */ 
     int Execute(const std::string& input);
+
+   struct ExecutionError {
+       ExecutionError(const std::string& errMsg): msg(errMsg) {}
+       std::string msg;
+   };
+
+   std::string Usage();
 
 private:
 
@@ -94,6 +105,7 @@ private:
     int ExecuteAliasCommand(const Tokens& args);
 
     std::map<std::string,Func*> procs;
+    std::map<std::string,std::string> usage;
     Aliases aliasTable;
 };
 
