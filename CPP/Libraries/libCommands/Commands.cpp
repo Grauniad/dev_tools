@@ -2,6 +2,7 @@
 #include "logger.h"
 #include "stringUtils.h"
 #include "tokenizor.h"
+#include "stringUtils.h"
 
 using namespace std;
 
@@ -101,11 +102,11 @@ int Commands::ExecuteSingleCommand(const std::string& command) {
          * We pass the un-parsed string through since to preserve
          * quotes etc during string expansion.
          */
+        string buf, args;
         stringstream ss(command);
-        ss >> procName;
-        string args;
+        ss >> buf;
         getline(ss,args);
-        Execute(aliasTable.Expand(procName,args));
+        ret = Execute(aliasTable.Expand(procName,args));
     } else if ( procName == "alias" ) {
         // The user wants to define a new alias
         ret = ExecuteAliasCommand(tokens);
@@ -114,9 +115,9 @@ int Commands::ExecuteSingleCommand(const std::string& command) {
         auto it = procs.find(procName);
         if ( it != procs.end() ) {
             // Execute will tokenise itself..
+            string buf, args;
             stringstream ss(command);
-            ss >> procName;
-            string args;
+            ss >> buf;
             getline(ss,args);
 
             // TODO: we're parsing the string twice here. In most case
@@ -135,6 +136,10 @@ int Commands::ExecuteSingleCommand(const std::string& command) {
             throw Commands::ExecutionError("No such comamnd: " + procName);
         }
     }
+    SLOG_FROM(LOG_VERBOSE,"Commands::ExecuteSingleCommand",
+              "Execution completed: " << command << endl
+               << "procName: '" << procName << "'" << endl
+               << "Return code: '" << ret << "'")
     return ret;
 }
 
