@@ -480,48 +480,20 @@ std::string Terminal::GetLine(const std::string& prompt, bool storePrompt) {
         wprintw(win,prompt.c_str());
     }
 
-    string command = "";
-    /*
-     * Listen to user input and build up the command...
-     */
-    bool more = true;
-    while ( more ) {
-        int c = wgetch(win);
-        switch ( c ) {
-        case KEY_MOUSE:
-            // Notify the screen of queued mouse event
-            Screen::Instance().OnMouseEvent();
-            break;
-        case 10: // new line
-        case 13: // carraige return
-            more = false;
-            if ( storePrompt ) {
-                PutString("\n");
-            }
-            break;
-        case KEY_BACKSPACE:
-        case 127: // [DEL]
-            // Move us back a char
-            int y, x;
-            getyx(win,y,x);
-            if ( x > 0 ) { // Check for someone trying to be a nuisance
-                mvwdelch(win,y,x-1);
-                wmove(win,y,x-1);
-            }
-            command = command.substr(0,command.length()-1);
-            break;
-        default:
-            // Let's restrict ourselves to ascii behaviour for the timebeing
-            if ( c >=1 && 255 ) {
-                char ch = static_cast<char>(c);
-                command += ch;
-                putchar(ch);
-                Refresh();
-            }
-        }
-        SLOG_FROM(LOG_VERY_VERBOSE, "Window::GetLine",
-              "Read " << c << ", command is now: " << command)
-    }
+    // Store start position so we can print the prompt...
+    int startx, starty;
+    getyx(win,starty,startx);
+   
+    echo();
+    char buf[4096];
+    wgetnstr(win,buf,4095);
+    noecho();
+
+    string command(buf);
+
+    // Store the prompt for replay...
+    wmove(win,starty,startx);
+    PutString(command + "\n");
 
     return command;
 }
