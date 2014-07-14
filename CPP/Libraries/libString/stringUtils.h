@@ -19,5 +19,7 @@
 namespace StringUtils {
     std::string Substitute( const std::string& skeleton, 
                             const std::string& input);
+
+    void Trim(std::string& toTrim);
 }
 #endif

@@ -4,6 +4,7 @@
 #include "regex.h"
 #include "logger.h"
 #include <sstream>
+#include <boost/algorithm/string/trim.hpp>
 
 using namespace std;
 
@@ -119,4 +120,8 @@ std::string StringUtils::Substitute(
         arg.Replace(argTokens);
     }
     return arg.Result();
+}
+
+void StringUtils::Trim(std::string& toTrim) {
+        boost::algorithm::trim(toTrim);
 }
