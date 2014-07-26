@@ -42,6 +42,10 @@ public:
        return true;
    }
 
+   const std::vector<std::string>& Vector() const {
+       return *this;
+   }
+
    using std::vector<std::string>::begin;
    using std::vector<std::string>::cbegin;
    using std::vector<std::string>::end;
