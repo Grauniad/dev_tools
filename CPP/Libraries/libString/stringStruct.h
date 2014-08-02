@@ -14,10 +14,13 @@ public:
     }
 
     size_t GetIdx(const std::string& el);
+    const std::string& GetName(const size_t& idx);
 
     StringStruct New() const;
 
     StringStruct New(const char* input) const;
+
+    static const std::string NO_SUCH_ELMENT;
 
 private:
     std::vector<std::string>  elements;
@@ -27,27 +30,41 @@ private:
 
 class StringStruct {
 public:
-    StringStruct(size_t size)
-       : array(new int[size]) { } 
+    StringStruct(size_t _size)
+       : array(new long[_size]), size(_size) { } 
 
     StringStruct(StringStruct&& moveFrom)
-       : array(moveFrom.array) 
+       : array(moveFrom.array) , size(moveFrom.size)
     { 
         moveFrom.array = nullptr;
     }
 
     ~StringStruct() { delete[] array; } 
 
-    int& operator[](const size_t& idx) {
+    long& operator[](const size_t& idx) {
         return array[idx];
     }
+
+    const long& operator[](const size_t& idx) const {
+        return array[idx];
+    }
+
+    /*
+     * The caller has responsibility for proving the structs are of the same
+     * size...
+     */
+    StringStruct& operator+=(const StringStruct& rhs);
+    StringStruct& operator-=(const StringStruct& rhs);
 
     // Prevent copy constructing: there has to be a clear owner of the
     // heap memory
     StringStruct(const StringStruct& copy) = delete;
     StringStruct& operator=(const StringStruct& copy) = delete;
+
+    size_t Size() { return size; } 
 private:
-    int* array;
+    long* array;
+    size_t size;
 };
 
 inline StringStruct StringStructFactory::New() const {

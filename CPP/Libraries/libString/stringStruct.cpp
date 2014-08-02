@@ -4,6 +4,8 @@
 
 using namespace std;
 
+const string StringStructFactory::NO_SUCH_ELMENT = "";
+
 StringStructFactory::StringStructFactory(const string& definitions) 
     : elements(Parts(definitions).Vector()), 
       size(elements.size())
@@ -21,6 +23,13 @@ size_t StringStructFactory::GetIdx(const string& el) {
         return 0;
     }
 }
+const std::string& StringStructFactory::GetName(const size_t& idx) {
+    if ( idx < elements.size() ) {
+        return elements[idx];
+    } else {
+        return NO_SUCH_ELMENT;
+    }
+}
 
 StringStruct StringStructFactory::New(const char* from) const {
     StringStruct s(size);
@@ -36,4 +45,18 @@ StringStruct StringStructFactory::New(const char* from) const {
         s[i] = strtol(from,const_cast<char **>(&from),10);
     }
     return s;
+}
+
+StringStruct& StringStruct::operator+=(const StringStruct& rhs) {
+    for (size_t i = 0; i< size; ++i ) {
+        array[i] += rhs.array[i];
+    }
+    return *this;
+}
+
+StringStruct& StringStruct::operator-=(const StringStruct& rhs) {
+    for (size_t i = 0; i< size; ++i ) {
+        array[i] -= rhs.array[i];
+    }
+    return *this;
 }

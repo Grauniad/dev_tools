@@ -1,8 +1,9 @@
 LINKED_LIBS= libUtils  \
 			 libIOInterface \
-			 libTest
+			 libTest \
+			 libString
  
-BUILD_TIME_TESTS=binaryData time search
+BUILD_TIME_TESTS=binaryData time search dynStruct
 CPP_TAGS_FILE=utilTests-c++.tags
 
 BOOST_MODULES+=filesystem system
