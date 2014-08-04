@@ -33,18 +33,22 @@ const std::string& StringStructFactory::GetName(const size_t& idx) {
 
 StringStruct StringStructFactory::New(const char* from) const {
     StringStruct s(size);
+    s.Reset(from);
+    return s;
+}
+
+void StringStruct::Reset(const char* from) {
     for (size_t i = 0; i< size; ++i ) {
         if ( *from == '\0') {
             for ( size_t j = i; j< size; ++j) {
-                s[j] = 0;
+                array[j] = 0;
             }
             break;
         }
         // strtol returns 0 for invalid ints
         // Because c programers can't do const correctly, *sigh*
-        s[i] = strtol(from,const_cast<char **>(&from),10);
+        array[i] = strtol(from,const_cast<char **>(&from),10);
     }
-    return s;
 }
 
 StringStruct& StringStruct::operator+=(const StringStruct& rhs) {

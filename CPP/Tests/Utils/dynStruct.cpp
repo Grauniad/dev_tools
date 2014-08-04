@@ -8,6 +8,7 @@ int InitialiseEmptyStruct(testLogger& log);
 int InitialiseStruct(testLogger& log);
 int InitialisePartialStruct(testLogger& log);
 int Arithmetic(testLogger& log);
+int Reset(testLogger& log);
 
 vector<StringStruct> buf1;
 vector<StringStruct> buf2;
@@ -21,6 +22,7 @@ int main(int argc, const char *argv[])
     Test("Initialising struct...",InitialiseStruct).RunTest();
     Test("Initialising struct from partial string...",InitialisePartialStruct).RunTest();
     Test("Adding and subtracting using the struct..",Arithmetic).RunTest();
+    Test("Reseting a struct...",Arithmetic).RunTest();
     return 0;
 }
 
@@ -116,6 +118,29 @@ int InitialiseEmptyStruct(testLogger& log ) {
 int InitialiseStruct(testLogger& log ) {
     StringStructFactory factory("a1 a2 a3 a5");
     StringStruct s = factory.New("0235 2 0 -34234");
+    if ( s[0] != 235 ) {
+        log << "Failed to read 235: " << s[0] << endl;
+        return 1;
+    }
+    if ( s[1] != 2 ) {
+        log << "Failed to read 2: " << s[1] << endl;
+        return 1;
+    }
+    if ( s[2] != 0 ) {
+        log << "Failed to read 0: " << s[2] << endl;
+        return 1;
+    }
+    if ( s[3] != -34234 ) {
+        log << "Failed to read -34234: " << s[3] << endl;
+        return 1;
+    }
+    return 0;
+}
+
+int Reset(testLogger& log ) {
+    StringStructFactory factory("a1 a2 a3 a5");
+    StringStruct s = factory.New("");
+    s.Reset("0235 2 0 -34234");
     if ( s[0] != 235 ) {
         log << "Failed to read 235: " << s[0] << endl;
         return 1;

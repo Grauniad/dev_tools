@@ -39,6 +39,8 @@ public:
         moveFrom.array = nullptr;
     }
 
+    void Reset(const char* from);
+
     ~StringStruct() { delete[] array; } 
 
     long& operator[](const size_t& idx) {
