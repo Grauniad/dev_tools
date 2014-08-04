@@ -32,7 +32,7 @@ private:
 
 class StringStruct {
 public:
-    StringStruct(size_t _size)
+    explicit StringStruct(size_t _size)
        : array(new long[_size]), size(_size) { } 
 
     StringStruct(StringStruct&& moveFrom)
