@@ -1,10 +1,13 @@
 #include "stringStruct.h"
 #include "tokenizor.h"
 #include <cstdlib>
+#include <limits>
 
 using namespace std;
 
 const string StringStructFactory::NO_SUCH_ELMENT = "";
+const size_t StringStructFactory::NO_SUCH_INDEX = 
+                 numeric_limits<size_t>::max();
 
 StringStructFactory::StringStructFactory(const string& definitions) 
     : elements(Parts(definitions).Vector()), 
@@ -15,12 +18,21 @@ StringStructFactory::StringStructFactory(const string& definitions)
     }
 }
 
+vector<size_t> StringStructFactory::GetIdxs(const std::string& els) {
+    vector<size_t> list;
+    Parts elList(els);
+    for (const string& el:elList.Vector()) {
+        list.push_back(GetIdx(el));
+    }
+    return list;
+}
+
 size_t StringStructFactory::GetIdx(const string& el) {
     auto it = elMap.find(el);
     if ( it != elMap.end() ) {
         return it->second;
     } else {
-        return 0;
+        return NO_SUCH_INDEX;
     }
 }
 const std::string& StringStructFactory::GetName(const size_t& idx) {

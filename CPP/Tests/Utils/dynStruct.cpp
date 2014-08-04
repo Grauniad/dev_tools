@@ -9,6 +9,7 @@ int InitialiseStruct(testLogger& log);
 int InitialisePartialStruct(testLogger& log);
 int Arithmetic(testLogger& log);
 int Reset(testLogger& log);
+int GetIdxs(testLogger& log);
 
 vector<StringStruct> buf1;
 vector<StringStruct> buf2;
@@ -23,6 +24,7 @@ int main(int argc, const char *argv[])
     Test("Initialising struct from partial string...",InitialisePartialStruct).RunTest();
     Test("Adding and subtracting using the struct..",Arithmetic).RunTest();
     Test("Reseting a struct...",Arithmetic).RunTest();
+    Test("Getting an array of indexes...",GetIdxs).RunTest();
     return 0;
 }
 
@@ -67,6 +69,21 @@ int InitialiseFactory( testLogger& log ) {
     if ( factory.GetName(20) != StringStructFactory::NO_SUCH_ELMENT ) {
         log << "Invalid name for invalid element : " << factory.GetName(20);
         return 1;
+    }
+    return 0;
+}
+
+int GetIdxs(testLogger& log ) {
+
+    StringStructFactory factory("a1 a2 a3 a5");
+    vector<size_t> expected = { 3,1,StringStructFactory::NO_SUCH_INDEX,2,0};
+    vector<size_t> actual = factory.GetIdxs("a5 a2 giberish a3 a1");
+    for (size_t i =0; i<expected.size(); ++i) {
+        if ( expected[i] != actual[i] ) {
+            log << "Invalid element at index: " << i << endl;
+            log << "Expected: " << expected[i];
+            log << "Actual:   " << actual[i];
+        }
     }
     return 0;
 }

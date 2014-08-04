@@ -14,6 +14,7 @@ public:
     }
 
     size_t GetIdx(const std::string& el);
+    std::vector<size_t> GetIdxs(const std::string& els);
     const std::string& GetName(const size_t& idx);
 
     StringStruct New() const;
@@ -21,6 +22,7 @@ public:
     StringStruct New(const char* input) const;
 
     static const std::string NO_SUCH_ELMENT;
+    static const size_t NO_SUCH_INDEX;
 
 private:
     std::vector<std::string>  elements;
