@@ -21,5 +21,10 @@ namespace StringUtils {
                             const std::string& input);
 
     void Trim(std::string& toTrim);
+
+    /*
+     * Print the long integer n to the string out
+     */
+    void FastPrintLong(long n, size_t max, char* out);
 }
 #endif

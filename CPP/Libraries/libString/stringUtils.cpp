@@ -125,3 +125,41 @@ std::string StringUtils::Substitute(
 void StringUtils::Trim(std::string& toTrim) {
         boost::algorithm::trim(toTrim);
 }
+
+void StringUtils::FastPrintLong(long n, size_t max, char* out) {
+    --out;
+    // Catch negative numbers
+    if ( n < 0 ) {
+        *(++out) = '-';
+        n*=-1;
+        --max;
+    }
+
+    // 0 is a special case - it would skip the whole loop
+    if ( n == 0 ) {
+        *(++out) = '0';
+    } else {
+        char tmp[50];
+
+        // Print each digit, smallest first...
+        char *p = tmp-1;
+        while ( n > 0 ) {
+            *(++p) = '0' + n % 10;
+            n /= 10;
+        }
+
+        char * stop = tmp;
+        size_t len = 1 + (p-tmp);
+        if ( len+1 > max ) {
+            stop = (p - max) +2;
+        }
+        // Reverse the number
+        for ( char * t=p; t>=stop; --t) {
+            *(++out) = *t;
+        }
+    }
+
+    // Null terminate - it's a proper string...
+    *(++out) = '\0';
+}
+
