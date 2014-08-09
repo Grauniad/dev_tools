@@ -147,6 +147,10 @@ int Commands::ExecuteAliasCommand(const Tokens& args) {
     // args 0 was alias
     string name(args[1]);
     string skel(args[2]);
+    const vector<string>& parts = args.Vector();
+    for ( size_t i = 3; i<parts.size(); ++i) {
+        skel += " " + parts[i];
+    }
     if ( name != "" && skel != "" ) {
         aliasTable.AddAlias(name,skel);
     }
