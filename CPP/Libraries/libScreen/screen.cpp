@@ -493,7 +493,9 @@ std::string Terminal::GetLine(const std::string& prompt, bool storePrompt) {
 
     // Store the prompt for replay...
     wmove(win,starty,startx);
-    PutString(command + "\n");
+    if ( storePrompt) {
+        PutString(command + "\n");
+    }
 
     return command;
 }
