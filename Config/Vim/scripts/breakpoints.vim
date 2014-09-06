@@ -15,7 +15,7 @@ function! BreakPointsInit()
 "
 " First Setup the python environment
 "
-python << endpython
+python3 << endpython
 import vim
 #regular expression library
 import re
@@ -189,25 +189,25 @@ endfunction
 " Now expose the python function to vim
 "
 function! LoadBreakPoints () 
-python << endpython
+python3 << endpython
 LoadBreakPoints()
 endpython
 endfunction
 
 function! AnnotateBreakPoints ()
-python << endpython
+python3 << endpython
 AnnotateBreakPoints()
 endpython
 endfunction
 
 function! AddBreakPoint ( ) 
-python << endpython
+python3 << endpython
 AddBreakPoint()
 endpython
 endfunction
 
 function! RemoveBreakPoint ( ) 
-python << endpython
+python3 << endpython
 RemoveBreakpoint()
 endpython
 endfunction
