@@ -16,7 +16,7 @@ PROFILE_GEN_COMMAND=$(SCRIPTS_DIR)/prof2html.py $(EXPORT_PROFILE_DIR)/$$(basenam
 PROFILE_VIEWER=$(WEB_VIEWER) $(EXPORT_PROFILE_DIR)index.html
 
 ifndef GNU_CPP
-     CPP=g++-4.8
+     CPP=g++
 else
      CPP=$(GNU_CPP)
 endif
@@ -28,7 +28,7 @@ GSL_LOCAL_LINK_FLAGS=-lgsl -lgslcblas -lm
 GSL_DEV_TOOLS_LINK_FLAGS=$(DEV_TOOLS_DIR)/EXTERNAL_LIBS/GSL/libgsl.a $(DEV_TOOLS_DIR)/EXTERNAL_LIBS/GSL/libgslcblas.a -lm
 
 PLPLOT_DEV_TOOLS_LINK_FLAGS=$(DEV_TOOLS_DIR)/EXTERNAL_LIBS/PLPLOT/libplplotd.a $(DEV_TOOLS_DIR)/EXTERNAL_LIBS/PLPLOT/libltdl.a
-PLPLOT_LOCAL_LINK_FLAGS=-I/usr/include/plplot  -lplplotd -lltdl -ldl -lm -lcsirocsa -lcsironn -lqhull -lqsastime -lfreetype
+PLPLOT_LOCAL_LINK_FLAGS=-I/usr/include/plplot  -lplplotd -lltdl -ldl -lm -lcsirocsa -lqhull -lqsastime -lfreetype
 
 THREADS_LINK_FLAGS=-pthread
 
