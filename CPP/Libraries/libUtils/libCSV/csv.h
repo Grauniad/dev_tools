@@ -11,6 +11,7 @@
 #include "binaryWriter.h"
 #include <type_traits>
 #include <iomanip>
+#include <tuple>
 
 #define TYPE(i) CSV<Types...>::ColTypes::type<i>
 #define THIS CSV<Types...>
