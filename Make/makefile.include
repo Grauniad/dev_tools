@@ -119,6 +119,10 @@ ifndef ALL_WARNINGS
    ALL_WARNINGS=YES
 endif
 
+ifndef DEBUG_VALGRIND
+	DEBUG_VALGRIND=NO
+endif 
+
 #
 # External Libraries
 #
@@ -186,6 +190,14 @@ ifndef HELGRIND_OPTIONS
     HELGRIND__OPTIONS+=--fullpath-after=
 endif
 
+
+ifeq ($(findstring YES,$(DEBUG_VALGRIND)),YES) 
+    # Wait for gdb to attach when an error is found
+    HELGRIND_OPTIONS+=--vgdb=full
+    VALGIND_OPTIONS+=--vgdb=full
+    HELGRIND_OPTIONS+=--vgdb-error=1
+    VALGRIND_OPTIONS+=--vgdb-error=1
+endif
 
 ifndef GDB_OPTIONS
    # Use terminal user interface (display source code)
@@ -818,10 +830,14 @@ usage:
 	@echo "SOURCE_EXTENSION:  $(SOURCE_EXTENSION)"
 	@echo "COMPILER FLAGS:    $(COMP_FLAGS)"
 	@echo ""
+	@echo "        Debugging Options"
+	@echo "CORE_SIZE                  Max allowed size of genereated core files - ($(DEFAULT_CORE_SIZE)), <$(CORE_SIZE)>"
+	@echo "DEBUG_VALGRIND             Wait for gdb to attach when memtest find an error- (YES)), <$(DEBUG_VALGRIND)>"
+	@echo ""
+	@echo "        Generic Options"
 	@echo "ADDITIONAL_INCLUDE_FLAGS:  Add extra include directories - (), <$(ADDITIONAL_INCLUDE_FLAGS)>"
 	@echo "ADDITIONAL_TEST_COMP_FLAGS: Add extra flags used when compiling test binaries - (), <$(ADDITIONAL_INCLUDE_FLAGS)>"
 	@echo "ALL_WARNINGS               Set to NO to turn off warnings for questionable code - (YES), <$(ALL_WARNINGS)>"
-	@echo "CORE_SIZE                  Max allowed size of genereated core files - ($(DEFAULT_CORE_SIZE)), <$(CORE_SIZE)>"
 	@echo "CPPSTD:                    Set the C++ standard to be used by $(CPP) - ($(DEFAULT_CPPSTD)), <$(CPPSTD)>"
 	@echo "COMP_FLAGS:                 Flags passed to $(CPP) - (), <$(COMP_FLAGS)>" 
 	@echo "COMP_PROFILE_FLAGS          Flags used when profiling - ($(DEFAULT_COMP_PROFILE_FLAGS)), <$(COMP_PROFILE_FLAGS)>"
