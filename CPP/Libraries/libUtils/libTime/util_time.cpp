@@ -18,7 +18,8 @@ Time::Time(const std::string& timestamp) {
     (*this) = timestamp;
 }
 
-Time::Time(const struct timeval& tv) { (*this) = tv;
+Time::Time(const struct timeval& tv) {
+    (*this) = tv;
 }
 
 Time::Time(const long& usecs) {
@@ -27,20 +28,20 @@ Time::Time(const long& usecs) {
 
 Time& Time::operator=(const struct timeval& tv) {
     this->tv = tv;
-    SetTmFromTimeval();
+    ready = false;
     return *this;
 }
 
 Time& Time::operator=(const long& usecs ) {
     this->tv.tv_usec = usecs%1000000L;
     this->tv.tv_sec = usecs / 1000000L;
-    SetTmFromTimeval();
+    ready = false;
     return *this;
 }
 
 Time& Time::operator=(const Time& rhs) {
     this->tv = rhs.tv;
-    this->time = rhs.time;
+    this->ready = false;
     return *this;
 }
 
@@ -58,6 +59,7 @@ Time& Time::operator=(const std::string& timestamp) {
     epoch.tm_mon=0;
     epoch.tm_year=70;
     epoch.tm_isdst=-1; // <0 = unknown
+    epoch.tm_gmtoff = 0;
     //epoch.tm_wday: Not used by mktime
     //epoch.tm_yday: Not used by mktime
     time = epoch;
@@ -99,20 +101,29 @@ Time& Time::operator=(const std::string& timestamp) {
      tv.tv_sec = difftime(mktime(&time),mktime(&epoch));
      tv.tv_usec =  atoi(timestamp.substr(18,6).c_str());
 
+     ready = true;
+
     return *this;
 }
 
 Time& Time::SetNow() {
     gettimeofday(&tv,NULL);
-    SetTmFromTimeval();
+    ready = false;
     return *this;
 }
 
-void Time::SetTmFromTimeval()  {
-    localtime_r(&tv.tv_sec,&time);
+void Time::MakeReady() const {
+    if ( !ready) {
+        SetTmFromTimeval();
+    }
+}
+
+void Time::SetTmFromTimeval() const {
+    gmtime_r(&tv.tv_sec,&time);
 }
 
 string Time::Timestamp() const {
+    MakeReady();
     stringstream strtime;
     strtime << Year();
     strtime << setw(2) << setfill ('0');
@@ -130,6 +141,7 @@ string Time::Timestamp() const {
 }
 
 string Time::FileTimestamp() const {
+    MakeReady();
     stringstream strtime;
     strtime << Year() << "-" << Month() << "-" << MDay();
     strtime << "_" << Hour() << ":" << Minute() << ":" << Second();

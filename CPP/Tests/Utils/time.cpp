@@ -23,10 +23,6 @@ int main(int argc, const char *argv[])
 int CheckTime(testLogger&log, const Time& testTime) {
     log << "Expected time: " << reftime << endl;
     log << "Constructed time: " << testTime.Timestamp() << endl;
-    if ( testTime.Timestamp() != reftime) {
-        log << "Timestamp missmatch!" << endl;
-        return 1;
-    }
     if (testTime.Year() != 2014) {
         log << "Invalid Year!" << testTime.Year();
         return 1;
@@ -61,6 +57,10 @@ int CheckTime(testLogger&log, const Time& testTime) {
     }
     if (testTime.USec() != 294930) {
         log << "Invalid USec!" << testTime.USec();
+        return 1;
+    }
+    if ( testTime.Timestamp() != reftime) {
+        log << "Timestamp missmatch!" << endl;
         return 1;
     }
     return 0;

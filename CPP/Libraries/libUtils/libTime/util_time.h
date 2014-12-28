@@ -19,12 +19,12 @@ public:
     Time& SetNow();
 
     // Components
-    int Year()   const { return time.tm_year + 1900;}
-    int Month()  const { return time.tm_mon + 1;}
-    int MDay()   const { return time.tm_mday;}
-    int Hour()   const { return time.tm_hour;}
-    int Minute() const { return time.tm_min;}
-    int Second() const { return time.tm_sec;}
+    int Year()   const { MakeReady(); return time.tm_year + 1900;}
+    int Month()  const { MakeReady(); return time.tm_mon + 1;}
+    int MDay()   const { MakeReady(); return time.tm_mday;}
+    int Hour()   const { MakeReady(); return time.tm_hour;}
+    int Minute() const { MakeReady(); return time.tm_min;}
+    int Second() const { MakeReady(); return time.tm_sec;}
     int MSec()   const { return tv.tv_usec / 1000;}
     int USec()   const { return tv.tv_usec;}
 
@@ -40,9 +40,11 @@ public:
     std::string Timestamp() const;
     std::string FileTimestamp() const;
 private:
-    void SetTmFromTimeval();
+    void MakeReady() const;
+    void SetTmFromTimeval() const;
     struct timeval tv;
-    struct tm time;
+    mutable struct tm time;
+    bool   ready;
 };
 
 #endif
