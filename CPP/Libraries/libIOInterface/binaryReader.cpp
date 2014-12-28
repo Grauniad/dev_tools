@@ -1,6 +1,7 @@
 #include <string>
 #include "binaryReader.h"
 #include "logger.h"
+#include "stringUtils.h"
 
 using namespace std;
 
@@ -23,10 +24,6 @@ BinaryReader& BinaryReader::operator+=( long additionalOffset)
 
 BinaryReader& BinaryReader::operator-=( long additionalOffset) 
 {
-    SLOG_FROM( 
-        LOG_VERY_VERBOSE, 
-        "BinaryReader::operator-=", 
-        "Starting Offset: " << offset << endl)
     offset -= additionalOffset;
     return *this;
 }
@@ -37,40 +34,19 @@ BinaryReader& BinaryReader::operator=(long newOffset) {
 }
 
 BinaryReader BinaryReader::Begin() const {
-    SLOG_FROM( 
-        LOG_VERY_VERBOSE, 
-        "BinaryReader::Begin", 
-        "Starting Offset: " << offset << endl)
     return BinaryReader(file,0);
 }
 
 BinaryReader BinaryReader::End() const {
-    SLOG_FROM( 
-        LOG_VERY_VERBOSE, 
-        "BinaryReader::End", 
-        "Starting Offset: " << offset << endl)
     return BinaryReader(file,file.Size());
 }
 
 BinaryReader BinaryReader::Pos(long offset) const {
-    SLOG_FROM( 
-        LOG_VERY_VERBOSE, 
-        "BinaryReader::Pos", 
-        "Starting Offset: " << offset << endl)
     return BinaryReader(file,offset);
 }
 
 BinaryReader BinaryReader::Find(unsigned char c) const {
-    SLOG_FROM( 
-        LOG_VERY_VERBOSE, 
-        "BinaryReader::Find", 
-        "Starting Offset: " << offset << endl)
-
     BinaryReader loc(file,file.Next(offset, c));
-    SLOG_FROM( 
-        LOG_VERY_VERBOSE, 
-        "BinaryReader::Find", 
-        "Looking for char: " << int(c) << ", found at: " << loc.Offset())
 
     if ( loc < Begin() )
         return Begin();
@@ -79,10 +55,6 @@ BinaryReader BinaryReader::Find(unsigned char c) const {
 }
 
 BinaryReader BinaryReader::RFind(unsigned char c) const {
-    SLOG_FROM( 
-        LOG_VERY_VERBOSE, 
-        "BinaryReader::RFind", 
-        "Starting Offset: " << offset << endl)
     BinaryReader loc(file,file.Last(offset, c));
     if ( loc < Begin() )
         return Begin();
@@ -91,18 +63,10 @@ BinaryReader BinaryReader::RFind(unsigned char c) const {
 }
 
 void BinaryReader::Read(void *dest, long size) const{
-    SLOG_FROM( 
-        LOG_VERY_VERBOSE, 
-        "BinaryReader::Read", 
-        "Starting Offset: " << offset << endl)
     file.Read(offset,dest,size);
 }
 
 void BinaryReader::Read(BinaryWriter& pos, long size) const {
-    SLOG_FROM( 
-        LOG_VERY_VERBOSE, 
-        "BinaryReader::Read", 
-        "Starting Offset: " << offset << endl)
     pos.Write(*this,size);
 }
 
@@ -146,7 +110,6 @@ void BinaryReader::AppendString(string& dest) const{
 string BinaryReader::ReadString() const {
     string s;
     file.ReadString(offset,s);
-    SLOG ( LOG_VERY_VERBOSE, "Binary Reader read a string from offset, " << offset << " - >" << s << "<")
     return s;
 }
 
