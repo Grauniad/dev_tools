@@ -6,6 +6,7 @@
 #include "logger.h"
 #include "util_time.h"
 #include <fstream>
+#include <queue>
 
 
 using namespace std;
@@ -82,7 +83,6 @@ public:
      // Handle endl
      static DefaultTestLogger& endl(DefaultTestLogger& stream)
      {
-         SPRINT (std::endl)
          return stream;
      }
 
@@ -102,12 +102,34 @@ public:
     }
 
     void WriteLog(const string& fname, const Time& time);
+
+    /**
+     * Log each queued message, and then clear the queue
+     */
+    void FlushQueue();
 private:
-     static DefaultTestLogger GLOBAL_LOG;
-     stringstream testoutput;
-     stringstream overview_log;
-     stringstream full_log;
-     ofstream     ffull_log;
+    struct Message {
+    	const Time time;
+		const string message;
+		const string context;
+		const LOG_LEVEL level;
+    };
+
+    /**
+     * Push the message out to all our consumers
+     */
+    void LogMessage(const Message& message);
+
+    static DefaultTestLogger GLOBAL_LOG;
+    stringstream testoutput;
+    stringstream overview_log;
+    stringstream full_log;
+    ofstream     ffull_log;
+
+    std::queue<Message>   messageQueue;
+
+    bool        use_full_log;
+    bool        use_capture_from;
 };
 
 #ifdef __PROFILE__TESTS

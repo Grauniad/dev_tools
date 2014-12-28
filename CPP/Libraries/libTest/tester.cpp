@@ -8,6 +8,8 @@
 #include "stdWriter.h"
 #include "env.h"
 
+const size_t MAX_QUEUE_SIZE = 1e7;
+
 DefaultTestLogger DefaultTestLogger::GLOBAL_LOG;
 
 using namespace std;
@@ -15,7 +17,10 @@ DefaultTestLogger& DefaultTestLogger::RunTimeLog() {
     return GLOBAL_LOG;
 }
 
-DefaultTestLogger::DefaultTestLogger(): ffull_log("test.full_log") {
+DefaultTestLogger::DefaultTestLogger()
+   : ffull_log("test.full_log"),
+     use_full_log(false), use_capture_from(false)
+{
     Logger::Instance().RegisterLog(*this);
 
     // Prevent Logging directly to stdout / stderr
@@ -45,6 +50,9 @@ DefaultTestLogger::DefaultTestLogger(): ffull_log("test.full_log") {
         Logger::Instance().LogEnabled( LOG_SCHEDULER, true);
     }
     Logger::Instance().LogEnabled( LOG_WARNING, true);
+
+    use_full_log = ENV::IsSet("DEV_TOOLS_TEST_FULL_TEST_LOG");
+    use_capture_from = ENV::IsSet("DEV_TOOLS_TEST_CAPTURE_FROM");
     Logger::Instance().LogEnabled( LOG_ERROR, true);
 }
 
@@ -53,6 +61,7 @@ DefaultTestLogger::~DefaultTestLogger() {
 }
 
 void DefaultTestLogger::WriteLog(const string& fname, const Time& time) {
+	FlushQueue();
     OFStreamWriter("OverviewLog_" + time.FileTimestamp() + fname) << overview_log.str();
     OFStreamWriter("FullLog_" + time.FileTimestamp() + fname) << full_log.str();
 }
@@ -61,33 +70,14 @@ void DefaultTestLogger::Log( const string& message,
                              const string& context, 
                              const Time& time,
                              LOG_LEVEL level) {
-    if ( level == LOG_DEFAULT ) {
-        testoutput << message;
-        overview_log << message;
-        full_log << message;
+	messageQueue.push({time,message,context,level});
 
-    } else if (    level == LOG_ERROR
-                || level == LOG_WARNING
-                || level == LOG_OVERVIEW) 
-    {
-        testoutput << GenericFormatLogger::Format(message,context,time,level);
-        overview_log << GenericFormatLogger::Format(message,context,time,level);
-        full_log << GenericFormatLogger::Format(message,context,time,level);
-    } else {
-        full_log << GenericFormatLogger::Format(message,context,time,level);
+	if ( messageQueue.size() > MAX_QUEUE_SIZE) {
+     	cout << Time().Timestamp() << "***WARNING: MAX MESSAGE QUEUE SIZE REACHED!, FLUSHING QUEUE ****" << endl;
+		FlushQueue();
+        cout << Time().Timestamp() << "**** FLUSH COMPLETE ****" << endl;;
+	}
 
-        if ( ENV::IsSet("DEV_TOOLS_TEST_FULL_TEST_LOG") ) {
-            testoutput << GenericFormatLogger::Format(message,context,time,level);
-        }
-    }
-
-    if ( ENV::IsSet("DEV_TOOLS_TEST_FULL_TEST_LOG") ) {
-        ffull_log << GenericFormatLogger::Format(message,context,time,level);
-        ffull_log.flush();
-    } else if ( ENV::IsInList("DEV_TOOLS_TEST_CAPTURE_FROM", context) ) {
-        ffull_log << GenericFormatLogger::Format(message,context,time,level);
-        ffull_log.flush();
-    }
 }
 
 Test::Test(string description, std::function<int(testLogger& log)> test):
@@ -138,12 +128,57 @@ void Test::RunTest() {
         cout << "TEST FAILED in " << runTime << " seconds" <<  endl;
         cout << "Run Time Log:" << endl;
         cout << "Test Log follows: " << endl;
+        log.FlushQueue();
         cout << log.str() << endl;
-        DefaultTestLogger::RunTimeLog().WriteLog("TestRuntimeLog", startTime);
         log.WriteLog(description, startTime);
+        DefaultTestLogger::RunTimeLog().WriteLog("TestRuntimeLog", startTime);
         if ( ENV::IsSet("DEV_TOOLS_TEST_FULL_TEST_LOG") ) {
             cout << DefaultTestLogger::RunTimeLog().str() << endl;
         }
         exit(result);
+    }
+}
+
+void DefaultTestLogger::FlushQueue() {
+	while (!messageQueue.empty()) {
+		LogMessage(messageQueue.front());
+		messageQueue.pop();
+	}
+}
+
+void DefaultTestLogger::LogMessage(const Message& message) {
+	const string messageText = GenericFormatLogger::Format(
+			                       message.message,
+								   message.context,
+								   message.time,
+								   message.level);
+    if ( message.level == LOG_DEFAULT ) {
+        testoutput << message.message;
+        overview_log << messageText;
+        full_log << messageText;
+
+    } else if (    message.level == LOG_ERROR
+                || message.level == LOG_WARNING
+                || message.level == LOG_OVERVIEW)
+    {
+        testoutput << message.message;
+        overview_log << messageText;
+        full_log << messageText;
+    } else {
+        full_log << messageText;
+
+        if ( use_full_log ) {
+            testoutput << message.message;
+        }
+    }
+
+    if ( use_full_log ) {
+        ffull_log << messageText;
+        ffull_log.flush();
+    } else if (    use_capture_from
+    		    && ENV::IsInList("DEV_TOOLS_TEST_CAPTURE_FROM", message.context) )
+    {
+        ffull_log << messageText;
+        ffull_log.flush();
     }
 }
