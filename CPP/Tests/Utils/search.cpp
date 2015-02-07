@@ -38,12 +38,12 @@ int noSuchMatch(testLogger& log ) {
         log << "Searcher matched an invalid regex" << endl;
         return 1;
     }
-    if ( !searcher.Search("The quick brown fox jumped over the lazy dog") ) {
-        log << "Searcher failed to match a whole line" << endl;
-        return 1;
-    }
     if ( !searcher.Search("fox") ) {
         log << "Searcher failed to match a sub string" << endl;
+        return 1;
+    }
+    if ( !searcher.Search("The quick brown fox jumped over the lazy dog") ) {
+        log << "Searcher failed to match a whole line" << endl;
         return 1;
     }
     if ( !searcher.Search("f[oa]x") ) {
