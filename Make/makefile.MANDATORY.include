@@ -73,3 +73,23 @@ endif
 ifndef BOOST_DIR
    $(error BOOST_DIR must be specified!)
 endif
+
+ifeq ($(USE_CEF),YES)
+    ifneq ($(USE_GTK),YES)
+        $(error USE_GTK is required for USE_CEF)
+    endif
+
+    ifndef CEF_DIR
+       $(error The CEF_DIR (CEF installation directory) must set to enable USE_CEF)
+    endif
+
+    ifndef USE_CPP11
+       $(error The USE_CPP11 is required for USE_CEF)
+    endif
+endif
+
+ifeq ($(LINK_CEF_RESOURCES),YES)
+    ifndef CEF_DIR
+       $(error The CEF_DIR (CEF installation directory) must set to use LINK_CEF_RESOURCES)
+    endif
+endif

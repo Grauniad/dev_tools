@@ -158,6 +158,18 @@ ifndef USE_THREADS
     USE_THREADS=YES
 endif
 
+ifndef USE_CEF
+    USE_CEF=NO
+endif
+
+ifndef LINK_CEF_RESOURCES
+    LINK_CEF_RESOURCES=NO
+endif
+
+ifndef USE_GTK
+    USE_GTK=NO
+endif
+
 #
 # Configure Debuggers
 #
@@ -319,6 +331,19 @@ endif
 COMP_FLAGS+=-std=$(STD)
 
 ###################################################################
+#                  Configure Conditional Paths                    #
+###################################################################
+
+ifdef CEF_DIR
+    ifeq ($(DEBUG_ON),YES)
+        CEF_LIBS=$(CEF_DIR)/out/Debug
+    else
+        CEF_LIBS=$(CEF_DIR)/out/Release
+    endif
+    CEF_RESOURCES=$(CEF_DIR)/Resources
+endif
+
+###################################################################
 #                  Calculate Targets                              #
 ###################################################################
 
@@ -333,6 +358,7 @@ FOLDERS_TO_CLEAN=
 LINKED_FILES=
 TO_COPY=
 SUB_FOLDER=
+FILES_TO_SYM_LINK=
 
 ifdef TARGET_DYNAMIC_LIB
    $(shell mkdir -p $(EXPORT_LIB_DIR))
@@ -452,6 +478,19 @@ ifdef LINKED_LIBS
 endif
 
 ###################################################################
+#                  Utilities
+###################################################################
+ifeq ($(LINK_CEF_RESOURCES),YES)
+    FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/locales
+    FILES_TO_SYM_LINK+=$(CEF_LIBS)/chrome-sandbox
+    FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/cef_100_percent.pak
+    FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/cef_200_percent.pak
+    FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/cef.pak 
+    FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/devtools_resources.pak
+    FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/icudtl.dat
+endif
+
+###################################################################
 #                  Foreign libraries                              #
 ###################################################################
 
@@ -508,12 +547,35 @@ else
 endif
 endif
 
+#
+# ptheads, etc
+#
 ifeq ($(USE_THREADS),YES)
     EXTERNAL_LIBS+=$(THREADS_LINK_FLAGS)
 endif
 
 
+#
+# CEF
+#
+ifeq ($(USE_CEF),YES)
 
+    INCLUDE_FLAGS+=-I$(CEF_DIR)
+    EXTERNAL_LIBS+=-L$(CEF_LIBS) $(CEF_LIBS)/obj.target/libcef_dll_wrapper.a -lcef 
+endif
+
+#
+# GTK+ 
+#   ** must come after CEF **
+#
+ifeq ($(USE_GTK),YES)
+    INCLUDE_FLAGS+=$(shell pkg-config --cflags gtk+-2.0) 
+    EXTERNAL_LIBS+=$(shell pkg-config --libs-only-l gmodule-2.0 gtk+-2.0 gthread-2.0 gtk+-unix-print-2.0)
+    EXTERNAL_LIBS+=-ludev -lX11
+endif
+
+
+ 
 ###################################################################
 #                        Tags                                     #
 ###################################################################
@@ -527,6 +589,11 @@ endif
 ###################################################################
 #                     Overrides                                   #
 ###################################################################
+ifneq ($(strip $(FILES_TO_SYM_LINK)),)
+    BUILD_DEPS+=sym_link
+    FILES_TO_CLEAN+=$(notdir $(FILES_TO_SYM_LINK))
+endif
+
 ifeq ($(strip $(FILES_TO_CLEAN)),)
     CLEAN_CMD=@echo "nothing to clean"
 else
@@ -587,6 +654,9 @@ profileview:
 
 clean: FOLDERS_TO_CLEAN 
 	$(CLEAN_CMD)
+
+sym_link: 
+	ln -f -s $(FILES_TO_SYM_LINK) .
 
 EXEC: $(TO_BUILD) $(LINKED_FILES)
 	$(COMP) $(COMP_FLAGS) -o $(EXEC_TO_BUILD) $(TO_BUILD) $(LINKED_FILES) $(EXTERNAL_LIBS)
@@ -786,12 +856,16 @@ usage:
 	@echo ""
 	@echo "        Linker Options"
 	@echo "INCLUDES_DIR:  $(INCLUDES_DIR)"
-	@echo "USE_GSL:       $(USE_GSL)   ( LOCAL: $(USE_LOCAL_GSL))"
-	@echo "USE_PLPLOT:    $(USE_PLPLOT)   ( LOCAL: $(USE_LOCAL_PLPLOT))"
-	@echo "USE_SQLITE:    $(USE_SQLITE)"
 	@echo "LINKED_FILES:  $(LINKED_FILES)"
 	@echo "EXTERNAL_LIBS: $(EXTERNAL_LIBS)"
+	@echo ""
+	@echo "USE_GSL:       $(USE_GSL)   ( LOCAL: $(USE_LOCAL_GSL))"
+	@echo "USE_PLPLOT:    $(USE_PLPLOT)   ( LOCAL: $(USE_LOCAL_PLPLOT))"
+	@echo "USE_PLPLOT:    $(USE_PLPLOT)   ( LOCAL: $(USE_LOCAL_PLPLOT))"
+	@echo "USE_SQLITE:    $(USE_SQLITE)"
 	@echo "USE_FPIC:      $(USE_FPIC)"
+	@echo "USE_CEF:       $(USE_CEF)"
+	@echo "USE_GTK:       $(USE_GTK)"
 	@echo ""
 	@echo "        Boost Options (Enabled: $(USE_BOOST))"
 	@echo "Build Options:"
@@ -809,6 +883,7 @@ usage:
 	@echo "  TO open a module's help page: >>  make bost-help <module>" 
 	@echo ""
 	@echo "        Test Options"
+	@echo "ADDITIONAL_TEST_COMP_FLAGS: Add extra flags used when compiling test binaries - (), <$(ADDITIONAL_INCLUDE_FLAGS)>"
 	@echo "DEV_TOOLS_TEST_CAPTURE_FROM  (Cherry pick contexts to full_log):"
 	@echo "    >$(DEV_TOOLS_TEST_CAPTURE_FROM)<"
 	@echo "Other Test Options ( set to activate)"
@@ -819,11 +894,7 @@ usage:
 	@echo "    NO_LOG_VERBOSE:                >$(NO_LOG_VERBOSE)<"
 	@echo "    NO_LOG_VERY_VERBOSE:           >$(NO_LOG_VERY_VERBOSE)<"
 	@echo ""
-	@echo "        Thread Options"
-	@echo "    Starting Thread Pool Size:"
-	@echo "       TASK_MASTER_NUM_THREADS:      >$(TASK_MASTER_NUM_THREADS)<"
-	@echo ""
-	@echo "        Compiler Options"
+	@echo "        Calculated Compiler Options"
 	@echo "MODE:              $(MODE)"
 	@echo "TOOL_CHAIN:        $(TOOL_CHAIN)"
 	@echo "COMPILER:          $(COMP)"
@@ -834,23 +905,32 @@ usage:
 	@echo "CORE_SIZE                  Max allowed size of genereated core files - ($(DEFAULT_CORE_SIZE)), <$(CORE_SIZE)>"
 	@echo "DEBUG_VALGRIND             Wait for gdb to attach when memtest find an error- (YES)), <$(DEBUG_VALGRIND)>"
 	@echo ""
-	@echo "        Generic Options"
-	@echo "ADDITIONAL_INCLUDE_FLAGS:  Add extra include directories - (), <$(ADDITIONAL_INCLUDE_FLAGS)>"
-	@echo "ADDITIONAL_TEST_COMP_FLAGS: Add extra flags used when compiling test binaries - (), <$(ADDITIONAL_INCLUDE_FLAGS)>"
-	@echo "ALL_WARNINGS               Set to NO to turn off warnings for questionable code - (YES), <$(ALL_WARNINGS)>"
+	@echo "        Configured Compiler Options"
+	@echo "SUPPRESSED_WARNINGS:       List of specific warnings to supress - () , <$(SUPPRESSED_WARNINGS)>"
 	@echo "CPPSTD:                    Set the C++ standard to be used by $(CPP) - ($(DEFAULT_CPPSTD)), <$(CPPSTD)>"
-	@echo "COMP_FLAGS:                 Flags passed to $(CPP) - (), <$(COMP_FLAGS)>" 
-	@echo "COMP_PROFILE_FLAGS          Flags used when profiling - ($(DEFAULT_COMP_PROFILE_FLAGS)), <$(COMP_PROFILE_FLAGS)>"
+	@echo "USE_CPP11:                 To use the CPP11 std, set USE_CPP11=YES - (NO), <$(USE_CPP11)>"
+	@echo "COMP_FLAGS:                Flags passed to $(CPP) - (), <$(COMP_FLAGS)>" 
+	@echo "COMP_PROFILE_FLAGS         Flags used when profiling - ($(DEFAULT_COMP_PROFILE_FLAGS)), <$(COMP_PROFILE_FLAGS)>"
+	@echo "FATAL_WARNINGS             Set to NO to prevent compiler warnings becomings errors - (YES), <$(FATAL_WARNINGS)>"
+	@echo "ALL_WARNINGS               Set to NO to turn off warnings for questionable code - (YES), <$(ALL_WARNINGS)>"
+	@echo "ADDITIONAL_INCLUDE_FLAGS:  Add extra include directories - (), <$(ADDITIONAL_INCLUDE_FLAGS)>"
+	@echo ""
+	@echo "        File Operations"
+	@echo "LINK_CEF_RESOURCES: $(LINK_CEF_RESOURCES)"
+	@echo "Files to link: $(FILES_TO_SYM_LINK)"
+	@echo "Files to clean: $(FILES_TO_CLEAN)"
+	@echo ""
+	@echo "        Target Options"
 	@echo "DEBUG_FLAGS:               Flags to $(CPP) when debugging is enabled - ($(DEFAULT_DEBUG_FLAGS)), <$(DEBUG_FLAGS)>"
 	@echo "DEBUG_ON:                  To disable debug symbols: export DEBUG_ON=FALSE - (YES), <$(DEBUG_ON)>"
 	@echo "FAST_FLAGS                 Flags to $(CPP)when fast build is enabled (Enable dangerous optimizations) -  ($(DEFAULT_FAST_FLAGS)), <$(FAST_FLAGS)>"
 	@echo "FAST_ON:                   Do everything to enhance performance, including dangerous optimizations - (NO), <$(FAST_ON)>"
-	@echo "FATAL_WARNINGS             Set to NO to prevent compiler warnings becomings errors - (YES), <$(FATAL_WARNINGS)>"
-	@echo "PROFILE_SECS               Minimum time a test must run for when profiling - ($(DEFAULT_PROFILE_SECS)), <$(PROFILE_SECS)>"
 	@echo "RELEASE_FLAGS              Flags to $(CPP)when release build is enabled -  ($(DEFAULT_RELEASE_FLAGS)), <$(RELEASE_FLAGS)>"
 	@echo "RELEASE_ON:                Enable release optimizations - (NO), <$(RELEASE_ON)>"
-	@echo "SUPPRESSED_WARNINGS:       List of specific warnings to supress - () , <$(SUPPRESSED_WARNINGS)>"
-	@echo "USE_CPP11:                 To use the CPP11 std, set USE_CPP11=YES - (NO), <$(USE_CPP11)>"
+	@echo ""
+	@echo "       Other Options"
+	@echo "CORE_SIZE                  Max allowed size of genereated core files - ($(DEFAULT_CORE_SIZE)), <$(CORE_SIZE)>"
+	@echo "PROFILE_SECS               Minimum time a test must run for when profiling - ($(DEFAULT_PROFILE_SECS)), <$(PROFILE_SECS)>"
 	@echo ""
 	@echo "        CTAGS"
 	@echo "CTAGS:                    (ctags)   Set the ctags executable <$(CTAGS)>"
