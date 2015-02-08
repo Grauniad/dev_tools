@@ -483,6 +483,10 @@ endif
 ifeq ($(LINK_CEF_RESOURCES),YES)
     FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/locales
     FILES_TO_SYM_LINK+=$(CEF_LIBS)/chrome-sandbox
+    FILES_TO_SYM_LINK+=$(CEF_LIBS)/chrome-sandbox
+    FILES_TO_SYM_LINK+=$(CEF_LIBS)/libcef.so*
+    FILES_TO_SYM_LINK+=$(CEF_LIBS)/libffmpegsumo.so*
+    FILES_TO_SYM_LINK+=$(CEF_LIBS)/libpdf.so*
     FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/cef_100_percent.pak
     FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/cef_200_percent.pak
     FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/cef.pak 
