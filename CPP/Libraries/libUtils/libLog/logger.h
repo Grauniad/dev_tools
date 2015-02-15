@@ -1,5 +1,6 @@
 #ifndef __LOGGER_H__
 #define __LOGGER_H__
+
 #include "binaryWriter.h"
 #include <set>
 #include <sstream>
@@ -140,6 +141,8 @@ public:
     const string& GetName( LOG_LEVEL level ) {
         return logLevelNames[level];
     }
+
+    LOG_LEVEL GetValue(const std::string& level);
 
 private:  
     /*

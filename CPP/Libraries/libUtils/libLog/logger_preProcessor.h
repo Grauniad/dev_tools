@@ -1,3 +1,6 @@
+#ifndef LOGGER_PRE_PROCESS
+#define LOGGER_PRE_PROCESS
+
 #ifdef DEV_TOOLS_NO_LOGGING
 /*
  * Optimise out logging
@@ -61,5 +64,8 @@
         __s__ << text; \
         Logger::Instance().LogMessage(__s__.str(), level, context); \
     }
+
+#endif
+
 
 #endif

@@ -152,3 +152,13 @@ string GenericFormatLogger::Format( const string& message,
     return log.str();
 }
 
+LOG_LEVEL Logger::GetValue(const std::string& level) {
+	LOG_LEVEL levelKey = __NUM_LOG_LEVELS;
+	for(size_t i = 0; i<logLevelNames.size() && levelKey==__NUM_LOG_LEVELS; ++i) {
+		if (logLevelNames[i]==level)
+		{
+			levelKey = static_cast<LOG_LEVEL>(i);
+		}
+	}
+	return levelKey;
+}
