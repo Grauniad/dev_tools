@@ -9,7 +9,6 @@
 #define IF_LOG(level,code) /* Logging has been optimised out! */
 #define FLOG_FROM(level, context, code) /* Logging has been optimised out! */
 #define PRINT(text) /* Logging has been optimised out! */
-#define LOG(level, text) /* Logging has been optimised out! */
 #define LOG_FROM(level, context, text) /* Logging has been optimised out! */
 #define SPRINT(text) /* Logging has been optimised out! */
 #define SLOG(level, text) /* Logging has been optimised out! */
@@ -32,11 +31,6 @@
 #define PRINT(text) \
     if ( Logger::Instance().LogEnabled(LOG_DEFAULT) ) { \
         Logger::Instance().LogMessage(text, LOG_DEFAULT); \
-    }
-
-#define LOG(level, text) \
-    if ( Logger::Instance().LogEnabled(level) ) { \
-        Logger::Instance().LogMessage(text, level); \
     }
 
 #define LOG_FROM(level, context, text) \
