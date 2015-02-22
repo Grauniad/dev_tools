@@ -7,6 +7,7 @@ MAKE_DIRS= libIOInterface\
 		   libScreen \
 		   libMeta \
 		   libCommands \
+		   libGTK \
 		   libCEF
 
 MODE=CPP
