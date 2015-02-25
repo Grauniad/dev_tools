@@ -16,11 +16,17 @@ public:
     CSV_rows(CSV_rows&& source) = default;
 
     static CSV_rows<T> LoadCSV(BinaryReader reader);
+    static CSV_rows<T> MakeEmpty();
 
     std::vector<T>& GetRow(size_t r) {
         return rows[r];
     }
     size_t Rows() { return rows.size(); }
+
+    template <class ...Args>
+    void AddRow(Args&&... items);
+
+    void AddRow(std::vector<T>&& row);
 
     decltype(rows.begin()) begin() {
         return rows.begin();

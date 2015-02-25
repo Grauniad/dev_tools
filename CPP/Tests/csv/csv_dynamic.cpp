@@ -6,9 +6,114 @@
 using namespace std;
 
 int ReadFile(testLogger& log);
+int ManuallyAddRows(testLogger& log);
+int ManuallyAddVectors(testLogger& log);
 
 int main(void) {
     Test("Reading file...",ReadFile).RunTest();
+    Test("Manually adding rows...",ManuallyAddRows).RunTest();
+    Test("Manually adding rows (as vectors)...",ManuallyAddVectors).RunTest();
+    return 0;
+}
+
+int ManuallyAddVectors(testLogger& log) {
+    CSV_rows<long>  rows = CSV_rows<long>::MakeEmpty();
+    rows.AddRow(std::vector<long>({1,2,3}));
+    rows.AddRow(std::vector<long>({}));
+    rows.AddRow(std::vector<long>({4,5,8,12,15}));
+    rows.AddRow(std::vector<long>({-1,-2}));
+
+    auto& row = rows.GetRow(0);
+    if ( row.size() != 3 ) {
+        log << "Expected size of row 0 to be 3, but is " << row.size() << endl;
+        return 1;
+    }
+
+    if ( row[0] != 1 || row[1] != 2 || row [2] != 3) {
+        log << "Data error on row 1!" << endl;
+        return 1;
+    }
+
+    auto& row2 = rows.GetRow(1);
+    if ( row2.size() != 0) {
+        log << "Expected size of row 1 to be 0, but is " << row2.size() << endl;
+        return 1;
+    }
+
+    auto& row3 = rows.GetRow(2);
+    if ( row3.size() != 5) {
+        log << "Expected size of row 0 to be 3, but is " << row3.size() << endl;
+        return 1;
+    }
+
+    if ( row3[0] != 4 || row3[1] != 5 || row3[2] != 8 || row3[3] != 12
+         || row3[4] != 15 )
+    {
+        log << "Data error on row 3!" << endl;
+        return 1;
+    }
+
+    auto& row4 = rows.GetRow(3);
+    if ( row4.size() != 2) {
+        log << "Expected size of row 4 to be 2, but is " << row4.size() << endl;
+        return 1;
+    }
+
+    if ( row4[0] != -1 || row4[1] != -2 )
+    {
+        log << "Data error on row 4!" << endl;
+        return 1;
+    }
+    return 0;
+}
+int ManuallyAddRows(testLogger& log) {
+    CSV_rows<long>  rows = CSV_rows<long>::MakeEmpty();
+    rows.AddRow(1,2,3);
+    rows.AddRow();
+    rows.AddRow(4,5,8,12,15);
+    rows.AddRow(-1,-2);
+
+    auto& row = rows.GetRow(0);
+    if ( row.size() != 3 ) {
+        log << "Expected size of row 0 to be 3, but is " << row.size() << endl;
+        return 1;
+    }
+
+    if ( row[0] != 1 || row[1] != 2 || row [2] != 3) {
+        log << "Data error on row 1!" << endl;
+        return 1;
+    }
+
+    auto& row2 = rows.GetRow(1);
+    if ( row2.size() != 0) {
+        log << "Expected size of row 1 to be 0, but is " << row2.size() << endl;
+        return 1;
+    }
+
+    auto& row3 = rows.GetRow(2);
+    if ( row3.size() != 5) {
+        log << "Expected size of row 0 to be 3, but is " << row3.size() << endl;
+        return 1;
+    }
+
+    if ( row3[0] != 4 || row3[1] != 5 || row3[2] != 8 || row3[3] != 12
+         || row3[4] != 15 )
+    {
+        log << "Data error on row 3!" << endl;
+        return 1;
+    }
+
+    auto& row4 = rows.GetRow(3);
+    if ( row4.size() != 2) {
+        log << "Expected size of row 4 to be 2, but is " << row4.size() << endl;
+        return 1;
+    }
+
+    if ( row4[0] != -1 || row4[1] != -2 )
+    {
+        log << "Data error on row 4!" << endl;
+        return 1;
+    }
     return 0;
 }
 

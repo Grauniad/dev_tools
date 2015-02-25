@@ -26,6 +26,22 @@ CSV_rows<T> CSV_rows<T>::LoadCSV(BinaryReader reader) {
 }
 
 template<class T>
+inline CSV_rows<T> CSV_rows<T>::MakeEmpty() {
+    return CSV_rows<T>();
+}
+
+template<class T>
+template<class... Args>
+void CSV_rows<T>::AddRow(Args&&... items) {
+    rows.emplace_back(std::vector<T>({items...}));
+}
+
+template<class T>
+inline void CSV_rows<T>::AddRow(std::vector<T>&& row) {
+    rows.emplace_back(row);
+}
+
+template<class T>
 void CSV_rows<T>::NewRow(const Tokeniser& tok) {
     vector<T> row;
     for ( Tokeniser::iterator it = tok.begin();
