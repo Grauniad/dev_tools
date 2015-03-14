@@ -88,7 +88,7 @@ Test::Test(string description, std::function<int(testLogger& log)> test):
     this->description = description;
 }
 
-void Test::RunTest() {
+void Test::RunTest(FAILURE_ACTION action) {
     cout << description << ": ";
     testLogger log;
     startTime.SetNow();
@@ -135,7 +135,19 @@ void Test::RunTest() {
         if ( ENV::IsSet("DEV_TOOLS_TEST_FULL_TEST_LOG") ) {
             cout << DefaultTestLogger::RunTimeLog().str() << endl;
         }
-        exit(result);
+        switch(action)
+        {
+            case PRINT_LOG_AND_EXIT:
+                exit(result);
+                break;
+            case PRINT_LOG_AND_THROW:
+                throw TestFailureException{description};
+                break;
+            default:
+                cout << "WARNING: Unknown action, I will now abort" << endl;
+                abort();
+
+        }
     }
 }
 

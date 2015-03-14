@@ -144,7 +144,16 @@ typedef std::function<int(testLogger&)> loggedTest ;
 class Test {
 public:
     Test (string description, std::function<int(testLogger&)> test);
-    void RunTest();
+    enum FAILURE_ACTION {
+        PRINT_LOG_AND_EXIT,
+        PRINT_LOG_AND_THROW
+    };
+
+    struct TestFailureException {
+        std::string description;
+    };
+
+    void RunTest(FAILURE_ACTION action = PRINT_LOG_AND_THROW);
     double RunTime() { return runTime; }
 
 private:

@@ -9,7 +9,8 @@ MAKE_DIRS= IOInterface\
 		    \
 		   commands \
 		   regex \
-		   strings 
+		   strings  \
+		   CEF
 
 MODE=CPP
 

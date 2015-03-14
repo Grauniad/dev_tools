@@ -166,6 +166,10 @@ ifndef LINK_CEF_RESOURCES
     LINK_CEF_RESOURCES=NO
 endif
 
+ifndef TEST_LINK_CEF_RESOURCES
+    TEST_LINK_CEF_RESOURCES=NO
+endif
+
 ifndef USE_GTK
     USE_GTK=NO
 endif
@@ -359,6 +363,7 @@ LINKED_FILES=
 TO_COPY=
 SUB_FOLDER=
 FILES_TO_SYM_LINK=
+TEST_FILES_TO_SYM_LINK=
 
 ifdef TARGET_DYNAMIC_LIB
    $(shell mkdir -p $(EXPORT_LIB_DIR))
@@ -494,6 +499,19 @@ ifeq ($(LINK_CEF_RESOURCES),YES)
     FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/icudtl.dat
 endif
 
+ifeq ($(TEST_LINK_CEF_RESOURCES),YES)
+    TEST_FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/locales
+    TEST_FILES_TO_SYM_LINK+=$(CEF_LIBS)/chrome-sandbox
+    TEST_FILES_TO_SYM_LINK+=$(CEF_LIBS)/chrome-sandbox
+    TEST_FILES_TO_SYM_LINK+=$(CEF_LIBS)/libcef.so*
+    TEST_FILES_TO_SYM_LINK+=$(CEF_LIBS)/libffmpegsumo.so*
+    TEST_FILES_TO_SYM_LINK+=$(CEF_LIBS)/libpdf.so*
+    TEST_FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/cef_100_percent.pak
+    TEST_FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/cef_200_percent.pak
+    TEST_FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/cef.pak 
+    TEST_FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/devtools_resources.pak
+    TEST_FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/icudtl.dat
+endif
 ###################################################################
 #                  Foreign libraries                              #
 ###################################################################
@@ -598,6 +616,11 @@ ifneq ($(strip $(FILES_TO_SYM_LINK)),)
     FILES_TO_CLEAN+=$(notdir $(FILES_TO_SYM_LINK))
 endif
 
+ifneq ($(strip $(TEST_FILES_TO_SYM_LINK)),)
+    BUILD_DEPS+=test_sym_link
+    FILES_TO_CLEAN+=$(addprefix $(EXPORT_TESTS_TO),$(notdir $(TEST_FILES_TO_SYM_LINK)))
+endif
+
 ifeq ($(strip $(FILES_TO_CLEAN)),)
     CLEAN_CMD=@echo "nothing to clean"
 else
@@ -661,6 +684,9 @@ clean: FOLDERS_TO_CLEAN
 
 sym_link: 
 	ln -f -s $(FILES_TO_SYM_LINK) .
+
+test_sym_link: 
+	ln -f -s $(TEST_FILES_TO_SYM_LINK) $(EXPORT_TESTS_TO)/
 
 EXEC: $(TO_BUILD) $(LINKED_FILES)
 	$(COMP) $(COMP_FLAGS) -o $(EXEC_TO_BUILD) $(TO_BUILD) $(LINKED_FILES) $(EXTERNAL_LIBS)
@@ -921,6 +947,7 @@ usage:
 	@echo ""
 	@echo "        File Operations"
 	@echo "LINK_CEF_RESOURCES: $(LINK_CEF_RESOURCES)"
+	@echo "TEST_LINK_CEF_RESOURCES: $(LINK_CEF_RESOURCES)"
 	@echo "Files to link: $(FILES_TO_SYM_LINK)"
 	@echo "Files to clean: $(FILES_TO_CLEAN)"
 	@echo ""
