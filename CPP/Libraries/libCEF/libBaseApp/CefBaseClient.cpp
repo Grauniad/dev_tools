@@ -7,8 +7,9 @@
 
 #include "CefBaseClient.h"
 
-CefBaseClient::CefBaseClient()
+CefBaseClient::CefBaseClient(CefBaseApp* parent)
         :
+            parent_(parent),
             lifeSpanHandler_(new CefBaseLifeSpanHandler),
             renderHandler_(new CefBaseRenderHandler),
             requestHandler_(new CefBaseRequestHandler),

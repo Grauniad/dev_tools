@@ -10,7 +10,7 @@
 CefBaseApp::CefBaseApp()
     : browser_(new CefBaseBrowserProcess),
       renderer_(new CefBaseRendererProcess),
-      client_(new CefBaseClient)
+      client_(new CefBaseClient(this))
 {
     // TODO Auto-generated constructor stub
 

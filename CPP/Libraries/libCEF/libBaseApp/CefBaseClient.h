@@ -15,13 +15,15 @@
 #include "CefBaseDisplayHandler.h"
 #include "CefBaseLoadHandler.h"
 
+class CefBaseApp;
+
 #include <vector>
 
 class CefBaseClient: public CefClient {
 public:
     typedef std::shared_ptr<CefClient> MessageHandlerPtrType;
 
-    CefBaseClient();
+    CefBaseClient(CefBaseApp* parent);
 
     virtual ~CefBaseClient();
 
@@ -83,8 +85,12 @@ public:
 
     CefBaseLoadHandler& LoadHandler();
 
+    CefBaseApp& Parent() {
+        return *parent_;
+    }
 
 private:
+    CefBaseApp*                   parent_;
     CefRefPtr<CefLifeSpanHandler> lifeSpanHandler_;
     CefRefPtr<CefRenderHandler>   renderHandler_;
     CefRefPtr<CefRequestHandler>  requestHandler_;
