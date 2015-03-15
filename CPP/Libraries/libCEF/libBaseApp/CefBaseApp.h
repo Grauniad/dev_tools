@@ -55,15 +55,6 @@ public:
         return client_;
     }
 
-    /**
-     * Run the application, and return a exit code.
-     *
-     * The exit code returned by the function should be used immediately to
-     * return from the program's main loop
-     *
-     */
-    int Main(int argc, char *argv[]);
-
     /**********************************************************************
      *                         Accessors
      **********************************************************************/
