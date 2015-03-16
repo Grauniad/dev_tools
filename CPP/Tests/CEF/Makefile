@@ -21,4 +21,6 @@ TEST_LINK_CEF_RESOURCES=YES
 # still memory test the rest of our code
 NO_MEMTEST=YES
 
+NO_TRAVIS=YES
+
 include ../makefile_tests.include
