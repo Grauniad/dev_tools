@@ -2,3 +2,4 @@
 *.mod
 *.swp
 *.svg
+*/Tests/*/core.*
