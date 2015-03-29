@@ -779,9 +779,6 @@ void Terminal::FindNext() {
                 // last_line points to the next line which will be printed
                 // Bottom of the screen will be used for input
                 last_line = std::distance(output.cbegin(),it) -2;
-                if ( last_line < 0 ) {
-                    last_line = 0;
-                }
                 FeedLines(info.lines);
             }
         }
@@ -801,9 +798,6 @@ void Terminal::FindPrev() {
                 // last_line points to the next line which will be printed
                 // Bottom of the screen will be used for input
                 last_line = std::distance(output.cbegin(),it) -2;
-                if ( last_line < 0 ) {
-                    last_line = 0;
-                }
                 FeedLines(info.lines);
             }
         }

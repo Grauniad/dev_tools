@@ -278,6 +278,10 @@ public:
      */
     void PutString(const std::string& text);
 
+    virtual void PutString(int x, int y, const std::string& line) {
+        Window::PutString(x,y,line);
+    }
+
     /*********************************
      *     Screen Manipulation
      ********************************/

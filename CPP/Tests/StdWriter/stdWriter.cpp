@@ -1,10 +1,11 @@
-using namespace std;
 #include <cstring>
 #include <iostream>
 #include "tester.h"
 #include <sstream>
 #include "stdWriter.h"
 #include <cstdio>
+
+using namespace std;
 
 //Tests
 template<class Writer>

@@ -1,4 +1,3 @@
-using namespace std;
 #include <cstring>
 #include <iostream>
 #include "tester.h"
@@ -7,6 +6,8 @@ using namespace std;
 #include <cstdio>
 #include <vector>
 #include "defer.h"
+
+using namespace std;
 
 //Tests
 template<class Reader>

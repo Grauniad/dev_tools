@@ -73,9 +73,11 @@ void DefaultTestLogger::Log( const string& message,
 	messageQueue.push({time,message,context,level});
 
 	if ( messageQueue.size() > MAX_QUEUE_SIZE) {
-     	cout << Time().Timestamp() << "***WARNING: MAX MESSAGE QUEUE SIZE REACHED!, FLUSHING QUEUE ****" << endl;
+     	cout << Time().Timestamp()
+     	     << "***WARNING: MAX MESSAGE QUEUE SIZE REACHED!, FLUSHING QUEUE ****"
+     	     << std::endl;
 		FlushQueue();
-        cout << Time().Timestamp() << "**** FLUSH COMPLETE ****" << endl;;
+        cout << Time().Timestamp() << "**** FLUSH COMPLETE ****" << std::endl;
 	}
 
 }

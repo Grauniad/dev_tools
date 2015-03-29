@@ -1,4 +1,3 @@
-using namespace std;
 #include <cstring>
 #include <ctime>
 #include <iostream>
@@ -6,6 +5,8 @@ using namespace std;
 #include "tester.h"
 #include "fileLikeObject.h"
 #include <sstream>
+
+using namespace std;
 
 long Arrays(testLogger& log);
 long ArraysStack (testLogger& log);

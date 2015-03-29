@@ -1,0 +1,45 @@
+DEFAULT_DEBUG_FLAGS=-g
+DEFAULT_RELEASE_FLAGS=-O2 -march=native -g
+DEFAULT_FAST_FLAGS=-Ofast -march=native -DDEV_TOOLS_NO_LOGGING
+DEFAULT_COMP_PROFILE_FLAGS=-pg $(DEFAULT_RELEASE_FLAGS)
+DEFAULT_CPPSTD=gnu++98
+DEFAULT_FORTRAN_STD=f2008
+
+COMPILER_CPP11=c++11
+COMPILER_ALL_WARNINGS=-Wall
+COMPILER_FATAL_WARNINGS=-Werror
+COMPILER_COVERAGE=--coverage
+COMPILER_WARNING_SUPPRESSION_PREFIX="-Wno-"
+
+PROFILE_COMMAND=gprof $$test > $(EXPORT_PROFILE_DIR)/$$(basename $$test).profile  || exit;
+PROFILE_GEN_COMMAND=$(SCRIPTS_DIR)/prof2html.py $(EXPORT_PROFILE_DIR)/$$(basename $$test).profile || exit;
+PROFILE_VIEWER=$(WEB_VIEWER) $(EXPORT_PROFILE_DIR)index.html
+
+ifndef LLVM_CPP
+     CPP=clang++
+else
+     CPP=$(LLVM_CPP)
+endif
+
+FORTRAN=gfortran
+AR=ar
+
+GSL_LOCAL_LINK_FLAGS=-lgsl -lgslcblas -lm
+GSL_DEV_TOOLS_LINK_FLAGS=$(DEV_TOOLS_DIR)/EXTERNAL_LIBS/GSL/libgsl.a $(DEV_TOOLS_DIR)/EXTERNAL_LIBS/GSL/libgslcblas.a -lm
+
+PLPLOT_DEV_TOOLS_LINK_FLAGS=$(DEV_TOOLS_DIR)/EXTERNAL_LIBS/PLPLOT/libplplotd.a $(DEV_TOOLS_DIR)/EXTERNAL_LIBS/PLPLOT/libltdl.a
+PLPLOT_LOCAL_LINK_FLAGS=-I/usr/include/plplot  -lplplotd -lltdl -ldl -lm -lcsirocsa -lqhull -lqsastime -lfreetype
+
+THREADS_LINK_FLAGS=-pthread
+
+SQLITE_LINK_FLAGS=-lsqlite3
+
+
+COVER_FILE=index.html
+
+GEN_COVER: 
+	lcov --capture --directory $(PROJECT_ROOT_DIR) --output-file $(EXPORT_COVER_DIR)test.info
+	genhtml -f --demangle-cpp  --legend --num-spaces 4 -s $(EXPORT_COVER_DIR)test.info --output-directory $(EXPORT_COVER_DIR)
+
+
+BOOST_DIR=$(DEV_TOOLS_GCC_BOOST_DIR)
