@@ -18,6 +18,7 @@
 #include "CefTests.h"
 #include "CefTestAppHandlers.h"
 #include "CefTestClient.h"
+#include <CefTestJSHandler.h>
 
 #include <functional>
 #include <memory>
@@ -47,12 +48,16 @@ public:
      */
     void RunTestsAndExit(int argc, char** argv);
 
+    CefRefPtr<CefTestJSHandler> JSHandler() { return jsHandler_; }
+
 private:
     DummyCefApp();
 
     typedef std::shared_ptr<DummyCefAppHandlers> PointerType;
-
     PointerType handlers;
+
+    CefRefPtr<CefTestJSHandler> jsHandler_;
+
 
 IMPLEMENT_REFCOUNTING(DummyCefApp);
 

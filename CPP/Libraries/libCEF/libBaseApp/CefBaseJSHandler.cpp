@@ -13,12 +13,11 @@
 CefBaseJSHandler::CefBaseJSHandler(
     const std::string& queryFn,
     const std::string& cancelFn)
-   : router_(queryFn,cancelFn)
+   : router_(new CefBaseJSMessageRouter(queryFn,cancelFn))
 {
 }
 
 CefBaseJSHandler::~CefBaseJSHandler() {
-    // TODO Auto-generated destructor stub
 }
 
 
@@ -87,6 +86,17 @@ void CefBaseJSHandler::InstallHandler(CefBaseApp& app) {
             jsHandler->OnContextReleased(browser,frame,context);
         }
 
+        bool OnProcessMessageReceived(
+            CefRefPtr<CefBrowser> browser,
+            CefProcessId source_process,
+            CefRefPtr<CefProcessMessage> message) OVERRIDE
+        {
+            return jsHandler->OnProcessMessageReceived(
+                browser,
+                source_process,
+                message);
+        }
+
     private:
         CefRefPtr<CefBaseJSHandler> jsHandler;
         IMPLEMENT_REFCOUNTING(JSRendererProcess);
@@ -121,6 +131,8 @@ void CefBaseJSHandler::InstallHandler(CefBaseApp& app) {
         std::shared_ptr<CefRequestHandler>(new JSRequestHandler(this)));
     app.Client().LifeSpanHandler().InstallHandler(
         std::shared_ptr<CefLifeSpanHandler>(new JSLifeSpanInstaller(this)));
+
+    app.Browser().InstallHandler(router_);
 }
 
 /****************************************************************************
@@ -130,13 +142,13 @@ void CefBaseJSHandler::InstallHandler(CefBaseApp& app) {
 void CefBaseJSHandler::OnBeforeClose(CefRefPtr<CefBrowser> browser) {
 	CEF_REQUIRE_UI_THREAD();
 
-    router_.GetBrowserSideRouter()->OnBeforeClose(browser);
+    router_->GetBrowserSideRouter()->OnBeforeClose(browser);
 }
 
 void CefBaseJSHandler::OnRenderProcessTerminated(CefRefPtr<CefBrowser> browser) {
 	CEF_REQUIRE_UI_THREAD();
 
-    router_.GetBrowserSideRouter()->OnRenderProcessTerminated(browser);
+    router_->GetBrowserSideRouter()->OnRenderProcessTerminated(browser);
 }
 
 void CefBaseJSHandler::OnBeforeBrowse(
@@ -145,7 +157,7 @@ void CefBaseJSHandler::OnBeforeBrowse(
 {
 	CEF_REQUIRE_UI_THREAD();
 
-    router_.GetBrowserSideRouter()->OnBeforeBrowse(browser,frame);
+    router_->GetBrowserSideRouter()->OnBeforeBrowse(browser,frame);
 }
 
 bool CefBaseJSHandler::OnBrowserProcessMessageReceived(
@@ -154,12 +166,11 @@ bool CefBaseJSHandler::OnBrowserProcessMessageReceived(
     CefRefPtr<CefProcessMessage> message)
 {
 	CEF_REQUIRE_UI_THREAD();
-
     bool handled = false;
 
     if (!handled)
     {
-        handled = router_.GetBrowserSideRouter()->OnProcessMessageReceived(
+        handled = router_->GetBrowserSideRouter()->OnProcessMessageReceived(
             browser,
             source_process,
             message);
@@ -179,7 +190,7 @@ void CefBaseJSHandler::OnContextCreated(
 {
     RegisterJSFunctions(context);
 
-    router_.GetRendererSideRouter()->OnContextCreated(browser,frame,context);
+    router_->GetRendererSideRouter()->OnContextCreated(browser,frame,context);
 }
 
 void CefBaseJSHandler::OnContextReleased(
@@ -187,7 +198,7 @@ void CefBaseJSHandler::OnContextReleased(
     CefRefPtr<CefFrame> frame,
     CefRefPtr<CefV8Context> context)
 {
-    router_.GetRendererSideRouter()->OnContextReleased(
+    router_->GetRendererSideRouter()->OnContextReleased(
         browser,
         frame,
         context);
@@ -202,7 +213,7 @@ bool CefBaseJSHandler::OnRendererProcessMessageReceived(
 
     if (!handled)
     {
-        handled = router_.GetRendererSideRouter()->OnProcessMessageReceived(
+        handled = router_->GetRendererSideRouter()->OnProcessMessageReceived(
             browser,
             source_process,
             message);
@@ -217,15 +228,12 @@ bool CefBaseJSHandler::OnProcessMessageReceived(
     CefRefPtr<CefProcessMessage> message)
 {
     bool handled = false;
-    if (CefCurrentlyOn(TID_RENDERER))
-    {
+    if (CefCurrentlyOn(TID_RENDERER)) {
         handled = OnRendererProcessMessageReceived(
             browser,
             source_process,
             message);
-    }
-    else if (CefCurrentlyOn(TID_UI))
-    {
+    } else if (CefCurrentlyOn(TID_UI)) {
         handled = OnBrowserProcessMessageReceived(
             browser,
             source_process,

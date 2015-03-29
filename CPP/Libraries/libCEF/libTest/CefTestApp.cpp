@@ -63,8 +63,10 @@ void DummyCefApp::RunTestsAndExit(int argc, char **argv) {
 }
 
 DummyCefApp::DummyCefApp()
-   : handlers(new DummyCefAppHandlers)
+   : handlers(new DummyCefAppHandlers),
+     jsHandler_(new CefTestJSHandler("testQuery","testQueryCancel"))
 {
+    jsHandler_->InstallHandler(*this);
     Renderer().InstallHandler(handlers);
     Browser().InstallHandler(handlers);
 }

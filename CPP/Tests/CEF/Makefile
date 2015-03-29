@@ -3,7 +3,7 @@ LINKED_LIBS= libCEF \
              libUtils  \
 			 libTest
 
-BUILD_TIME_TESTS=jsObject
+BUILD_TIME_TESTS=jsTests
 CPP_TAGS_FILE=dev_tools_cpp_tests_cef-c++.tags
 
 USE_CEF=YES
@@ -22,5 +22,7 @@ TEST_LINK_CEF_RESOURCES=YES
 NO_MEMTEST=YES
 
 NO_TRAVIS=YES
+
+MODE=CPP
 
 include ../makefile_tests.include

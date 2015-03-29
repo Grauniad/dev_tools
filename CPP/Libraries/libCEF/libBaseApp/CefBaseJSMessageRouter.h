@@ -9,9 +9,13 @@
 #define GCGVMESSAGEROUTER_H_
 
 #include <include/wrapper/cef_message_router.h>
-#include <string>
+#include <include/cef_browser_process_handler.h>
 
-class CefBaseJSMessageRouter {
+#include <CefBaseRequestReplies.h>
+
+
+class CefBaseJSMessageRouter: public CefBrowserProcessHandler
+{
 public:
     /*
      * Create a new message router
@@ -24,10 +28,29 @@ public:
 
     CefRefPtr<CefMessageRouterRendererSide> GetRendererSideRouter();
 
+    /**************************************************************************
+     *                      Trigger to install handlers
+     *************************************************************************/
+
+    virtual void OnContextInitialized();
+
+    /**
+     * Process: Browser
+     * Thread:  UI
+     *
+     * Provides access to the reqReps object.
+     *
+     * Note that this is only valid on the the browser process.
+     *
+     */
+    CefBaseJSRequestReplyHandler& ReqReps() { return *reqReps_; }
+
 
 private:
     CefRefPtr<CefMessageRouterBrowserSide>  browserSideRouter_;
     CefRefPtr<CefMessageRouterRendererSide> rendererSideRouter_;
+
+    std::shared_ptr<CefBaseJSRequestReplyHandler>  reqReps_;
 
 	IMPLEMENT_REFCOUNTING(CefBaseJSMessageRouter);
 };

@@ -10,6 +10,7 @@
 
 #include "CefBaseJSMessageRouter.h"
 #include <CefBaseApp.h>
+#include <CEFJSUtils.h>
 
 /*
  * External interface for the java-script library.
@@ -24,6 +25,12 @@ public:
      * Install this java-script hander into an application
      */
     void InstallHandler(CefBaseApp& app);
+
+    /**
+     * Accessor to the Req-Rep object (Browser only) which dynamic installation
+     * of new req-rep handlers at run time
+     */
+    CefBaseJSRequestReplyHandler& ReqReps() { return router_->ReqReps(); }
 
     /**
      * @param queryFn   The JS query function to start async requests
@@ -106,6 +113,7 @@ public:
         CefRefPtr<CefBrowser> browser,
         CefRefPtr<CefFrame> frame,
         CefRefPtr<CefV8Context> context);
+
 protected:
     /*
      * Register custom JS functions
@@ -138,7 +146,7 @@ private:
      *                        Data
      ****************************************************************************/
 
-    CefBaseJSMessageRouter router_;
+    std::shared_ptr<CefBaseJSMessageRouter> router_;
 
     IMPLEMENT_REFCOUNTING(CefBaseJSHandler);
 };
