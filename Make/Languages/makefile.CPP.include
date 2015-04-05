@@ -28,8 +28,16 @@ ifndef USE_CPP11
    USE_CPP11=NO
 endif
 
+ifndef USE_CPP14
+   USE_CPP11=NO
+endif
+
 ifeq ($(USE_CPP11),YES)
   CPPSTD=$(COMPILER_CPP11)
+endif
+
+ifeq ($(USE_CPP14),YES)
+  CPPSTD=$(COMPILER_CPP14)
 endif
 
 

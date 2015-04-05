@@ -10,6 +10,7 @@ MAKE_DIRS= IOInterface\
 		   commands \
 		   regex \
 		   strings  \
+		   JSON \
 		   CEF
 
 MODE=CPP

@@ -1,6 +1,7 @@
 MAKE_DIRS= libIOInterface\
 		   libUtils \
 		   libString \
+		   libJSON \
 		   libTest \
 		     \
 		      \

@@ -29,7 +29,7 @@ EXPORT_LIB_DIR=$(EXPORTS_DIR)lib/
 EXPORT_PROFILE_DIR=$(EXPORTS_DIR)profs/
 EXPORT_COVER_DIR=$(EXPORTS_DIR)coverage/
 
-EXTERNAL_INCLUDE_DIR=$(DEV_TOOLS_DIR)/EXTERNAL_INCLUDES/
+EXTERNAL_INCLUDE_DIR=$(DEV_TOOLS_DIR)EXTERNAL_INCLUDES/
 EXTERNAL_LIBS_DIR=$(DEV_TOOLS_DIR)/EXTERNAL_LIBS/
 
 INCLUDES_DIR:=$(EXPORT_INCLUDES_DIR)
@@ -172,6 +172,10 @@ endif
 
 ifndef USE_GTK
     USE_GTK=NO
+endif
+
+ifndef USE_JSON
+    USE_JSON=NO
 endif
 
 ifndef NO_MEMTEST
@@ -604,6 +608,12 @@ ifeq ($(USE_GTK),YES)
     EXTERNAL_LIBS+=-ludev -lX11
 endif
 
+#
+# RapidJSON
+#
+ifeq ($(USE_JSON),YES)
+    INCLUDE_FLAGS+=-I$(EXTERNAL_INCLUDE_DIR)RAPID_JSON/rapidjson/include
+endif
 
  
 ###################################################################
@@ -904,6 +914,7 @@ usage:
 	@echo "USE_FPIC:      $(USE_FPIC)"
 	@echo "USE_CEF:       $(USE_CEF)"
 	@echo "USE_GTK:       $(USE_GTK)"
+	@echo "USE_JSON:       $(USE_JSON)"
 	@echo ""
 	@echo "        Boost Options (Enabled: $(USE_BOOST))"
 	@echo "Build Options:"
@@ -947,6 +958,7 @@ usage:
 	@echo "SUPPRESSED_WARNINGS:       List of specific warnings to supress - () , <$(SUPPRESSED_WARNINGS)>"
 	@echo "CPPSTD:                    Set the C++ standard to be used by $(CPP) - ($(DEFAULT_CPPSTD)), <$(CPPSTD)>"
 	@echo "USE_CPP11:                 To use the CPP11 std, set USE_CPP11=YES - (NO), <$(USE_CPP11)>"
+	@echo "USE_CPP14:                 To use the CPP14 std, set USE_CPP14=YES - (NO), <$(USE_CPP14)>"
 	@echo "COMP_FLAGS:                Flags passed to $(CPP) - (), <$(COMP_FLAGS)>" 
 	@echo "COMP_PROFILE_FLAGS         Flags used when profiling - ($(DEFAULT_COMP_PROFILE_FLAGS)), <$(COMP_PROFILE_FLAGS)>"
 	@echo "FATAL_WARNINGS             Set to NO to prevent compiler warnings becomings errors - (YES), <$(FATAL_WARNINGS)>"

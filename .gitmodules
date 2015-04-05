@@ -1,3 +1,6 @@
 [submodule "CPP/Libraries/libDefer"]
 	path = CPP/Libraries/libDefer
 	url = https://github.com/Grauniad/CPP-Defer.git
+[submodule "EXTERNAL_INCLUDES/RAPID_JSON/rapidjson"]
+	path = EXTERNAL_INCLUDES/RAPID_JSON/rapidjson
+	url = https://github.com/miloyip/rapidjson.git
