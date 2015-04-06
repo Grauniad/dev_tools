@@ -17,6 +17,11 @@ class CefBaseJSRequestReply {
 public:
     virtual ~CefBaseJSRequestReply() { }
 
+    struct RequestContext {
+        const std::string& request;
+        CefRefPtr<CefBrowser> browser;
+    };
+
     /**
      * Process: Browser
      * Thread:  UI
@@ -32,12 +37,20 @@ public:
      *
      * @returns The string response
      */
-    virtual std::string OnRequest(const std::string& request) = 0;
+    virtual std::string OnRequest(RequestContext& context) = 0;
+
 
     struct CefBaseInvalidRequestException {
         int code;
         std::string errMsg;
     };
+
+    struct CefBaseAbdandonRequest { };
+protected:
+    /**
+     * WARNING: Only valid during an ongoing call to OnRequest
+     */
+    CefRefPtr<CefBrowser> Browser();
 };
 
 class CefBaseJSRequestReplyHandler: public CefMessageRouterBrowserSide::Handler
@@ -104,7 +117,8 @@ private:
      */
     bool GetResponse(
         const std::string& reqString,
-        const CefRefPtr<Callback>& callback);
+        const CefRefPtr<Callback>& callback,
+        CefRefPtr<CefBrowser> browser);
 
     /**
      * Trigger the provided handler for a response to callback, getting the
@@ -114,6 +128,7 @@ private:
         const std::string& request,
         const std::string& name,
         const CefRefPtr<Callback> callback,
+        CefRefPtr<CefBrowser> browser,
         CefBaseJSRequestReply& handler);
 
 

@@ -16,7 +16,8 @@
  *
  * REQUEST:
  *    {
- *         pattern: "*.out"
+ *         pattern: "*.out",
+ *         prefix: ""
  *    }
  *
  * REPLY:
@@ -36,13 +37,14 @@ class CefBaseReqFileList: public CefBaseJSRequestReply {
 public:
     CefBaseReqFileList();
 
-    virtual std::string OnRequest(const std::string& request);
+    virtual std::string OnRequest(RequestContext& context);
 
     virtual ~CefBaseReqFileList();
 private:
     NewStringField(pattern);
+    NewStringField(prefix);
     NewStringArrayField(files);
-    typedef SimpleParsedJSON<pattern> Request;
+    typedef SimpleParsedJSON<pattern,prefix> Request;
     typedef SimpleParsedJSON<files> Reply;
 
     Request request;

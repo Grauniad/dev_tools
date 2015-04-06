@@ -7,6 +7,8 @@
 
 #include "CefBaseRequestReplies.h"
 
+#include <logger.h>
+
 
 bool CefBaseJSRequestReplyHandler::InstallHandler(
     const std::string& name,
@@ -18,6 +20,12 @@ bool CefBaseJSRequestReplyHandler::InstallHandler(
     if (it == handlers.end()) {
         handlers.insert(HandlerMap::value_type(name, std::move(handler)));
     }
+
+    SLOG_FROM(
+        LOG_VERBOSE,
+        "CefBaseJSRequestReplyHandler::InstallHandler",
+        "Installed handler: " << name
+        )
 
     return ok;
 }
@@ -36,15 +44,32 @@ bool CefBaseJSRequestReplyHandler::OnQuery(
     bool handled = false;
 
     if ( strncmp("REQUEST_",reqString.c_str(),8) == 0 ) {
-        handled = GetResponse(reqString, callback);
+        handled = GetResponse(reqString, callback, browser);
     }
+
+    if (handled) {
+        SLOG_FROM(
+            LOG_VERBOSE,
+            "CefBaseJSRequestReplyHandler::OnQuery",
+            "Handled request: " << reqString
+            )
+    } else {
+        SLOG_FROM(
+            LOG_VERBOSE,
+            "CefBaseJSRequestReplyHandler::OnQuery",
+            "Failed to handle request: " << reqString
+            )
+
+    }
+
 
     return handled;
 }
 
 bool CefBaseJSRequestReplyHandler::GetResponse(
     const std::string& reqString,
-    const CefRefPtr<Callback>& callback)
+    const CefRefPtr<Callback>& callback,
+    CefRefPtr<CefBrowser> browser)
 {
     bool handled = false;
 
@@ -63,7 +88,7 @@ bool CefBaseJSRequestReplyHandler::GetResponse(
 
     if (it != handlers.end()) {
         CefBaseJSRequestReply& handler = *it->second;
-        handled = GetResponse(reqString, name, callback, handler);
+        handled = GetResponse(reqString, name, callback, browser, handler);
     }
 
     return handled;
@@ -73,22 +98,29 @@ bool CefBaseJSRequestReplyHandler::GetResponse(
     const std::string&       request,
     const std::string&       name,
     const CefRefPtr<Callback> callback,
+    CefRefPtr<CefBrowser> browser,
     CefBaseJSRequestReply& handler)
 {
     bool handled = false;
 
     try {
         const size_t prefix = name.length() + 1; // include the space
-        std::string response =
-            request.length() > prefix ?
-                handler.OnRequest(request.substr(prefix)):
-                handler.OnRequest("");
+        CefBaseJSRequestReply::RequestContext context
+            {
+                request.length() > prefix ? request.substr(prefix): "",
+                browser
+            };
+
+        std::string response = handler.OnRequest(context);
 
         handled = true;
         callback->Success(std::move(response));
     } catch (CefBaseJSRequestReply::CefBaseInvalidRequestException& e) {
         handled = true;
         callback->Failure(e.code, e.errMsg);
+    } catch (CefBaseJSRequestReply::CefBaseAbdandonRequest& e) {
+        // silently drop the request
+        handled = true;
     }
     return handled;
 }

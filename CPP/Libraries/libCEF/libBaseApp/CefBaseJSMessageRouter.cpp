@@ -8,8 +8,8 @@
 #include "CefBaseJSMessageRouter.h"
 
 class PingHandler: public CefBaseJSRequestReply {
-    virtual std::string OnRequest(const std::string& request) {
-        return request;
+    virtual std::string OnRequest(RequestContext& context) {
+        return context.request;
     }
 };
 

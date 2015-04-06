@@ -11,12 +11,12 @@
 CefBaseReqFileList::CefBaseReqFileList() {
 }
 
-std::string CefBaseReqFileList::OnRequest(const std::string& rawRequest) {
+std::string CefBaseReqFileList::OnRequest(RequestContext& context) {
     static std::string error;
     request.Clear();
     reply.Clear();
 
-    if ( !request.Parse(rawRequest.c_str(),error) ) {
+    if ( !request.Parse(context.request.c_str(),error) ) {
         throw CefBaseInvalidRequestException{0,error};
     }
 
@@ -26,6 +26,13 @@ std::string CefBaseReqFileList::OnRequest(const std::string& rawRequest) {
     }
 
     reply.Get<files>() = OS::Glob(request.Get<pattern>());
+
+    if ( request.Get<prefix>() != "")
+    {
+        for (std::string& file: reply.Get<files>()) {
+            file = request.Get<prefix>()  + file;
+        }
+    }
 
     return reply.GetJSONString();
 }
