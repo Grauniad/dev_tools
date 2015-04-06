@@ -72,3 +72,20 @@ void SimpleJSONBuilder::Add(const std::string& name, const bool& value) {
     writer.String(name.c_str());
     writer.Bool(value);
 }
+
+void SimpleJSONBuilder::StartArray(const std::string& name) {
+    writer.String(name.c_str());
+    writer.StartArray();
+}
+
+void SimpleJSONBuilder::EndArray() {
+    writer.EndArray();
+}
+
+void SimpleJSONBuilder::StartAnonymousObject() {
+    writer.StartObject();
+}
+
+void SimpleJSONBuilder::EndObject() {
+    writer.EndObject();
+}

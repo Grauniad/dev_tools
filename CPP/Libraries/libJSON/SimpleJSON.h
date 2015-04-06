@@ -39,6 +39,16 @@ public:
      */
     void Clear();
 
+    /*
+     * It is the callers responsibility to call the corresponding End Array...
+     */
+    void StartArray(const std::string& name);
+    void EndArray();
+
+    void StartAnonymousObject();
+    void EndObject();
+
+
     /**
      * Return the current object as a JSON string, and reset the builder.
      */
