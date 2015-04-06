@@ -3,9 +3,10 @@ SOURCES=$(shell echo *.cpp)
 
 TARGET_LIB=libCEF
 
-LINKED_LIBS=libUtils libIOInterface libTest libGTK
+LINKED_LIBS=libUtils libIOInterface libTest libJSON libGTK
 USE_CEF=YES
 USE_GTK=YES
+USE_JSON=YES
 
 MODE=CPP
 TAGS_FILE=DEV_TOOLS_CEF_c++.tags

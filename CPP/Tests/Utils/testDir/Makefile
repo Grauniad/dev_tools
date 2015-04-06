@@ -3,7 +3,7 @@ LINKED_LIBS= libUtils  \
 			 libTest \
 			 libString
  
-BUILD_TIME_TESTS=os binaryData time search dynStruct
+BUILD_TIME_TESTS=binaryData time search dynStruct
 CPP_TAGS_FILE=utilTests-c++.tags
 
 BOOST_MODULES+=filesystem system
@@ -11,6 +11,3 @@ BOOST_MODULES+=filesystem system
 USE_BOOST=YES
 
 include ../makefile_tests.include
-
-export PROJET_ROOT_DIR
-

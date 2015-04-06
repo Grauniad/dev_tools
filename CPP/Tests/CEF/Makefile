@@ -1,4 +1,5 @@
 LINKED_LIBS= libCEF \
+             libJSON \
              libIOInterface\
              libUtils  \
 			 libTest
@@ -8,6 +9,7 @@ CPP_TAGS_FILE=dev_tools_cpp_tests_cef-c++.tags
 
 USE_CEF=YES
 USE_GTK=YES
+USE_JSON=YES
 
 TEST_LINK_CEF_RESOURCES=YES
 

@@ -153,7 +153,7 @@ public:
         std::string description;
     };
 
-    void RunTest(FAILURE_ACTION action = PRINT_LOG_AND_THROW);
+    void RunTest(FAILURE_ACTION action = PRINT_LOG_AND_EXIT);
     double RunTime() { return runTime; }
 
 private:

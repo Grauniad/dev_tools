@@ -5,15 +5,7 @@
 #include <vector>
 
 namespace OS {
-    /**
-     * Return files matching a glob pattern
-     *
-     * WARNING: glibc's glob is not thread safe, so a unique lock is used to
-     *          police its usage
-     */
     std::vector<std::string> Glob(const std::string& path);
-
-    std::string PWD();
 
     std::string Join(const std::string& path1, const std::string& path2);
 

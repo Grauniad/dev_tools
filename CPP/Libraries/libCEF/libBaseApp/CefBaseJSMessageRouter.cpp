@@ -24,10 +24,11 @@ CefBaseJSMessageRouter::CefBaseJSMessageRouter(
 
     browserSideRouter_ = CefMessageRouterBrowserSide::Create(config);
     rendererSideRouter_ = CefMessageRouterRendererSide::Create(config);
+
+    reqReps_.reset(new CefBaseJSRequestReplyHandler);
 }
 
 void CefBaseJSMessageRouter::OnContextInitialized() {
-    reqReps_.reset(new CefBaseJSRequestReplyHandler);
     reqReps_->Install<PingHandler>("DEV_TOOLS_Ping");
     browserSideRouter_->AddHandler(reqReps_.get(),false);
 }

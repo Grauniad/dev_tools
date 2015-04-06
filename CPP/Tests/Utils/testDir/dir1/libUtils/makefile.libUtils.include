@@ -1,0 +1,7 @@
+TARGET_LIB=libUtils
+CPP_TAGS_FILE=libUtils-c++.tags
+
+LINKED_LIBS=libIOInterface
+MODE=CPP
+
+include ../../../../../makefile.include
