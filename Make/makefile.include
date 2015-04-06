@@ -462,6 +462,8 @@ ifdef BUILD_TIME_TESTS
        FILES_TO_CLEAN+=$(TESTS_TO_BUILD)
        FILES_TO_CLEAN+=$(shell ls *.gcda 2> /dev/null)
        FILES_TO_CLEAN+=$(shell ls *.gcno 2> /dev/null)
+       FILES_TO_CLEAN+=$(shell ls core.* 2> /dev/null)
+       FILES_TO_CLEAN+=test.full_log
    endif
 endif
 
@@ -486,6 +488,8 @@ ifdef TEST_SCRIPTS
        TESTS_TO_RUN=$(TEST_SCRIPTS)
        FILES_TO_CLEAN+=$(shell ls *.gcda 2> /dev/null)
        FILES_TO_CLEAN+=$(shell ls *.gcno 2> /dev/null)
+       FILES_TO_CLEAN+=$(shell ls core.* 2> /dev/null)
+       FILES_TO_CLEAN+=test.full_log
    endif
 endif
 
