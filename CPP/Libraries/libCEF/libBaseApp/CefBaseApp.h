@@ -27,7 +27,6 @@ public:
     CefBaseApp();
     virtual ~CefBaseApp();
 
-
     /**********************************************************************
      *                         CEF APP
      **********************************************************************/
@@ -51,7 +50,7 @@ public:
     virtual CefRefPtr<CefRenderProcessHandler> GetRenderProcessHandler()
             OVERRIDE;
 
-    CefRefPtr<CefClient> GetClient() {
+    CefRefPtr<CefBaseClient> GetClient() {
         return client_;
     }
 
@@ -66,8 +65,8 @@ public:
 
 private:
     CefRefPtr<CefBrowserProcessHandler> browser_;
-    CefRefPtr<CefRenderProcessHandler> renderer_;
-    CefRefPtr<CefClient>               client_;
+    CefRefPtr<CefRenderProcessHandler>  renderer_;
+    CefRefPtr<CefBaseClient>            client_;
     IMPLEMENT_REFCOUNTING(CefBaseApp);
 };
 

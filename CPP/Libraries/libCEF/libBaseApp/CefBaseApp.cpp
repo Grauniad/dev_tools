@@ -13,7 +13,6 @@ CefBaseApp::CefBaseApp()
       client_(new CefBaseClient(this))
 {
     // TODO Auto-generated constructor stub
-
 }
 
 CefBaseApp::~CefBaseApp() {
@@ -39,4 +38,3 @@ CefBaseBrowserProcess& CefBaseApp::Browser() {
 CefBaseClient& CefBaseApp::Client() {
     return static_cast<CefBaseClient&>(*client_.get());
 }
-
