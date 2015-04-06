@@ -1,4 +1,4 @@
 include $(DEV_TOOLS_DIR)/Make/Compilers/makefile.GNU.include
 
-CPP=g++-4.8
-FORTRAN=gfortran-4.8
+CPP=g++-4.9
+FORTRAN=gfortran-4.9
