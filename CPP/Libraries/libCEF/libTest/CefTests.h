@@ -18,7 +18,7 @@ public:
         virtual std::string Dump() const = 0;
     };
 
-    struct CefTestGenericException {
+    struct CefTestGenericException: public CefTestBaseException {
         CefTestGenericException(const std::string& msg): msg(msg) { }
 
         virtual std::string Dump() const { return msg; }
