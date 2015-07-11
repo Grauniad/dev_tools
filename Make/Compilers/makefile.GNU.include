@@ -11,6 +11,7 @@ COMPILER_ALL_WARNINGS=-Wall
 COMPILER_FATAL_WARNINGS=-Werror
 COMPILER_COVERAGE=--coverage
 COMPILER_WARNING_SUPPRESSION_PREFIX="-Wno-"
+COMPILER_STATIC=-static
 
 PROFILE_COMMAND=gprof $$test > $(EXPORT_PROFILE_DIR)/$$(basename $$test).profile  || exit;
 PROFILE_GEN_COMMAND=$(SCRIPTS_DIR)/prof2html.py $(EXPORT_PROFILE_DIR)/$$(basename $$test).profile || exit;
@@ -29,7 +30,7 @@ GSL_LOCAL_LINK_FLAGS=-lgsl -lgslcblas -lm
 GSL_DEV_TOOLS_LINK_FLAGS=$(DEV_TOOLS_DIR)/EXTERNAL_LIBS/GSL/libgsl.a $(DEV_TOOLS_DIR)/EXTERNAL_LIBS/GSL/libgslcblas.a -lm
 
 PLPLOT_DEV_TOOLS_LINK_FLAGS=$(DEV_TOOLS_DIR)/EXTERNAL_LIBS/PLPLOT/libplplotd.a $(DEV_TOOLS_DIR)/EXTERNAL_LIBS/PLPLOT/libltdl.a
-PLPLOT_LOCAL_LINK_FLAGS=-I/usr/include/plplot  -lplplotd -lltdl -ldl -lm -lcsirocsa -lqhull -lqsastime -lfreetype
+PLPLOT_LOCAL_LINK_FLAGS=-I/usr/include/plplot  -lplplot -lltdl -ldl -lm -lcsirocsa -lqhull -lqsastime -lfreetype
 
 THREADS_LINK_FLAGS=-pthread
 

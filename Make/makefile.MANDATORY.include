@@ -46,6 +46,10 @@ ifndef COMPILER_COVERAGE
     $(error COMPILER_COVERAGE must be specified!)
 endif
 
+ifndef COMPILER_STATIC
+    $(error COMPILER_STATIC must be specified!)
+endif
+
 ifndef COMPILER_WARNING_SUPPRESSION_PREFIX
     $(error COMPILER_WARNING_SUPPRESSION_PREFIX must be specified!)
 endif

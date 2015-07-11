@@ -123,6 +123,10 @@ ifndef DEBUG_VALGRIND
 	DEBUG_VALGRIND=NO
 endif 
 
+ifndef STATIC
+    STATIC=NO
+endif
+
 #
 # External Libraries
 #
@@ -296,6 +300,10 @@ endif
 
 ifeq ($(findstring YES,$(USE_FPIC)),YES)
    COMP_FLAGS+=-fpic
+endif
+
+ifeq ($(findstring YES,$(STATIC)),YES)
+   COMP_FLAGS+=$(COMPILER_STATIC)
 endif
 
 ifndef COMP_PROFILE_FLAGS
@@ -982,6 +990,7 @@ usage:
 	@echo "FAST_ON:                   Do everything to enhance performance, including dangerous optimizations - (NO), <$(FAST_ON)>"
 	@echo "RELEASE_FLAGS              Flags to $(CPP)when release build is enabled -  ($(DEFAULT_RELEASE_FLAGS)), <$(RELEASE_FLAGS)>"
 	@echo "RELEASE_ON:                Enable release optimizations - (NO), <$(RELEASE_ON)>"
+	@echo "STATIC:                    Instruct the complier to not link against dynamic libraries - (STATIC), <STATIC>"
 	@echo ""
 	@echo "       Other Options"
 	@echo "CORE_SIZE                  Max allowed size of genereated core files - ($(DEFAULT_CORE_SIZE)), <$(CORE_SIZE)>"
