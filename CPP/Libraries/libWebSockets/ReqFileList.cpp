@@ -1,28 +1,28 @@
 /*
- * CefBaseReqFileList.cpp
+ * ReqFileList.cpp
  *
- *  Created on: 5 Apr 2015
+ *  Created on: 29 Oct 2015
  *      Author: lhumphreys
  */
 
-#include "CefBaseReqFileList.h"
+#include "ReqFileList.h"
 #include <OSTools.h>
 
-CefBaseReqFileList::CefBaseReqFileList() {
+ReqFileList::ReqFileList() {
 }
 
-std::string CefBaseReqFileList::OnRequest(RequestContext& context) {
+std::string ReqFileList::OnRequest(const char* req) {
     static std::string error;
     request.Clear();
     reply.Clear();
 
-    if ( !request.Parse(context.request.c_str(),error) ) {
-        throw CefBaseInvalidRequestException{0,error};
+    if ( !request.Parse(req,error) ) {
+        throw InvalidRequestException{0,error};
     }
 
     if ( request.Get<pattern>() == "")
     {
-        throw CefBaseInvalidRequestException{0,"No pattern provided!"};
+        throw InvalidRequestException{0,"No pattern provided!"};
     }
 
     reply.Get<files>() = OS::Glob(request.Get<pattern>());
@@ -37,6 +37,6 @@ std::string CefBaseReqFileList::OnRequest(RequestContext& context) {
     return reply.GetJSONString();
 }
 
-CefBaseReqFileList::~CefBaseReqFileList() {
+ReqFileList::~ReqFileList() {
 }
 

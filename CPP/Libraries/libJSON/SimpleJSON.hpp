@@ -9,6 +9,7 @@
 #define SIMPLEJSON_HPP_
 
 #include <limits>
+#include <type_traits>
 
 /**
  * TODO:
@@ -35,18 +36,33 @@ struct StringField: public FieldBase {
     virtual FieldType Type() {
         return STRING;
     }
+
+    bool String(const char* str, rapidjson::SizeType length, bool copy) {
+        value.assign(str,length);
+        return true;
+    }
 };
 
-struct StringArrayField: public FieldBase {
+struct StringArrayField: public FieldArrayBase {
     typedef std::vector<std::string> ValueType;
     ValueType value;
 
     virtual void Clear() {
+        FieldArrayBase::Clear();
         value.clear();
     }
 
     virtual FieldType Type() {
         return STRING_ARRAY;
+    }
+
+    bool String(const char* str, rapidjson::SizeType length, bool copy) {
+        if (inArray) {
+            value.emplace_back(str,length);
+        } else {
+            throw spJSON::WrongTypeError{Name()};
+        }
+        return true;
     }
 };
 
@@ -61,6 +77,20 @@ struct IntField: public FieldBase {
     virtual FieldType Type() {
         return INT;
     }
+
+    bool Int(int i) {
+        value = i;
+        return true;
+    }
+
+    bool Uint(unsigned u) {
+        if (u <= static_cast<unsigned>(std::numeric_limits<int>::max())) {
+            value = u;
+        } else {
+            throw spJSON::ValueError{Name()};
+        }
+        return true;
+    }
 };
 
 struct I64Field: public FieldBase {
@@ -73,6 +103,31 @@ struct I64Field: public FieldBase {
 
     virtual FieldType Type() {
         return INT_64;
+    }
+
+    bool Int(int i) {
+        value = i;
+        return true;
+    }
+
+    bool Int64(int64_t i) {
+        value = i;
+        return true;
+    }
+
+    bool Uint(unsigned u) {
+        value = u;
+        return true;
+    }
+
+    bool Uint64(uint64_t u) {
+        if (u <= static_cast<uint64_t>(std::numeric_limits<int64_t>::max()))
+        {
+            value = u;
+        } else {
+            throw spJSON::ValueError{Name()};
+        }
+        return true;
     }
 };
 
@@ -87,6 +142,16 @@ struct UI64Field: public FieldBase {
     virtual FieldType Type() {
         return UINT_64;
     }
+
+    bool Uint(unsigned u) {
+        value = u;
+        return true;
+    }
+
+    bool Uint64(uint64_t u) {
+        value = u;
+        return true;
+    }
 };
 
 struct UIntField: public FieldBase {
@@ -99,6 +164,11 @@ struct UIntField: public FieldBase {
 
     virtual FieldType Type() {
         return UINT;
+    }
+
+    bool Uint(unsigned u) {
+        value = u;
+        return true;
     }
 };
 
@@ -113,6 +183,31 @@ struct DoubleField: public FieldBase {
     virtual FieldType Type() {
         return DOUBLE;
     }
+
+    bool Int(int i) {
+        value = i;
+        return true;
+    }
+
+    bool Int64(int64_t i) {
+        value = i;
+        return true;
+    }
+
+    bool Uint(unsigned u) {
+        value = u;
+        return true;
+    }
+
+    bool Uint64(uint64_t u) {
+        value = u;
+        return true;
+    }
+
+    bool Double(double d) {
+        value = d;
+        return true;
+    }
 };
 
 struct BoolField: public FieldBase {
@@ -125,6 +220,299 @@ struct BoolField: public FieldBase {
 
     virtual FieldType Type() {
         return BOOL;
+    }
+
+    bool Uint(unsigned u) {
+        value = u;
+        return true;
+    }
+
+    bool Bool(bool b) {
+        value = b;
+        return true;
+    }
+};
+
+template<class JSON>
+struct EmbededObjectField: public FieldBase {
+    /*******************************
+     *         Properties
+     *******************************/ 
+    typedef JSON ValueType;
+    ValueType value;
+
+    size_t depth;
+
+    /*******************************
+     *         Utilities
+     *******************************/ 
+
+    virtual void Clear() {
+        value.Clear();
+        depth = 0;
+    }
+
+    bool Key(const char* str, rapidjson::SizeType length, bool copy) {
+        value.Key(str,length,copy);
+        return true;
+    }
+
+    virtual FieldType Type() {
+        return OBJECT;
+    }
+
+    /**
+     * Add this field to a JSON string which is being built up
+     */
+    virtual void AddToJSON(SimpleJSONBuilder& builder) {
+        builder.AddName(Name());
+        builder.StartAnonymousObject();
+        value.PrintAllFields(builder);
+        builder.EndObject();
+    }
+
+    /*******************************
+     *     Rapid JSON Interface
+     *******************************/ 
+
+    bool StartObject() {
+        ++depth;
+        value.StartObject();
+        return true;
+    }
+
+    bool EndObject(rapidjson::SizeType memberCount) {
+        if (depth > 0) {
+            value.EndObject(memberCount);
+            --depth;
+        } else {
+            throw spJSON::ParseError();
+        }
+        return true;
+    }
+
+    bool String(const char* str, rapidjson::SizeType length, bool copy) {
+        value.String(str,length,copy);
+        return true;
+    }
+
+    bool Int(int i) {
+        value.Int(i);
+        return true;
+    }
+
+    bool Int64(int64_t i) {
+        value.Int64(i);
+        return true;
+    }
+
+    bool Uint(unsigned u) {
+        value.Uint(u);
+        return true;
+    }
+
+    bool Uint64(uint64_t u) {
+        value.Uint64(u);
+        return true;
+    }
+
+    bool Double(double d) {
+        value.Double(d);
+        return true;
+    }
+
+    bool Bool(bool b) {
+        value.Bool(b);
+        return true;
+    }
+
+    bool StartArray() {
+        value.StartArray();
+        return true;
+    }
+
+    bool EndArray(rapidjson::SizeType elementCount) {
+        value.EndArray(elementCount);
+        return true;
+    }
+};
+
+/**
+ * Note that we cannot derrive from the array base since we need special
+ * handling for the embeded object which may have its own arrays
+ */ 
+template<class JSON>
+struct ObjectArray: public FieldBase {
+    /*******************************
+     *         Properties
+     *******************************/ 
+    class pJSON {
+    public:
+        pJSON() : ptr(new JSON()) { }
+
+        JSON* operator->() {
+            return ptr.get();
+        }
+
+        JSON& operator*() {
+            return *ptr;
+        }
+        
+    private:
+        std::unique_ptr<JSON> ptr;
+    };
+    typedef std::vector<pJSON> ValueType;
+    ValueType value;
+
+    int depth;
+
+    /*******************************
+     *         Utilities
+     *******************************/ 
+    ObjectArray() {
+         Clear();
+    }
+
+    virtual void Clear() {
+        value.clear();
+        depth = -1;
+    }
+
+    bool Key(const char* str, rapidjson::SizeType length, bool copy) {
+        if (value.size() > 0)  {
+            value.back()->Key(str,length,copy);
+        } else {
+            throw spJSON::ParseError();
+        }
+        return true;
+    }
+
+    virtual FieldType Type() {
+        return OBJECT_ARRAY;
+    }
+
+    /**
+     * Add this field to a JSON string which is being built up
+     */
+    virtual void AddToJSON(SimpleJSONBuilder& builder) {
+        builder.StartArray(Name());
+        for (pJSON& obj: value) {
+            builder.StartAnonymousObject();
+            obj->PrintAllFields(builder);
+            builder.EndObject();
+        }
+        builder.EndArray();
+    }
+
+    /*******************************
+     *     Rapid JSON Interface
+     *******************************/ 
+
+    bool StartObject() {
+        if (depth > 0) {
+            ++depth;
+            value.back()->StartObject();
+        } else {
+            depth = 1;
+            value.emplace_back();
+            value.back()->StartObject();
+        }
+        return true;
+    }
+
+    bool EndObject(rapidjson::SizeType memberCount) {
+        if (depth > 0) {
+            value.back()->EndObject(memberCount);
+            --depth;
+        } else {
+            throw spJSON::ParseError();
+        }
+        return true;
+    }
+
+    bool String(const char* str, rapidjson::SizeType length, bool copy) {
+        if (depth > 0) {
+            value.back()->String(str,length,copy);
+        } else {
+            throw spJSON::ParseError();
+        }
+        return true;
+    }
+
+    bool Int(int i) {
+        if (depth > 0) {
+            value.back()->Int(i);
+        } else {
+            throw spJSON::ParseError();
+        }
+        return true;
+    }
+
+    bool Int64(int64_t i) {
+        if (depth > 0) {
+            value.back()->Int64(i);
+        } else {
+            throw spJSON::ParseError();
+        }
+        return true;
+    }
+
+    bool Uint(unsigned u) {
+        if (depth > 0) {
+            value.back()->Uint(u);
+        } else {
+            throw spJSON::ParseError();
+        }
+        return true;
+    }
+
+    bool Uint64(uint64_t u) {
+        if (depth > 0) {
+            value.back()->Uint64(u);
+        } else {
+            throw spJSON::ParseError();
+        }
+        return true;
+    }
+
+    bool Double(double d) {
+        if (depth > 0) {
+            value.back()->Double(d);
+        } else {
+            throw spJSON::ParseError();
+        }
+        return true;
+    }
+
+    bool Bool(bool b) {
+        if (depth > 0) {
+            value.back()->Bool(b);
+        } else {
+            throw spJSON::ParseError();
+        }
+        return true;
+    }
+
+    bool StartArray() {
+        if (depth > 0) {
+            value.back()->StartArray();
+        } else if (depth == -1) {
+            depth = 0;
+        } else {
+            throw spJSON::ParseError();
+        }
+        return true;
+    }
+
+    bool EndArray(rapidjson::SizeType elementCount) {
+        if (depth > 0) {
+            value.back()->EndArray(elementCount);
+        } else if (depth == 0) {
+            depth = -1;
+        } else {
+            throw spJSON::ParseError();
+        }
+        return true;
     }
 };
 
@@ -153,11 +541,11 @@ bool SimpleParsedJSON<Fields...>::Parse(const char* json, std::string& errMsg) {
         ok = true;
     } catch (UnknownFieldError& extraField) {
         errMsg = "Unknown extra field: " + extraField.field;
-    } catch (ValueError& value) {
+    } catch (spJSON::ValueError& value) {
         errMsg = "Invalid value for field: " + value.field;
-    } catch (ParseError& parse) {
+    } catch (spJSON::ParseError& parse) {
         errMsg = "Invalid JSON!";
-    } catch (WrongTypeError& type) {
+    } catch (spJSON::WrongTypeError& type) {
         errMsg = "Invalid type for field: " + type.field;
     }
 
@@ -187,9 +575,6 @@ typename FIELD::ValueType& SimpleParsedJSON<Fields...>::Get() {
 /**
  * RapidJSON has found the start of a new object. Either this the start of our
  * object, or the start of an embeded object.
- *
- * We don't support embeded objects, so if this a second call to StartObject
- * raise an error.
  */
 template <class...Fields>
 bool SimpleParsedJSON<Fields...>::StartObject() {
@@ -197,9 +582,10 @@ bool SimpleParsedJSON<Fields...>::StartObject() {
         ++depth;
     } else {
         if ( currentField != nullptr) {
-            throw WrongTypeError{currentField->name};
+            ++depth;
+            currentField->field->StartObject();
         } else {
-            throw UnknownTypeError();
+            throw spJSON::UnknownTypeError();
         }
     }
     return true;
@@ -213,8 +599,11 @@ template <class...Fields>
 bool SimpleParsedJSON<Fields...>::EndObject(rapidjson::SizeType memberCount) {
     if ( depth == 1) {
         --depth;
+    } else if (depth > 1 && currentField) {
+        currentField->field->EndObject(memberCount);
+        --depth;
     } else {
-        throw ParseError();
+        throw spJSON::ParseError();
     }
     return true;
 }
@@ -222,6 +611,9 @@ bool SimpleParsedJSON<Fields...>::EndObject(rapidjson::SizeType memberCount) {
 /*
  * Rapid JSON has moved on to the next field. Check we know about it, mark it as
  * the current field so we can handle the value call-back correctly.
+ *
+ * NOTE: If we are currently parsing an embeded object we have to pass it down
+ *       the chain.
  */
 template <class...Fields>
 bool SimpleParsedJSON<Fields...>::Key(
@@ -229,14 +621,18 @@ bool SimpleParsedJSON<Fields...>::Key(
     rapidjson::SizeType length,
     bool copy)
 {
-    currentField = Get(str);
+    if (currentField && depth > 1 ) {
+        currentField->field->Key(str,length,copy);
+    } else {
+        currentField = Get(str);
 
-    if (!currentField) {
-        throw UnknownFieldError {str} ;
-    }
+        if (!currentField) {
+            throw UnknownFieldError {str} ;
+        }
 
-    if (isArray) {
-        throw ParseError();
+        if (isArray) {
+            throw spJSON::ParseError();
+        }
     }
 
     return true;
@@ -255,28 +651,9 @@ bool SimpleParsedJSON<Fields...>::String(
     bool copy)
 {
     if (currentField) {
-
-        FieldInfo& info = *currentField;
-
-        if (info.type == FieldBase::STRING) {
-
-            StringField& field = static_cast<StringField&>(*info.field);
-            /*
-             * Profiling shows that a reserve before the assign is
-             * counterproductive - the = operator strlen's and assigns anyway.
-             */
-            field.value = str;
-
-        } else if (info.type == FieldBase::STRING_ARRAY) {
-            StringArrayField& field =
-                    static_cast<StringArrayField&>(*info.field);
-            field.value.push_back(str);
-        } else {
-            throw WrongTypeError{info.name};
-        }
-
+        currentField->field->String(str,length,copy);
     } else {
-        throw ParseError();
+        throw spJSON::ParseError();
     }
 
     return true;
@@ -291,25 +668,9 @@ bool SimpleParsedJSON<Fields...>::String(
 template <class...Fields>
 bool SimpleParsedJSON<Fields...>::Int(int i) {
     if (currentField) {
-        FieldInfo& info = *currentField;
-
-        if (info.type == FieldBase::INT) {
-            IntField& field = static_cast<IntField&>(*info.field);
-            field.value = i;
-
-        } else if (info.type == FieldBase::DOUBLE) {
-            DoubleField& field = static_cast<DoubleField&>(*info.field);
-            field.value = i;
-
-        } else if (info.type == FieldBase::INT_64) {
-            I64Field& field = static_cast<I64Field&>(*info.field);
-            field.value = i;
-
-        } else {
-            throw WrongTypeError{info.name};
-        }
+        currentField->field->Int(i);
     } else {
-        throw ParseError();
+        throw spJSON::ParseError();
     }
     return true;
 }
@@ -317,21 +678,9 @@ bool SimpleParsedJSON<Fields...>::Int(int i) {
 template <class...Fields>
 bool SimpleParsedJSON<Fields...>::Int64(int64_t i) {
     if (currentField) {
-        FieldInfo& info = *currentField;
-
-        if (info.type == FieldBase::INT_64) {
-            I64Field& field = static_cast<I64Field&>(*info.field);
-            field.value = i;
-
-        } else if (info.type == FieldBase::DOUBLE) {
-            DoubleField& field = static_cast<DoubleField&>(*info.field);
-            field.value = i;
-
-        } else {
-            throw WrongTypeError{info.name};
-        }
+        currentField->field->Int64(i);
     } else {
-        throw ParseError();
+        throw spJSON::ParseError();
     }
 
     return true;
@@ -347,45 +696,9 @@ bool SimpleParsedJSON<Fields...>::Int64(int64_t i) {
 template <class...Fields>
 bool SimpleParsedJSON<Fields...>::Uint(unsigned u) {
     if (currentField) {
-        FieldInfo& info = *currentField;
-
-        switch(info.type)
-        {
-        case FieldBase::UINT:
-            static_cast<UIntField&>(*info.field).value = u;
-            break;
-
-        case FieldBase::INT:
-            if (u <= static_cast<unsigned>(std::numeric_limits<int>::max())) {
-                static_cast<IntField&>(*info.field).value = static_cast<int>(u);
-            } else {
-                throw ValueError{info.name};
-            }
-            break;
-
-        case FieldBase::INT_64:
-            static_cast<I64Field&>(*info.field).value = u;
-            break;
-
-        case FieldBase::UINT_64:
-            static_cast<UI64Field&>(*info.field).value = u;
-            break;
-
-        case FieldBase::DOUBLE:
-            static_cast<DoubleField&>(*info.field).value = u;
-            break;
-
-        case FieldBase::BOOL:
-            static_cast<BoolField&>(*info.field).value = u;
-            break;
-
-        default:
-            throw WrongTypeError{info.name};
-            break;
-        }
-
+        currentField->field->Uint(u);
     } else {
-        throw ParseError();
+        throw spJSON::ParseError();
     }
     return true;
 }
@@ -393,29 +706,9 @@ bool SimpleParsedJSON<Fields...>::Uint(unsigned u) {
 template <class...Fields>
 bool SimpleParsedJSON<Fields...>::Uint64(uint64_t u) {
     if (currentField) {
-        FieldInfo& info = *currentField;
-
-        if (info.type == FieldBase::INT_64) {
-            if (u <= static_cast<uint64_t>(std::numeric_limits<int64_t>::max()))
-            {
-                I64Field& field = static_cast<I64Field&>(*info.field);
-                field.value = u;
-            } else {
-                throw ValueError{info.name};
-            }
-        } else if (info.type == FieldBase::UINT_64) {
-                UI64Field& field = static_cast<UI64Field&>(*info.field);
-                field.value = u;
-
-        } else if (info.type == FieldBase::DOUBLE) {
-            DoubleField& field = static_cast<DoubleField&>(*info.field);
-            field.value = u;
-
-        } else {
-            throw WrongTypeError{info.name};
-        }
+        currentField->field->Uint64(u);
     } else {
-        throw ParseError();
+        throw spJSON::ParseError();
     }
 
     return true;
@@ -430,15 +723,9 @@ bool SimpleParsedJSON<Fields...>::Uint64(uint64_t u) {
 template <class...Fields>
 bool SimpleParsedJSON<Fields...>::Double(double d) {
     if (currentField) {
-        FieldInfo& info = *currentField;
-        if (info.type == FieldBase::DOUBLE) {
-            DoubleField& field = static_cast<DoubleField&>(*info.field);
-            field.value = d;
-        } else {
-            throw WrongTypeError{info.name};
-        }
+        currentField->field->Double(d);
     } else {
-        throw ParseError();
+        throw spJSON::ParseError();
     }
     return true;
 }
@@ -451,15 +738,9 @@ bool SimpleParsedJSON<Fields...>::Double(double d) {
 template <class...Fields>
 bool SimpleParsedJSON<Fields...>::Bool(bool b) {
     if (currentField) {
-        FieldInfo& info = *currentField;
-        if (info.type == FieldBase::BOOL) {
-            BoolField& field = static_cast<BoolField&>(*info.field);
-            field.value = b;
-        } else {
-            throw WrongTypeError{info.name};
-        }
+        currentField->field->Bool(b);
     } else {
-        throw ParseError();
+        throw spJSON::ParseError();
     }
     return true;
 }
@@ -467,14 +748,9 @@ bool SimpleParsedJSON<Fields...>::Bool(bool b) {
 template <class...Fields>
 bool SimpleParsedJSON<Fields...>::StartArray() {
     if (currentField) {
-        FieldInfo& info = *currentField;
-        if (info.type == FieldBase::STRING_ARRAY) {
-            isArray = true;
-        } else {
-            throw WrongTypeError{info.name};
-        }
+        currentField->field->StartArray();
     } else {
-        throw ParseError();
+        throw spJSON::ParseError();
     }
 
     return true;
@@ -482,10 +758,10 @@ bool SimpleParsedJSON<Fields...>::StartArray() {
 
 template <class...Fields>
 bool SimpleParsedJSON<Fields...>::EndArray(rapidjson::SizeType elementCount) {
-    if ( isArray) {
-        isArray = false;
+    if (currentField) {
+        currentField->field->EndArray(elementCount);
     } else {
-        throw ParseError();
+        throw spJSON::ParseError();
     }
 
     return true;
@@ -496,7 +772,7 @@ bool SimpleParsedJSON<Fields...>::EndArray(rapidjson::SizeType elementCount) {
  *****************************************************************************/
 template <class...Fields>
 bool SimpleParsedJSON<Fields...>::Null() {
-    throw UnknownTypeError();
+    throw spJSON::UnknownTypeError();
 }
 
 /*****************************************************************************
@@ -517,20 +793,62 @@ template<class ...Fields>
 std::string SimpleParsedJSON<Fields...>::GetJSONString() {
     builder.Clear();
 
-    PrintNextField<sizeof...(Fields)>();
+    PrintNextField<sizeof...(Fields)>(builder);
 
     return builder.GetAndClear();
 }
 
 /**************************************************************************
-*           Convert each field to its JSON representation
+*           Convert a field to its JSON representation
+*   1) Call the type defined customer add command, if on the type
+*   2) Provide a default implementation which calls straight through to 
+*      the builder
 **************************************************************************/
 
+/**
+ * Check if there is an override
+ */
+namespace SimpleParsedJSON_AddToJSON {
+    template <typename T>
+    class HasAddToJSON
+    {
+        struct TTrue { };
+        struct TFalse { };
+
+        template <typename C> 
+        static TTrue test(decltype(&C::AddToJSON));
+
+        template <typename C> 
+        static TFalse test(...);
+
+    public:
+        static constexpr bool value = 
+            std::is_same<decltype(test<T>(0)),TTrue>::value;
+    };
+
+    template <typename Field>
+    typename std::enable_if<HasAddToJSON<Field>::value, void>::type
+    AddField(SimpleJSONBuilder& builder, Field& field) {
+        field.AddToJSON(builder);
+    }
+
+    template <typename Field>
+    typename std::enable_if<!HasAddToJSON<Field>::value, void>::type
+    AddField(SimpleJSONBuilder& builder, Field& field) {
+        builder.Add(field.Name(),field.value);
+    }
+
+}
+
+/**
+ * Implementation two (fall-back): Directly add the field to the builder.
+ */
 template<class ...Fields>
 template<int idx>
-inline void SimpleParsedJSON<Fields...>::PrintField() {
+inline void SimpleParsedJSON<Fields...>::PrintField(SimpleJSONBuilder& builder)
+{
     auto& field = std::get<idx>(fields);
-    builder.Add(field.Name(),field.value);
+    SimpleParsedJSON_AddToJSON::AddField(builder,field);
 }
 
 /*****************************************************************************

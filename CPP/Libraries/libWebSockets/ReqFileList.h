@@ -1,14 +1,14 @@
 /*
- * CefBaseReqFileList.h
+ * ReqFileList.h
  *
- *  Created on: 5 Apr 2015
+ *  Created on: 29 Oct 2015
  *      Author: lhumphreys
  */
 
-#ifndef CEFBASEREQFILELIST_H_
-#define CEFBASEREQFILELIST_H_
+#ifndef DEV_TOOLS_CPP_LIBRARIES_LIBWEBSOCKETS_REQFILELIST_H_
+#define DEV_TOOLS_CPP_LIBRARIES_LIBWEBSOCKETS_REQFILELIST_H_
 
-#include <CefBaseRequestReplies.h>
+#include "ReqServer.h"
 #include <SimpleJSON.h>
 
 /*
@@ -33,13 +33,13 @@
  *           assumed the user already has access to the PC, and that this code
  *           is not running on a web server...
  */
-class CefBaseReqFileList: public CefBaseJSRequestReply {
+class ReqFileList: public RequestReplyHandler {
 public:
-    CefBaseReqFileList();
+    ReqFileList();
 
-    virtual std::string OnRequest(RequestContext& context);
+    virtual std::string OnRequest(const char* req);
 
-    virtual ~CefBaseReqFileList();
+    virtual ~ReqFileList();
 private:
     NewStringField(pattern);
     NewStringField(prefix);
@@ -51,4 +51,4 @@ private:
     Reply   reply;
 };
 
-#endif /* CEFBASEREQFILELIST_H_ */
+#endif /* DEV_TOOLS_CPP_LIBRARIES_LIBWEBSOCKETS_REQFILELIST_H_ */

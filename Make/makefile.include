@@ -162,6 +162,10 @@ ifndef USE_THREADS
     USE_THREADS=YES
 endif
 
+ifndef USE_WEB_SOCKET_CPP
+    USE_WEB_SOCKET_CPP=NO
+endif
+
 ifndef USE_CEF
     USE_CEF=NO
 endif
@@ -380,6 +384,8 @@ TO_COPY=
 SUB_FOLDER=
 FILES_TO_SYM_LINK=
 TEST_FILES_TO_SYM_LINK=
+FILES_TO_CPP_CHECK=
+CPP_CHECK_FLAGS=
 
 ifdef TARGET_DYNAMIC_LIB
    $(shell mkdir -p $(EXPORT_LIB_DIR))
@@ -560,28 +566,6 @@ ifeq ($(USE_SQLITE),YES)
 endif
 
 #
-# Boost Setup
-#
-BOOST_LIBS=
-BOOST_LINK_FLAGS=
-
-ifneq ($(BOOST_MODULES),)
-   USE_BOOST=YES
-endif
-
-ifeq ($(USE_BOOST),YES)
-ifeq ($(USE_LOCAL_BOOST),YES)
-   BOOST_LIBS=$(addprefix -lboost_,$(BOOST_MODULES))
-   BOOST_LINK_FLAGS=$(BOOST_LIBS)
-else
-   BOOST_LIBS=$(addsuffix .a,$(addprefix libboost_,$(BOOST_MODULES)))
-   BOOST_LINK_FLAGS=$(addprefix $(BOOST_DIR)/$(EXTERNAL_LINK_TYPE)/lib/,$(BOOST_LIBS))
-   INCLUDE_FLAGS+=-I$(BOOST_DIR)/$(EXTERNAL_LINK_TYPE)/include
-endif
-   EXTERNAL_LIBS+=$(BOOST_LINK_FLAGS)
-endif
-
-#
 # PL-Plot
 #
 ifeq ($(USE_PLPLOT),YES)
@@ -615,7 +599,7 @@ endif
 #   ** must come after CEF **
 #
 ifeq ($(USE_GTK),YES)
-    INCLUDE_FLAGS+=$(shell pkg-config --cflags gtk+-2.0) 
+    INCLUDE_FLAGS+=$(shell pkg-config --cflags-only-I gtk+-2.0) 
     EXTERNAL_LIBS+=$(shell pkg-config --libs-only-l gmodule-2.0 gtk+-2.0 gthread-2.0 gtk+-unix-print-2.0)
     EXTERNAL_LIBS+=-ludev -lX11
 endif
@@ -627,6 +611,36 @@ ifeq ($(USE_JSON),YES)
     INCLUDE_FLAGS+=-I$(EXTERNAL_INCLUDE_DIR)RAPID_JSON/rapidjson/include
 endif
 
+#
+# Websockets CPP
+#
+ifeq ($(USE_WEB_SOCKET_CPP),YES)
+    INCLUDE_FLAGS+=-I$(EXTERNAL_INCLUDE_DIR)websocketpp
+    BOOST_MODULES+=system
+endif
+
+#
+# Boost Setup
+#   ** must be done after others have had the chance to declare dependency **
+#
+BOOST_LIBS=
+BOOST_LINK_FLAGS=
+
+ifneq ($(BOOST_MODULES),)
+   USE_BOOST=YES
+endif
+
+ifeq ($(USE_BOOST),YES)
+ifeq ($(USE_LOCAL_BOOST),YES)
+   BOOST_LIBS=$(addprefix -lboost_,$(BOOST_MODULES))
+   BOOST_LINK_FLAGS=$(BOOST_LIBS)
+else
+   BOOST_LIBS=$(addsuffix .a,$(addprefix libboost_,$(BOOST_MODULES)))
+   BOOST_LINK_FLAGS=$(addprefix $(BOOST_DIR)/$(EXTERNAL_LINK_TYPE)/lib/,$(BOOST_LIBS))
+   INCLUDE_FLAGS+=-I$(BOOST_DIR)/$(EXTERNAL_LINK_TYPE)/include
+endif
+   EXTERNAL_LIBS+=$(BOOST_LINK_FLAGS)
+endif
  
 ###################################################################
 #                        Tags                                     #
@@ -637,6 +651,19 @@ ifdef TAGS_FILE
    BUILD_DEPS+=$(TAGS_TO_BUILD)
 endif
 
+###################################################################
+#                      CPP Check                                  #
+###################################################################
+
+ifndef NO_CPP_CHECK
+   FILES_TO_CPP_CHECK+=$(SOURCES)
+   FILES_TO_CPP_CHECK+=$(EXPORT_INCLUDES)
+   FILES_TO_CPP_CHECK+=$(addsuffix $(SOURCE_EXTENSION),$(BUILD_TIME_TESTS))
+   CPP_CHECK_FLAGS+=$(subst -I,-I ,$(INCLUDE_FLAGS))
+   CPP_CHECK_FLAGS+=--enable=warning --std=posix --error-exitcode=1 --force
+   #CPP_CHECK_FLAGS+=--suppressions-list=$(PROJECT_ROOT_DIR)/.cppcheck.sup
+   CPP_CHECK_FLAGS+=--inconclusive
+endif
 
 ###################################################################
 #                     Overrides                                   #
@@ -693,6 +720,7 @@ coverview: VIEW_COVER
 full_log: all
 boost-list: PRINT_BOOST_MODULES
 boost-help: OPEN_BOOST_MODULE
+cppcheck: CPP_CHECK BUILD_FOLDERS
 
 
 OPEN_BOOST_MODULE:
@@ -742,6 +770,15 @@ BUILD_FOLDERS :
 		$(MAKE) -C $$dir $(MAKECMDGOALS) || exit;        \
 		echo "***********************************************************"; \
 		echo "Built successfully: $$dir ";\
+		echo "************************************************************"; \
+	done
+
+CPP_CHECK :
+	@for f in $(FILES_TO_CPP_CHECK); do  \
+		echo "***********************************************************"; \
+		echo "Checking: $$f";\
+		echo "************************************************************"; \
+		cppcheck $(CPP_CHECK_FLAGS) $$f || exit 1; \
 		echo "************************************************************"; \
 	done
 

@@ -323,6 +323,12 @@ int VerifyStringPull( testLogger& log) {
         char * pulld = new char [120];
         char * opd = new char [120];
 
+        DEFER (
+            delete [] read;
+            delete [] pulld;
+            delete [] opd;
+        )
+
         memset(read,'1',120);
         memset(pulld,'1',120);
         memset(opd,'1',120);
@@ -367,10 +373,6 @@ int VerifyStringPull( testLogger& log) {
         rd2 >> (opd + 51);
         VerifyData(read, opd,120);
 
-
-        delete [] read;
-        delete [] pulld;
-        delete [] opd;
     } catch (TestError& e) {
         return e.Error(log);
     }

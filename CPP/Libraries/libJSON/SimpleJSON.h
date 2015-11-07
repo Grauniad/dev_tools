@@ -4,6 +4,7 @@
 #include <string>
 #include <tuple>
 #include <map>
+#include <memory>
 
 #include <rapidjson/reader.h>
 #include <rapidjson/writer.h>
@@ -17,6 +18,7 @@
 class SimpleJSONBuilder {
 public: 
     SimpleJSONBuilder();
+    void AddName(const std::string& name);
     void Add(const std::string& name, const std::string& value);
 
     void Add(const std::string& name,
@@ -58,6 +60,23 @@ private:
     rapidjson::Writer<rapidjson::StringBuffer> writer;
 };
 
+/**************************************************************************
+ *                      Internal Errors
+ **************************************************************************/
+namespace spJSON {
+    struct WrongTypeError {
+        std::string field;
+    };
+
+    class UnknownTypeError { };
+
+    struct ValueError {
+        std::string field;
+    };
+
+    class ParseError { };
+}
+
 /*****************************************************************************
  *                          Field Type Definitions
  *                         (see .hpp file for details)
@@ -72,7 +91,9 @@ struct FieldBase {
         UINT,
         UINT_64,
         DOUBLE,
-        BOOL
+        BOOL,
+        OBJECT,
+        OBJECT_ARRAY
     };
 
     virtual ~FieldBase() { }
@@ -93,6 +114,50 @@ struct FieldBase {
      */
     virtual FieldType Type() = 0;
 
+    /*****************************************************************************
+     *                      Default Type Error Interface
+     *                 (see SimpleParsedJSON class for details)
+     *****************************************************************************/
+    virtual bool Key(const char* str, rapidjson::SizeType length, bool copy);
+
+    virtual bool String(const char* str, rapidjson::SizeType length, bool copy);
+
+    virtual bool Int(int i);
+
+    virtual bool Uint(unsigned u);
+
+    virtual bool Double(double d);
+
+    virtual bool StartObject();
+
+    virtual bool EndObject(rapidjson::SizeType memberCount);
+
+    virtual bool Null();
+
+    virtual bool Bool(bool b);
+
+    virtual bool Int64(int64_t i);
+
+    virtual bool Uint64(uint64_t u);
+
+    virtual bool StartArray();
+
+    virtual bool EndArray(rapidjson::SizeType elementCount);
+
+
+};
+
+struct FieldArrayBase: public FieldBase {
+    FieldArrayBase();
+
+    bool inArray;
+
+    // Must be called by the child class during clear!
+    virtual void Clear();
+
+    virtual bool StartArray();
+
+    virtual bool EndArray(rapidjson::SizeType elementCount);
 };
 
 /*
@@ -107,8 +172,9 @@ struct FieldBase {
 #define NewUI64Field(FieldName)   struct FieldName: public UI64Field    { const char * Name() { return #FieldName; } };
 #define NewDoubleField(FieldName) struct FieldName: public DoubleField  { const char * Name() { return #FieldName; } };
 #define NewBoolField(FieldName)   struct FieldName: public BoolField    { const char * Name() { return #FieldName; } };
-#define NewStringArrayField(FieldName)   struct FieldName: public StringArrayField    { const char * Name() { return #FieldName; } };
-
+#define NewStringArrayField(FieldName)    struct FieldName: public StringArrayField    { const char * Name() { return #FieldName; } };
+#define NewEmbededObject(FieldName, JSON) struct FieldName: public EmbededObjectField<JSON>  { const char * Name() { return #FieldName; } };
+#define NewObjectArray(FieldName, JSON) struct FieldName: public ObjectArray<JSON>  { const char * Name() { return #FieldName; } };
 
 /**
  * The simple parser takes in a map configuration of fields and their type.
@@ -209,26 +275,21 @@ public:
 
     bool EndArray(rapidjson::SizeType elementCount);
 
+    /**************************************************************************
+     *                       Public Utilities
+     **************************************************************************/
+
+     void PrintAllFields(SimpleJSONBuilder& builder) {
+         PrintNextField<sizeof...(Fields)>(builder);
+     }
+
 private:
     /**************************************************************************
      *                      Internal Errors
      **************************************************************************/
-
     struct UnknownFieldError {
         std::string field;
     };
-
-    struct WrongTypeError {
-        std::string field;
-    };
-
-    struct ValueError {
-        std::string field;
-    };
-
-    class ParseError { };
-
-    class UnknownTypeError { };
 
     /**************************************************************************
      *                      Internal Utilities
@@ -275,14 +336,14 @@ private:
 
     template <int idx>
     inline typename std::enable_if<idx!=0,void>::type
-    PrintNextField() {
-        PrintField<idx-1>();
-        PrintNextField<idx-1>();
+    PrintNextField(SimpleJSONBuilder& builder) {
+        PrintField<idx-1>(builder);
+        PrintNextField<idx-1>(builder);
     }
 
     template <int idx>
     inline typename std::enable_if<idx==0,void>::type
-    PrintNextField() { }
+    PrintNextField(SimpleJSONBuilder& builder) { }
 
     /**
      * Lookup the field with index idx, and store its name in the map with a
@@ -292,7 +353,7 @@ private:
      * name.
      */
     template <int idx>
-    void PrintField();
+    void PrintField(SimpleJSONBuilder& builder);
 
     /**************************************************************************
      *                      Internal Data
@@ -308,7 +369,7 @@ private:
     typedef std::map<std::string,FieldInfo> FieldMap;
     FieldMap fieldMap;
 
-    // Tracks if we are in a sub-object (not current supported!)
+    // Tracks if we are in a sub-object 
     size_t depth;
 
     // Tracks if we are currently handling an array...
@@ -317,7 +378,6 @@ private:
     // Used to build a string representation of the JSON
     SimpleJSONBuilder builder;
 };
-
 
 #include "SimpleJSON.hpp"
 

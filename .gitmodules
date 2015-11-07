@@ -4,3 +4,6 @@
 [submodule "EXTERNAL_INCLUDES/RAPID_JSON/rapidjson"]
 	path = EXTERNAL_INCLUDES/RAPID_JSON/rapidjson
 	url = https://github.com/miloyip/rapidjson.git
+[submodule "EXTERNAL_INCLUDES/websocketpp"]
+	path = EXTERNAL_INCLUDES/websocketpp
+	url = https://github.com/zaphoyd/websocketpp.git

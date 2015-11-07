@@ -3,6 +3,10 @@
 
 using namespace std;
 
+/*****************************************************************************
+ *                          JSON Builder
+ *****************************************************************************/
+
 SimpleJSONBuilder::SimpleJSONBuilder() 
     : writer(buf)
 {
@@ -36,6 +40,10 @@ void SimpleJSONBuilder::Add(
         writer.String(item.c_str());
     }
     writer.EndArray();
+}
+
+void SimpleJSONBuilder::AddName(const std::string& name) {
+    writer.String(name.c_str());
 }
 
 void SimpleJSONBuilder::Add(const std::string& name, const std::string& value) {
@@ -89,3 +97,89 @@ void SimpleJSONBuilder::StartAnonymousObject() {
 void SimpleJSONBuilder::EndObject() {
     writer.EndObject();
 }
+
+/*****************************************************************************
+ *                          Base Scalar Field
+ *****************************************************************************/
+bool FieldBase::StartObject() {
+   throw spJSON::WrongTypeError{Name()};
+}
+
+bool FieldBase::EndObject(rapidjson::SizeType memberCount) {
+   throw spJSON::WrongTypeError{Name()};
+}
+
+bool FieldBase::String(const char* str, rapidjson::SizeType length, bool copy) {
+   throw spJSON::WrongTypeError{Name()};
+}
+
+bool FieldBase::Key(const char* str, rapidjson::SizeType length, bool copy) {
+   throw spJSON::WrongTypeError{Name()};
+}
+
+bool FieldBase::Int(int i) {
+   throw spJSON::WrongTypeError{Name()};
+}
+
+bool FieldBase::Int64(int64_t i) {
+   throw spJSON::WrongTypeError{Name()};
+}
+
+bool FieldBase::Uint(unsigned u) {
+   throw spJSON::WrongTypeError{Name()};
+}
+
+bool FieldBase::Uint64(uint64_t u) {
+   throw spJSON::WrongTypeError{Name()};
+}
+
+bool FieldBase::Double(double d) {
+   throw spJSON::WrongTypeError{Name()};
+}
+
+bool FieldBase::Bool(bool b) {
+   throw spJSON::WrongTypeError{Name()};
+}
+
+bool FieldBase::StartArray() {
+   throw spJSON::WrongTypeError{Name()};
+}
+
+bool FieldBase::EndArray(rapidjson::SizeType elementCount) {
+   throw spJSON::WrongTypeError{Name()};
+}
+
+bool FieldBase::Null() {
+   throw spJSON::UnknownTypeError{};
+}
+
+/*****************************************************************************
+ *                          Base Array Field
+ *****************************************************************************/
+FieldArrayBase::FieldArrayBase() {
+    FieldArrayBase::Clear();
+}
+
+void FieldArrayBase::Clear() {
+    inArray = false;
+}
+
+bool FieldArrayBase::StartArray() {
+    if(inArray) {
+        throw spJSON::ParseError();
+    } else {
+        inArray = true;
+    }
+    return true;
+}
+
+bool FieldArrayBase::EndArray(rapidjson::SizeType elementCount) {
+    if(inArray) {
+        inArray = false;
+    } else {
+        throw spJSON::ParseError();
+    }
+    return true;
+}
+
+
