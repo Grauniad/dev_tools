@@ -6,7 +6,7 @@ LINKED_LIBS= libUtils  \
 BUILD_TIME_TESTS=os binaryData time search dynStruct
 CPP_TAGS_FILE=utilTests-c++.tags
 
-BOOST_MODULES+=filesystem system
+BOOST_MODULES+=filesystem system regex
 
 USE_BOOST=YES
 

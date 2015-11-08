@@ -8,5 +8,6 @@ LINKED_LIBS= libCommands \
 BUILD_TIME_TESTS=commands
 CPP_TAGS_FILE=dev_tools_tesst_set-c++.tags
 MODE=CPP
+BOOST_MODULES+=regex
 
 include ../makefile_tests.include
