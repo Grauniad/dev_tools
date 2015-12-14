@@ -8,33 +8,77 @@
 
 #include <rapidjson/reader.h>
 #include <rapidjson/writer.h>
+#include <rapidjson/prettywriter.h>
 #include <rapidjson/stringbuffer.h>
+
+
+class SimpleJSONBuilderCompactWriter: 
+     public rapidjson::StringBuffer,
+     public rapidjson::Writer<rapidjson::StringBuffer>
+ {
+public:
+     SimpleJSONBuilderCompactWriter();
+
+     void ResetAndClear();
+ };
+
+class SimpleJSONBuilderPrettyWriter: 
+     public rapidjson::StringBuffer,
+     public rapidjson::PrettyWriter<rapidjson::StringBuffer>
+ {
+public:
+     SimpleJSONBuilderPrettyWriter();
+
+     void ResetAndClear();
+ };
 
 /**
  * The simple JSON Builder wraps the rapidjson writer to provide a simpler, but
  * slower interface. It is designed for situations where the JSON write time is
  * note a critical bottle neck, for raw speed rapidjson should be used directly.
  */
-class SimpleJSONBuilder {
+template <class WRITER>
+class SimpleJSONBuilderBase {
 public: 
-    SimpleJSONBuilder();
+    SimpleJSONBuilderBase();
+
+    /**
+     * Add a new named item to the JSON, but do not create the value. 
+     *
+     * (For the JSON to be valid subsequent calls should be made to create the
+     * item. (E.g to create an object)
+     */
     void AddName(const std::string& name);
-    void Add(const std::string& name, const std::string& value);
 
+    /**
+     * Add a new named item to the JSON, but with a null value.
+     *
+     */
+    void AddNullField(const std::string& name);
+
+    /**
+     *  Add a new scalar item to the JSON.
+     */
+    template <typename VALUE_TYPE>
+    void Add(const std::string& name, const VALUE_TYPE& value) {
+        writer.String(name.c_str());
+        Add(value);
+    }
+
+    /**
+     *  Add a homogenous array to the JSON.
+     */
+    template <typename VALUE_TYPE>
     void Add(const std::string& name,
-             const std::vector<std::string>& stringArray);
-
-    void Add(const std::string& name, const int& value);
-
-    void Add(const std::string& name, const int64_t& value);
-
-    void Add(const std::string& name, const unsigned& value);
-
-    void Add(const std::string& name, const uint64_t& value);
-
-    void Add(const std::string& name, const double& value);
-
-    void Add(const std::string& name, const bool& value);
+             const std::vector<VALUE_TYPE>& array) 
+    {
+        writer.String(name.c_str());
+        writer.StartArray();
+        for (const VALUE_TYPE& item: array) {
+            Add(item);
+        }
+        writer.EndArray();
+    }
 
     /*
      * Reset the builder, as if it was a newly constructed object.
@@ -50,15 +94,36 @@ public:
     void StartAnonymousObject();
     void EndObject();
 
-
     /**
      * Return the current object as a JSON string, and reset the builder.
      */
     std::string GetAndClear();
 private:
-    rapidjson::StringBuffer buf;
-    rapidjson::Writer<rapidjson::StringBuffer> writer;
+    /*****************************************************
+     *       Add Anonymous Data
+     ****************************************************/
+    void Add(const std::string& value);
+
+    void Add(const int& value);
+
+    void Add(const int64_t& value);
+
+    void Add(const unsigned& value);
+
+    void Add(const uint64_t& value);
+
+    void Add(const double& value);
+
+    void Add(const bool& value);
+
+    /*****************************************************
+     * Data
+     ****************************************************/
+     WRITER writer;
 };
+
+typedef SimpleJSONBuilderBase<SimpleJSONBuilderCompactWriter> SimpleJSONBuilder;
+typedef SimpleJSONBuilderBase<SimpleJSONBuilderPrettyWriter> SimpleJSONPrettyBuilder;
 
 /**************************************************************************
  *                      Internal Errors
@@ -75,6 +140,17 @@ namespace spJSON {
     };
 
     class ParseError { };
+
+    /**************************************************************************
+     *                    Auto Generate an implementation
+     **************************************************************************/
+
+     /** 
+      * Auto-generate an implementation of SimpleParsedJSON, based on an example JSON string
+      *
+      * @returns The code to generate the SimpleParsedJSON implementation
+      */
+     std::string Gen(const std::string& className, const std::string& exampleJson);
 }
 
 /*****************************************************************************
@@ -83,18 +159,9 @@ namespace spJSON {
  *****************************************************************************/
 
 struct FieldBase {
-    enum FieldType {
-        STRING,
-        STRING_ARRAY,
-        INT,
-        INT_64,
-        UINT,
-        UINT_64,
-        DOUBLE,
-        BOOL,
-        OBJECT,
-        OBJECT_ARRAY
-    };
+    FieldBase ();
+
+    bool supplied;
 
     virtual ~FieldBase() { }
 
@@ -102,17 +169,12 @@ struct FieldBase {
      * Reset the state of this field (as if it were newly created, and not
      * "parsed")
      */
-    virtual void Clear() = 0;
+    virtual void Clear();
 
     /*
      * Access to the string name of this field
      */
     virtual const char* Name() = 0;
-
-    /**
-     * Utility for verifying the type of this field.
-     */
-    virtual FieldType Type() = 0;
 
     /*****************************************************************************
      *                      Default Type Error Interface
@@ -147,17 +209,20 @@ struct FieldBase {
 
 };
 
+template <typename TYPE>
 struct FieldArrayBase: public FieldBase {
     FieldArrayBase();
 
+    typedef std::vector<TYPE> ValueType;
+    ValueType value;
+
     bool inArray;
 
-    // Must be called by the child class during clear!
-    virtual void Clear();
+    void Clear();
 
-    virtual bool StartArray();
+    bool StartArray();
 
-    virtual bool EndArray(rapidjson::SizeType elementCount);
+    bool EndArray(rapidjson::SizeType elementCount);
 };
 
 /*
@@ -172,7 +237,15 @@ struct FieldArrayBase: public FieldBase {
 #define NewUI64Field(FieldName)   struct FieldName: public UI64Field    { const char * Name() { return #FieldName; } };
 #define NewDoubleField(FieldName) struct FieldName: public DoubleField  { const char * Name() { return #FieldName; } };
 #define NewBoolField(FieldName)   struct FieldName: public BoolField    { const char * Name() { return #FieldName; } };
-#define NewStringArrayField(FieldName)    struct FieldName: public StringArrayField    { const char * Name() { return #FieldName; } };
+
+#define NewStringArrayField(FieldName) struct FieldName: public StringArrayField  { const char * Name() { return #FieldName; } };
+#define NewIntArrayField(FieldName)    struct FieldName: public IntArrayField     { const char * Name() { return #FieldName; } };
+#define NewUIntArrayField(FieldName)   struct FieldName: public UIntArrayField    { const char * Name() { return #FieldName; } };
+#define NewDoubleArrayField(FieldName) struct FieldName: public DoubleArrayField  { const char * Name() { return #FieldName; } };
+#define NewBoolArrayField(FieldName)   struct FieldName: public BoolArrayField    { const char * Name() { return #FieldName; } };
+#define NewI64ArrayField(FieldName)    struct FieldName: public I64ArrayField     { const char * Name() { return #FieldName; } };
+#define NewUI64ArrayField(FieldName)   struct FieldName: public UI64ArrayField    { const char * Name() { return #FieldName; } };
+
 #define NewEmbededObject(FieldName, JSON) struct FieldName: public EmbededObjectField<JSON>  { const char * Name() { return #FieldName; } };
 #define NewObjectArray(FieldName, JSON) struct FieldName: public ObjectArray<JSON>  { const char * Name() { return #FieldName; } };
 
@@ -238,11 +311,34 @@ public:
     typename FIELD::ValueType& Get();
 
     /**
-     * Get a JSON string which represents the parsed JSON
+     * Check if a field was supplied on the JSON.
+     *
+     * @returns TRUE if the value was supplied, and not null, FALSE otherwise.
+     */
+    template <class FIELD>
+    bool Supplied();
+
+    /**
+     * Get a compact JSON string which represents the parsed JSON, suitable for
+     * sending over the wire
+     *
+     * @param nullIfNotSupplied     Set non-supplied fields to null. 
+     *                              (By default the default field value is used)
      *
      * @returns A valid JSON string
      */
-    std::string GetJSONString();
+    std::string GetJSONString(bool nullIfNotSupplied = false);
+
+    /**
+     * Get a humna readible JSON string which represents the parsed JSON, suitable for
+     * displaying to a user, or debugging.
+     *
+     * @param nullIfNotSupplied     Set non-supplied fields to null. 
+     *                              (By default the default field value is used)
+     *
+     * @returns A valid JSON string
+     */
+    std::string GetPrettyJSONString(bool nullIfNotSupplied = false);
 
     /**************************************************************************
      *                      Rapid JSON Implementation
@@ -279,8 +375,9 @@ public:
      *                       Public Utilities
      **************************************************************************/
 
-     void PrintAllFields(SimpleJSONBuilder& builder) {
-         PrintNextField<sizeof...(Fields)>(builder);
+     template <class Builder>
+     void PrintAllFields(Builder& builder, bool nullIfNotSupplied) {
+         PrintNextField<sizeof...(Fields)>(builder, nullIfNotSupplied);
      }
 
 private:
@@ -297,7 +394,6 @@ private:
 
     struct FieldInfo {
         FieldBase* const field;
-        const FieldBase::FieldType type;
         const char* const name;
     };
 
@@ -334,16 +430,16 @@ private:
      *  (Loop over each field with PrintNextField, calling PrintField for each)
      **************************************************************************/
 
-    template <int idx>
+    template <int idx, class Builder>
     inline typename std::enable_if<idx!=0,void>::type
-    PrintNextField(SimpleJSONBuilder& builder) {
-        PrintField<idx-1>(builder);
-        PrintNextField<idx-1>(builder);
+    PrintNextField(Builder& builder, bool nullIfNotSupplied) {
+        PrintField<idx-1>(builder, nullIfNotSupplied);
+        PrintNextField<idx-1>(builder, nullIfNotSupplied);
     }
 
-    template <int idx>
+    template <int idx, class Builder>
     inline typename std::enable_if<idx==0,void>::type
-    PrintNextField(SimpleJSONBuilder& builder) { }
+    PrintNextField(Builder& builder, bool nullIfNotSupplied) { }
 
     /**
      * Lookup the field with index idx, and store its name in the map with a
@@ -352,8 +448,8 @@ private:
      * This will be used at parse time to update the correct field based on its
      * name.
      */
-    template <int idx>
-    void PrintField(SimpleJSONBuilder& builder);
+    template <int idx, class Builder>
+    void PrintField(Builder& builder, bool nullIfNotSupplied);
 
     /**************************************************************************
      *                      Internal Data
@@ -374,9 +470,6 @@ private:
 
     // Tracks if we are currently handling an array...
     bool isArray;
-
-    // Used to build a string representation of the JSON
-    SimpleJSONBuilder builder;
 };
 
 #include "SimpleJSON.hpp"

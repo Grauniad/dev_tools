@@ -11,15 +11,139 @@
 #include <limits>
 #include <type_traits>
 
-/**
- * TODO:
- *    We will get better performance (in the worst case) if we convert these if
- *    statements into a virtual function.
- *
- *    (Currently a UINT field initialised from a bool takes many more
- *    instructions, due to the number of comparisons. Profiling on a release
- *    build shows converting to a switch statement is no help.)
- */
+/*****************************************************************************
+ *                          JSON Builder
+ *****************************************************************************/
+
+template <class WRTIER>
+SimpleJSONBuilderBase<WRTIER>::SimpleJSONBuilderBase() 
+{
+    writer.StartObject();
+}
+
+template <class WRTIER>
+void SimpleJSONBuilderBase<WRTIER>::Clear() {
+    writer.ResetAndClear();
+
+    writer.StartObject();
+}
+
+template <class WRTIER>
+std::string SimpleJSONBuilderBase<WRTIER>::GetAndClear() {
+    writer.EndObject();
+
+    std::string result = writer.GetString();
+
+    Clear();
+
+    return result;
+}
+
+template <class WRTIER>
+void SimpleJSONBuilderBase<WRTIER>::AddName(const std::string& name) {
+    writer.String(name.c_str());
+}
+
+template <class WRTIER>
+void SimpleJSONBuilderBase<WRTIER>::AddNullField(const std::string& name) {
+    AddName(name);
+    writer.Null();
+}
+
+template <class WRTIER>
+void SimpleJSONBuilderBase<WRTIER>::Add(const std::string& value) {
+    writer.String(value.c_str());
+}
+
+template <class WRTIER>
+void SimpleJSONBuilderBase<WRTIER>::Add(const int& value) {
+    writer.Int(value);
+}
+
+template <class WRTIER>
+void SimpleJSONBuilderBase<WRTIER>::Add(const int64_t& value) {
+    writer.Int64(value);
+}
+
+template <class WRTIER>
+void SimpleJSONBuilderBase<WRTIER>::Add(const unsigned & value) {
+    writer.Uint(value);
+}
+
+template <class WRTIER>
+void SimpleJSONBuilderBase<WRTIER>::Add(const uint64_t& value) {
+    writer.Uint64(value);
+}
+
+template <class WRTIER>
+void SimpleJSONBuilderBase<WRTIER>::Add(const double& value) {
+    writer.Double(value);
+}
+
+template <class WRTIER>
+void SimpleJSONBuilderBase<WRTIER>::Add(const bool& value) {
+    writer.Bool(value);
+}
+
+template <class WRTIER>
+void SimpleJSONBuilderBase<WRTIER>::StartArray(const std::string& name) {
+    writer.String(name.c_str());
+    writer.StartArray();
+}
+
+template <class WRTIER>
+void SimpleJSONBuilderBase<WRTIER>::EndArray() {
+    writer.EndArray();
+}
+
+template <class WRTIER>
+void SimpleJSONBuilderBase<WRTIER>::StartAnonymousObject() {
+    writer.StartObject();
+}
+
+template <class WRTIER>
+void SimpleJSONBuilderBase<WRTIER>::EndObject() {
+    writer.EndObject();
+}
+
+/*****************************************************************************
+ *                          Base Array Field
+ *****************************************************************************/
+template <typename TYPE>
+FieldArrayBase<TYPE>::FieldArrayBase() {
+    FieldArrayBase::Clear();
+}
+
+template <typename TYPE>
+void FieldArrayBase<TYPE>::Clear() {
+    FieldBase::Clear();
+    value.clear();
+    inArray = false;
+}
+
+template <typename TYPE>
+bool FieldArrayBase<TYPE>::StartArray() {
+    if(inArray) {
+        throw spJSON::ParseError();
+    } else {
+        inArray = true;
+    }
+    return true;
+}
+
+template <typename TYPE>
+bool FieldArrayBase<TYPE>::EndArray(rapidjson::SizeType elementCount)
+{
+    if(inArray) {
+        inArray = false;
+    } else {
+        throw spJSON::ParseError();
+    }
+    return true;
+}
+
+
+#endif /* SIMPLEJSON_HPP_ */
 
 /*****************************************************************************
  *                          Field Type Definitions
@@ -30,11 +154,8 @@ struct StringField: public FieldBase {
     ValueType value;
 
     virtual void Clear() {
+        FieldBase::Clear();
         value = "";
-    }
-
-    virtual FieldType Type() {
-        return STRING;
     }
 
     bool String(const char* str, rapidjson::SizeType length, bool copy) {
@@ -43,18 +164,7 @@ struct StringField: public FieldBase {
     }
 };
 
-struct StringArrayField: public FieldArrayBase {
-    typedef std::vector<std::string> ValueType;
-    ValueType value;
-
-    virtual void Clear() {
-        FieldArrayBase::Clear();
-        value.clear();
-    }
-
-    virtual FieldType Type() {
-        return STRING_ARRAY;
-    }
+struct StringArrayField: public FieldArrayBase<std::string> {
 
     bool String(const char* str, rapidjson::SizeType length, bool copy) {
         if (inArray) {
@@ -71,11 +181,8 @@ struct IntField: public FieldBase {
     ValueType value;
 
     virtual void Clear() {
+        FieldBase::Clear();
         value = 0;
-    }
-
-    virtual FieldType Type() {
-        return INT;
     }
 
     bool Int(int i) {
@@ -93,16 +200,30 @@ struct IntField: public FieldBase {
     }
 };
 
+struct IntArrayField: public FieldArrayBase<int> {
+
+    bool Int(int i) {
+        value.push_back(i);
+        return true;
+    }
+
+    bool Uint(unsigned u) {
+        if (u <= static_cast<unsigned>(std::numeric_limits<int>::max())) {
+            value.push_back(u);
+        } else {
+            throw spJSON::ValueError{Name()};
+        }
+        return true;
+    }
+};
+
 struct I64Field: public FieldBase {
     typedef int64_t ValueType;
     ValueType value;
 
     virtual void Clear() {
+        FieldBase::Clear();
         value = 0;
-    }
-
-    virtual FieldType Type() {
-        return INT_64;
     }
 
     bool Int(int i) {
@@ -131,16 +252,40 @@ struct I64Field: public FieldBase {
     }
 };
 
+struct I64ArrayField: public FieldArrayBase<int64_t> {
+    bool Int(int i) {
+        value.push_back(i);
+        return true;
+    }
+
+    bool Int64(int64_t i) {
+        value.push_back(i);
+        return true;
+    }
+
+    bool Uint(unsigned u) {
+        value.push_back(u);
+        return true;
+    }
+
+    bool Uint64(uint64_t u) {
+        if (u <= static_cast<uint64_t>(std::numeric_limits<int64_t>::max()))
+        {
+            value.push_back(u);
+        } else {
+            throw spJSON::ValueError{Name()};
+        }
+        return true;
+    }
+};
+
 struct UI64Field: public FieldBase {
     typedef uint64_t ValueType;
     ValueType value;
 
     virtual void Clear() {
+        FieldBase::Clear();
         value = 0;
-    }
-
-    virtual FieldType Type() {
-        return UINT_64;
     }
 
     bool Uint(unsigned u) {
@@ -154,20 +299,37 @@ struct UI64Field: public FieldBase {
     }
 };
 
+struct UI64ArrayField: public FieldArrayBase<uint64_t> {
+    bool Uint(unsigned u) {
+        value.push_back(u);
+        return true;
+    }
+
+    bool Uint64(uint64_t u) {
+        value.push_back(u);
+        return true;
+    }
+};
+
 struct UIntField: public FieldBase {
     typedef unsigned ValueType;
     ValueType value;
 
     virtual void Clear() {
+        FieldBase::Clear();
         value = 0;
-    }
-
-    virtual FieldType Type() {
-        return UINT;
     }
 
     bool Uint(unsigned u) {
         value = u;
+        return true;
+    }
+};
+
+struct UIntArrayField: public FieldArrayBase<unsigned> {
+
+    bool Uint(unsigned u) {
+        value.push_back(u);
         return true;
     }
 };
@@ -177,11 +339,8 @@ struct DoubleField: public FieldBase {
     ValueType value;
 
     virtual void Clear() {
+        FieldBase::Clear();
         value = 0.0;
-    }
-
-    virtual FieldType Type() {
-        return DOUBLE;
     }
 
     bool Int(int i) {
@@ -210,16 +369,40 @@ struct DoubleField: public FieldBase {
     }
 };
 
+struct DoubleArrayField: public FieldArrayBase<double> {
+    bool Int(int i) {
+        value.push_back(i);
+        return true;
+    }
+
+    bool Int64(int64_t i) {
+        value.push_back(i);
+        return true;
+    }
+
+    bool Uint(unsigned u) {
+        value.push_back(u);
+        return true;
+    }
+
+    bool Uint64(uint64_t u) {
+        value.push_back(u);
+        return true;
+    }
+
+    bool Double(double d) {
+        value.push_back(d);
+        return true;
+    }
+};
+
 struct BoolField: public FieldBase {
     typedef bool ValueType;
     ValueType value;
 
     virtual void Clear() {
+        FieldBase::Clear();
         value = false;
-    }
-
-    virtual FieldType Type() {
-        return BOOL;
     }
 
     bool Uint(unsigned u) {
@@ -229,6 +412,18 @@ struct BoolField: public FieldBase {
 
     bool Bool(bool b) {
         value = b;
+        return true;
+    }
+};
+
+struct BoolArrayField: public FieldArrayBase<bool> {
+    bool Uint(unsigned u) {
+        value.push_back(u);
+        return true;
+    }
+
+    bool Bool(bool b) {
+        value.push_back(b);
         return true;
     }
 };
@@ -248,6 +443,7 @@ struct EmbededObjectField: public FieldBase {
      *******************************/ 
 
     virtual void Clear() {
+        FieldBase::Clear();
         value.Clear();
         depth = 0;
     }
@@ -257,17 +453,14 @@ struct EmbededObjectField: public FieldBase {
         return true;
     }
 
-    virtual FieldType Type() {
-        return OBJECT;
-    }
-
     /**
      * Add this field to a JSON string which is being built up
      */
-    virtual void AddToJSON(SimpleJSONBuilder& builder) {
+    template <class Builder>
+    void AddToJSON(Builder& builder, bool nullIfNotSupplied) {
         builder.AddName(Name());
         builder.StartAnonymousObject();
-        value.PrintAllFields(builder);
+        value.PrintAllFields(builder, nullIfNotSupplied);
         builder.EndObject();
     }
 
@@ -275,6 +468,17 @@ struct EmbededObjectField: public FieldBase {
      *     Rapid JSON Interface
      *******************************/ 
 
+    bool Null() {
+        if (depth > 0) {
+            // Null found whilst procecssing a child object
+            value.Null();
+        } else {
+            // Null is for us, not a child
+            FieldBase::Null();
+        }
+
+        return true;
+    }
     bool StartObject() {
         ++depth;
         value.StartObject();
@@ -374,6 +578,7 @@ struct ObjectArray: public FieldBase {
     }
 
     virtual void Clear() {
+        FieldBase::Clear();
         value.clear();
         depth = -1;
     }
@@ -387,18 +592,15 @@ struct ObjectArray: public FieldBase {
         return true;
     }
 
-    virtual FieldType Type() {
-        return OBJECT_ARRAY;
-    }
-
     /**
      * Add this field to a JSON string which is being built up
      */
-    virtual void AddToJSON(SimpleJSONBuilder& builder) {
+    template <class Builder>
+    void AddToJSON(Builder& builder, bool nullIfNotSupplied) {
         builder.StartArray(Name());
         for (pJSON& obj: value) {
             builder.StartAnonymousObject();
-            obj->PrintAllFields(builder);
+            obj->PrintAllFields(builder, nullIfNotSupplied);
             builder.EndObject();
         }
         builder.EndArray();
@@ -417,6 +619,18 @@ struct ObjectArray: public FieldBase {
             value.emplace_back();
             value.back()->StartObject();
         }
+        return true;
+    }
+
+    bool Null() {
+        if (depth > 0) {
+            // Null found whilst procecssing a child object
+            value.back()->Null();
+        } else {
+            // Null is for us, not a child
+            FieldBase::Null();
+        }
+
         return true;
     }
 
@@ -568,6 +782,12 @@ typename FIELD::ValueType& SimpleParsedJSON<Fields...>::Get() {
     return std::get<FIELD>(fields).value;
 }
 
+template <class...Fields>
+template <class FIELD>
+bool SimpleParsedJSON<Fields...>::Supplied() {
+    return std::get<FIELD>(fields).supplied;
+}
+
 /*****************************************************************************
  *                          Rapid JSON Implementation
  *****************************************************************************/
@@ -629,6 +849,8 @@ bool SimpleParsedJSON<Fields...>::Key(
         if (!currentField) {
             throw UnknownFieldError {str} ;
         }
+
+        currentField->field->supplied = true;
 
         if (isArray) {
             throw spJSON::ParseError();
@@ -772,7 +994,13 @@ bool SimpleParsedJSON<Fields...>::EndArray(rapidjson::SizeType elementCount) {
  *****************************************************************************/
 template <class...Fields>
 bool SimpleParsedJSON<Fields...>::Null() {
-    throw spJSON::UnknownTypeError();
+    if (currentField) {
+        currentField->field->Null();
+    } else {
+        throw spJSON::ParseError();
+    }
+
+    return true;
 }
 
 /*****************************************************************************
@@ -784,16 +1012,25 @@ void SimpleParsedJSON<Fields...>::AddField() {
     auto& field = std::get<idx>(fields);
     typename FieldMap::value_type item(
             field.Name(),
-            { &field, field.Type(), field.Name() }
+            { &field, field.Name() }
         );
     fieldMap.insert(std::move(item));
 }
 
 template<class ...Fields>
-std::string SimpleParsedJSON<Fields...>::GetJSONString() {
-    builder.Clear();
+std::string SimpleParsedJSON<Fields...>::GetJSONString(bool nullIfNotSupplied) {
+    SimpleJSONBuilder builder;
 
-    PrintNextField<sizeof...(Fields)>(builder);
+    PrintNextField<sizeof...(Fields)>(builder, nullIfNotSupplied);
+
+    return builder.GetAndClear();
+}
+
+template<class ...Fields>
+std::string SimpleParsedJSON<Fields...>::GetPrettyJSONString(bool nullIfNotSupplied) {
+    SimpleJSONPrettyBuilder builder;
+
+    PrintNextField<sizeof...(Fields)>(builder, nullIfNotSupplied);
 
     return builder.GetAndClear();
 }
@@ -809,32 +1046,57 @@ std::string SimpleParsedJSON<Fields...>::GetJSONString() {
  * Check if there is an override
  */
 namespace SimpleParsedJSON_AddToJSON {
-    template <typename T>
+    template <typename T, class Builder>
     class HasAddToJSON
     {
         struct TTrue { };
         struct TFalse { };
 
+        /**
+         * This function can only be declared if the expression inside decltype
+         * is valid. If it isn't this will fail, and the compiler will move onto 
+         * the fallback implementation.
+         *
+         * The expresion inside decltype declares a pointer to the member function
+         * called AddToJSON and which takes a Builder object. There are two cases:
+         *    Function Exists:
+         *       test will be declared as a function returning "true", and taking 
+         *       a pointer to the member function.
+         *    Function does not Exist:
+         *       test will not be declared, but not a build error since template 
+         *       substitution failure is not an error (SFINAE)
+         *
+         */
         template <typename C> 
-        static TTrue test(decltype(&C::AddToJSON));
+        static TTrue test(decltype(static_cast<void (C::*)(Builder&, bool)>(&C::AddToJSON)));
 
+        /**
+         * Secondary implementation will work for all classes. 
+         *
+         * (The fall-back which returns "false")
+         */
         template <typename C> 
         static TFalse test(...);
 
     public:
+        /**
+         * Only one of the two "test" functions above will be declared. These 
+         * have different return types, which we extract with decltype, and then 
+         * compare against "true" to return a bool.
+         */
         static constexpr bool value = 
             std::is_same<decltype(test<T>(0)),TTrue>::value;
     };
 
-    template <typename Field>
-    typename std::enable_if<HasAddToJSON<Field>::value, void>::type
-    AddField(SimpleJSONBuilder& builder, Field& field) {
-        field.AddToJSON(builder);
+    template <typename Field, class Builder>
+    typename std::enable_if<HasAddToJSON<Field,Builder>::value, void>::type
+    AddField(Builder& builder, Field& field, bool nullIfNotSupplied) {
+        field.AddToJSON(builder, nullIfNotSupplied);
     }
 
-    template <typename Field>
-    typename std::enable_if<!HasAddToJSON<Field>::value, void>::type
-    AddField(SimpleJSONBuilder& builder, Field& field) {
+    template <typename Field, class Builder>
+    typename std::enable_if<!HasAddToJSON<Field,Builder>::value, void>::type
+    AddField(Builder& builder, Field& field, bool nullIfNotSupplied) {
         builder.Add(field.Name(),field.value);
     }
 
@@ -844,11 +1106,15 @@ namespace SimpleParsedJSON_AddToJSON {
  * Implementation two (fall-back): Directly add the field to the builder.
  */
 template<class ...Fields>
-template<int idx>
-inline void SimpleParsedJSON<Fields...>::PrintField(SimpleJSONBuilder& builder)
+template<int idx, class Builder>
+inline void SimpleParsedJSON<Fields...>::PrintField(Builder& builder, bool nullIfNotSupplied)
 {
     auto& field = std::get<idx>(fields);
-    SimpleParsedJSON_AddToJSON::AddField(builder,field);
+    if (field.supplied || !nullIfNotSupplied) {
+        SimpleParsedJSON_AddToJSON::AddField(builder,field,nullIfNotSupplied);
+    } else {
+        builder.AddNullField(field.Name());
+    }
 }
 
 /*****************************************************************************
@@ -866,4 +1132,3 @@ SimpleParsedJSON<Fields...>::Get(const char* fieldName)  {
     }
 }
 
-#endif /* SIMPLEJSON_HPP_ */

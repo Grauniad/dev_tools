@@ -50,6 +50,9 @@ public:
 
     void WriteLog(const string& descr, const Time& t) {
     }
+
+    void ReportStringDiff(const string& expected, const string actual) {
+    }
 }; 
 class DefaultTestLogger: LogDevice {
 public:
@@ -102,6 +105,8 @@ public:
     }
 
     void WriteLog(const string& fname, const Time& time);
+
+    void ReportStringDiff(const string& expected, const string actual);
 
     /**
      * Log each queued message, and then clear the queue

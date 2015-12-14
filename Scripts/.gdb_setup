@@ -1,3 +1,7 @@
+set print array on
+set print pretty on
+set print object on
+set print vtbl on
 #
 # Code to auto-run and cleanup the session
 #

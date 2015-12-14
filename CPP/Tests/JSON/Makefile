@@ -3,7 +3,7 @@ LINKED_LIBS= libJSON \
              libUtils\
 			 libTest
 
-BUILD_TIME_TESTS=json
+BUILD_TIME_TESTS=json json_gen 
 CPP_TAGS_FILE=dev_tools_cpp_tests_jsob-c++.tags
 MODE=CPP
 

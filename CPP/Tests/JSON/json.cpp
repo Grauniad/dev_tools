@@ -19,25 +19,37 @@ int ParseInt(testLogger& log);
 int ParseEmbededInt(testLogger& log);
 int ParseEmbededArrayInt(testLogger& log);
 
+int ParseIntArray(testLogger& log);
+
 int ParseUnsigned(testLogger& log);
 int ParseEmbededUnsigned(testLogger& log);
 int ParseEmbededArrayUnsigned(testLogger& log);
+
+int ParseUnsignedArray(testLogger& log);
 
 int ParseDouble(testLogger& log);
 int ParseEmbededDouble(testLogger& log);
 int ParseEmbededArrayDouble(testLogger& log);
 
+int ParseDoubleArray(testLogger& log);
+
 int ParseBool(testLogger& log);
 int ParseEmbededBool(testLogger& log);
 int ParseEmbededArrayBool(testLogger& log);
+
+int ParseBoolArray(testLogger& log);
 
 int ParseI64(testLogger& log);
 int ParseEmbededI64(testLogger& log);
 int ParseEmbededArrayI64(testLogger& log);
 
+int ParseI64Array(testLogger& log);
+
 int ParseUI64(testLogger& log);
 int ParseEmbededUI64(testLogger& log);
 int ParseEmbededArrayUI64(testLogger& log);
+
+int ParseUI64Array(testLogger& log);
 
 int Clear(testLogger& log);
 int EmbededClear(testLogger& log);
@@ -53,6 +65,10 @@ int TrippleEmbededObject(testLogger& log);
 
 int EmbededObjectInArray(testLogger& log);
 
+int Supplied(testLogger& log);
+int SuppliedEmbeded(testLogger& log);
+int SuppliedEmbededObjectInArray(testLogger& log);
+
 //TODO Missing Field!
 
 int main(int argc, const char *argv[])
@@ -66,19 +82,25 @@ int main(int argc, const char *argv[])
     Test("Parsing a single int json",ParseInt).RunTest();
     Test("Parsing a single embeded int json",ParseEmbededInt).RunTest();
     Test("Parsing an array of embeded ints json",ParseEmbededArrayInt).RunTest();
+    Test("Parsing a json int array",ParseIntArray).RunTest();
     Test("Parsing a single unsigned json",ParseUnsigned).RunTest();
+    Test("Parsing a json unsigned int array",ParseUnsignedArray).RunTest();
     Test("Parsing a single embeded unsigned json",ParseEmbededUnsigned).RunTest();
     Test("Parsing an array of embeded unsigneds json",ParseEmbededArrayUnsigned).RunTest();
     Test("Parsing a bool from json",ParseBool).RunTest();
+    Test("Parsing a bool array from json",ParseBoolArray).RunTest();
     Test("Parsing a bools from embeded json",ParseEmbededBool).RunTest();
     Test("Parsing an array of bools from json",ParseEmbededArrayBool).RunTest();
     Test("Parsing a single double json",ParseDouble).RunTest();
+    Test("Parsing a json double array",ParseDoubleArray).RunTest();
     Test("Parsing a single double json",ParseEmbededDouble).RunTest();
     Test("Parsing an array of doubles json",ParseEmbededArrayDouble).RunTest();
     Test("Parsing I64s...",ParseI64).RunTest();
+    Test("Parsing array of I64s...",ParseI64Array).RunTest();
     Test("Parsing Embeded I64s...",ParseEmbededI64).RunTest();
     Test("Parsing Embeded I64 array...",ParseEmbededArrayI64).RunTest();
     Test("Parsing UI64s...",ParseUI64).RunTest();
+    Test("Parsing array of UI64s...",ParseUI64Array).RunTest();
     Test("Parsing embeded UI64s...",ParseEmbededUI64).RunTest();
     Test("Parsing embeded UI64 array...",ParseEmbededArrayUI64).RunTest();
     Test("Too large INT",LargeInt).RunTest();
@@ -90,6 +112,9 @@ int main(int argc, const char *argv[])
     Test("Checking we get an error if an unexpected embeded object is found",EmbededObjectError).RunTest();
     Test("Checking we handles objects within objects within objects",TrippleEmbededObject).RunTest();
     Test("Checking we handles objects within arrays within objects",EmbededObjectInArray).RunTest();
+    Test("Checking supplied handling for fields in the root object",Supplied).RunTest();
+    Test("Checking supplied handling for fields in embeded objects",SuppliedEmbeded).RunTest();
+    Test("Checking supplied handling for fields in embeded objects in arrays",SuppliedEmbededObjectInArray).RunTest();
     return 0;
 }
 
@@ -152,8 +177,6 @@ int WriteStringArray(testLogger& log) {
     return 0;
 }
 
-//struct Field1: public StringField { const char * Name() { return "Field1"; } };
-
 NewStringField(Field1)
 NewStringField(Field2)
 NewIntField(IntField1)
@@ -162,6 +185,8 @@ NewUIntField(UIntField1)
 NewDoubleField(DoubleField1)
 NewDoubleField(DoubleField2)
 NewDoubleField(DoubleField3)
+NewDoubleField(DoubleField4)
+NewDoubleField(DoubleField5)
 NewBoolField(BoolField1)
 NewBoolField(BoolField2)
 NewBoolField(BoolField3)
@@ -174,6 +199,18 @@ NewUI64Field(UI64Field1)
 NewUI64Field(UI64Field2)
 NewStringArrayField(StringArrayField1);
 NewStringArrayField(StringArrayField2);
+NewIntArrayField(IntArrayField1);
+NewIntArrayField(IntArrayField2);
+NewUIntArrayField(UIntArrayField1);
+NewUIntArrayField(UIntArrayField2);
+NewDoubleArrayField(DoubleArrayField1);
+NewDoubleArrayField(DoubleArrayField2);
+NewBoolArrayField(BoolArrayField1);
+NewBoolArrayField(BoolArrayField2);
+NewI64ArrayField(I64ArrayField1);
+NewI64ArrayField(I64ArrayField2);
+NewUI64ArrayField(UI64ArrayField1);
+NewUI64ArrayField(UI64ArrayField2);
 
 int ParseString(testLogger& log) {
     std::string rawJson = R"JSON( 
@@ -183,7 +220,7 @@ int ParseString(testLogger& log) {
     }
     )JSON";
 
-    SimpleParsedJSON<Field1,Field2> json, json2;
+    SimpleParsedJSON<Field1,Field2> json, json2, json3;
 
     std::string error;
 
@@ -204,7 +241,7 @@ int ParseString(testLogger& log) {
         return 1;
     }
 
-    string newRawJson = json.GetJSONString();
+    string newRawJson = json.GetJSONString(true);
 
     ok = json2.Parse(newRawJson.c_str(), error);
 
@@ -222,6 +259,25 @@ int ParseString(testLogger& log) {
         log << "2 Invalid value for field2: " << json2.Get<Field2>() << endl;
         return 1;
     }
+
+    string newRawJson2 = json.GetPrettyJSONString();
+
+    ok = json3.Parse(newRawJson2.c_str(), error);
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    if ( json3.Get<Field1>() != "Hello World!") {
+        log << "2 Invalid value for field1: " << json3.Get<Field1>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<Field2>() != "") {
+        log << "2 Invalid value for field2: " << json3.Get<Field2>() << endl;
+        return 1;
+    }
     return 0;
 }
 
@@ -237,7 +293,7 @@ int ParseEmbededString(testLogger& log) {
 
     typedef SimpleParsedJSON<Field1,Field2> JSON; 
     NewEmbededObject(Object,JSON);
-    SimpleParsedJSON<Object> parent, parent2;
+    SimpleParsedJSON<Object> parent, parent2, parent3;
 
 
     std::string error;
@@ -261,7 +317,7 @@ int ParseEmbededString(testLogger& log) {
         return 1;
     }
 
-    string newRawJson = parent.GetJSONString();
+    string newRawJson = parent.GetJSONString(true);
     log << "Raw JSON:" << endl << newRawJson << endl;
 
     ok = parent2.Parse(newRawJson.c_str(), error);
@@ -282,6 +338,28 @@ int ParseEmbededString(testLogger& log) {
         log << "2 Invalid value for field2: " << json2.Get<Field2>() << endl;
         return 1;
     }
+
+    string newRawJson2 = parent.GetPrettyJSONString();
+    log << "Raw JSON:" << endl << newRawJson2 << endl;
+
+    ok = parent3.Parse(newRawJson2.c_str(), error);
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    JSON& json3 = parent3.Get<Object>();
+
+    if ( json3.Get<Field1>() != "Hello World!") {
+        log << "2 Invalid value for field1: " << json3.Get<Field1>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<Field2>() != "") {
+        log << "2 Invalid value for field2: " << json3.Get<Field2>() << endl;
+        return 1;
+    }
     return 0;
 }
 
@@ -300,7 +378,7 @@ int ParseEmbededArrayString(testLogger& log) {
 
     typedef SimpleParsedJSON<Field1,Field2> JSON; 
     NewObjectArray(Objects,JSON);
-    SimpleParsedJSON<Objects> parent, parent2;
+    SimpleParsedJSON<Objects> parent, parent2, parent3;
 
     std::string error;
 
@@ -334,7 +412,7 @@ int ParseEmbededArrayString(testLogger& log) {
         return 1;
     }
 
-    string newRawJson = parent.GetJSONString();
+    string newRawJson = parent.GetJSONString(true);
     log << "Raw JSON:" << endl << newRawJson << endl;
 
     ok = parent2.Parse(newRawJson.c_str(),error);
@@ -367,6 +445,39 @@ int ParseEmbededArrayString(testLogger& log) {
         return 1;
     }
 
+    string newRawJson2 = parent.GetPrettyJSONString();
+    log << "Raw JSON:" << endl << newRawJson2 << endl;
+
+    ok = parent3.Parse(newRawJson2.c_str(),error);
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    JSON& json3 = *parent.Get<Objects>()[0];
+    JSON& bjson3 = *parent.Get<Objects>()[1];
+
+    if ( json3.Get<Field1>() != "Hello World!") {
+        log << "Invalid value for field1: " << json3.Get<Field1>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<Field2>() != "") {
+        log << "Invalid value for field2: " << json3.Get<Field2>() << endl;
+        return 1;
+    }
+
+    if ( bjson3.Get<Field1>() != "Another string") {
+        log << "Invalid value for field1: " << bjson3.Get<Field1>() << endl;
+        return 1;
+    }
+
+    if ( bjson3.Get<Field2>() != "Not a blank string") {
+        log << "Invalid value for field2: " << bjson3.Get<Field2>() << endl;
+        return 1;
+    }
+
     return 0;
 }
 
@@ -383,7 +494,7 @@ int ParseStringArray(testLogger& log) {
         }
     )JSON";
 
-    SimpleParsedJSON<StringArrayField1, StringArrayField2> json, json2;
+    SimpleParsedJSON<StringArrayField1, StringArrayField2> json, json2, json3;
 
     std::string error;
 
@@ -429,7 +540,7 @@ int ParseStringArray(testLogger& log) {
 
     log << "Re-building JSON>..." << endl;
 
-    string newRawJson = json.GetJSONString();
+    string newRawJson = json.GetJSONString(true);
 
     ok = json2.Parse(newRawJson.c_str(), error);
 
@@ -438,8 +549,52 @@ int ParseStringArray(testLogger& log) {
         return 1;
     }
 
-    const vector<string>& v21 = json2.Get<StringArrayField1>();
-    const vector<string>& v22 = json2.Get<StringArrayField2>();
+    const vector<string>& v31 = json2.Get<StringArrayField1>();
+    const vector<string>& v32 = json2.Get<StringArrayField2>();
+
+    if ( v31.size() != 4 ) {
+        log << "Invalid size for field1: " << v31.size() << endl;
+        return 1;
+    }
+
+    if ( v31[0] != "String 1") {
+        log << "Invalid value for string 0: " << v31[0] << endl;
+        return 1;
+    }
+
+    if ( v31[1] != "String 2") {
+        log << "Invalid value for string 1: " << v31[1] << endl;
+        return 1;
+    }
+
+    if ( v31[2] != "") {
+        log << "Invalid value for string 2: " << v31[2] << endl;
+        return 1;
+    }
+
+    if ( v31[3] != "String 4") {
+        log << "Invalid value for string 3: " << v31[3] << endl;
+        return 1;
+    }
+
+    if ( v32.size() != 0 ) {
+        log << "Invalid size for field2: " << v32.size() << endl;
+        return 1;
+    }
+
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson2 = json.GetPrettyJSONString();
+
+    ok = json3.Parse(newRawJson2.c_str(), error);
+
+    if (!ok) {
+        log << "Failed to parse JSON!" << endl;
+        return 1;
+    }
+
+    const vector<string>& v21 = json3.Get<StringArrayField1>();
+    const vector<string>& v22 = json3.Get<StringArrayField2>();
 
     if ( v21.size() != 4 ) {
         log << "Invalid size for field1: " << v21.size() << endl;
@@ -491,7 +646,7 @@ int ParseEmbededStringArray(testLogger& log) {
     typedef SimpleParsedJSON<StringArrayField1, StringArrayField2> JSON;
 
     NewEmbededObject(Object,JSON);
-    SimpleParsedJSON<Object> parent, parent2;
+    SimpleParsedJSON<Object> parent, parent2, parent3;
 
     std::string error;
 
@@ -539,7 +694,7 @@ int ParseEmbededStringArray(testLogger& log) {
 
     log << "Re-building JSON>..." << endl;
 
-    string newRawJson = parent.GetJSONString();
+    string newRawJson = parent.GetJSONString(true);
 
     ok = parent2.Parse(newRawJson.c_str(), error);
 
@@ -583,6 +738,52 @@ int ParseEmbededStringArray(testLogger& log) {
         return 1;
     }
 
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson2 = parent.GetPrettyJSONString();
+
+    ok = parent3.Parse(newRawJson2.c_str(), error);
+
+    if (!ok) {
+        log << "Failed to parse JSON!" << endl;
+        return 1;
+    }
+
+    JSON& json3 = parent3.Get<Object>();
+
+    const vector<string>& v31 = json3.Get<StringArrayField1>();
+    const vector<string>& v32 = json3.Get<StringArrayField2>();
+
+    if ( v31.size() != 4 ) {
+        log << "Invalid size for field1: " << v31.size() << endl;
+        return 1;
+    }
+
+    if ( v31[0] != "String 1") {
+        log << "Invalid value for string 0: " << v31[0] << endl;
+        return 1;
+    }
+
+    if ( v31[1] != "String 2") {
+        log << "Invalid value for string 1: " << v31[1] << endl;
+        return 1;
+    }
+
+    if ( v31[2] != "") {
+        log << "Invalid value for string 2: " << v31[2] << endl;
+        return 1;
+    }
+
+    if ( v31[3] != "String 4") {
+        log << "Invalid value for string 3: " << v31[3] << endl;
+        return 1;
+    }
+
+    if ( v32.size() != 0 ) {
+        log << "Invalid size for field2: " << v32.size() << endl;
+        return 1;
+    }
+
     return 0;
 }
 
@@ -593,7 +794,7 @@ int ParseInt(testLogger& log) {
         IntField2,
         DoubleField1,
         DoubleField2
-    > json, json2;
+    > json, json2, json3;
 
     std::string error;
 
@@ -633,10 +834,9 @@ int ParseInt(testLogger& log) {
         return 1;
     }
 
-
     log << "Re-building JSON>..." << endl;
 
-    string newRawJson = json.GetJSONString();
+    string newRawJson = json.GetJSONString(true);
 
     ok = json2.Parse(newRawJson.c_str(), error);
 
@@ -665,6 +865,141 @@ int ParseInt(testLogger& log) {
         return 1;
     }
 
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson2 = json.GetPrettyJSONString();
+
+    ok = json3.Parse(newRawJson2.c_str(), error);
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    if ( json3.Get<IntField1>() != 500) {
+        log << "Invalid value for field1: " << json3.Get<IntField1>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<IntField2>() != -500) {
+        log << "Invalid value for field2: " << json3.Get<IntField2>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<DoubleField1>() != 500) {
+        log << "Invalid value for double 1: " << json3.Get<DoubleField1>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<DoubleField2>() != -500) {
+        log << "Invalid value for double 2: " << json3.Get<DoubleField2>() << endl;
+        return 1;
+    }
+
+    return 0;
+}
+
+int ParseIntArray(testLogger& log) {
+    std::string rawJson = R"JSON( 
+        {
+            "IntArrayField1": [
+                500,
+                -134,
+                0,
+                23
+            ],
+            "IntArrayField2": []
+        }
+    )JSON";
+
+    SimpleParsedJSON<IntArrayField1, IntArrayField2> json, json2, json3;
+
+    std::string error;
+
+    bool ok = json.Parse(rawJson.c_str(),error);
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    const vector<int>& v1 = json.Get<IntArrayField1>();
+    const vector<int>& v2 = json.Get<IntArrayField2>();
+
+    auto f = [&] (const vector<int>& v1, const vector<int>& v2) -> int {
+        if ( v1.size() != 4 ) {
+            log << "Invalid size for field1: " << v1.size() << endl;
+            return 1;
+        }
+
+        if ( v1[0] != 500) {
+            log << "Invalid value for int 0: " << v1[0] << endl;
+            return 1;
+        }
+
+        if ( v1[1] != -134) {
+            log << "Invalid value for int 1: " << v1[1] << endl;
+            return 1;
+        }
+
+        if ( v1[2] != 0) {
+            log << "Invalid value for int 2: " << v1[2] << endl;
+            return 1;
+        }
+
+        if ( v1[3] != 23) {
+            log << "Invalid value for int 3: " << v1[3] << endl;
+            return 1;
+        }
+
+        if ( v2.size() != 0 ) {
+            log << "Invalid size for field2: " << v2.size() << endl;
+            return 1;
+        }
+
+        return 0;
+    };
+
+    if ( f(v1,v2) != 0 ) {
+        return 1;
+    }
+
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson = json.GetJSONString(true);
+
+    ok = json2.Parse(newRawJson.c_str(), error);
+
+    if (!ok) {
+        log << "Failed to parse JSON!" << endl;
+        return 1;
+    }
+
+    const vector<int>& v21 = json2.Get<IntArrayField1>();
+    const vector<int>& v22 = json2.Get<IntArrayField2>();
+
+    if ( f(v21,v22) != 0 ) {
+        return 1;
+    }
+
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson2 = json.GetPrettyJSONString();
+
+    ok = json3.Parse(newRawJson2.c_str(), error);
+
+    if (!ok) {
+        log << "Failed to parse JSON!" << endl;
+        return 1;
+    }
+
+    const vector<int>& v31 = json3.Get<IntArrayField1>();
+    const vector<int>& v32 = json3.Get<IntArrayField2>();
+
+    if ( f(v31,v32) != 0 ) {
+        return 1;
+    }
+
     return 0;
 }
 
@@ -677,7 +1012,7 @@ int ParseEmbededInt(testLogger& log) {
     > JSON;
 
     NewEmbededObject(Object,JSON);
-    SimpleParsedJSON<Object> parent, parent2;
+    SimpleParsedJSON<Object> parent, parent2, parent3;
 
     std::string error;
 
@@ -723,7 +1058,7 @@ int ParseEmbededInt(testLogger& log) {
 
     log << "Re-building JSON>..." << endl;
 
-    string newRawJson = parent.GetJSONString();
+    string newRawJson = parent.GetJSONString(true);
 
 
     ok = parent2.Parse(newRawJson.c_str(), error);
@@ -755,6 +1090,40 @@ int ParseEmbededInt(testLogger& log) {
         return 1;
     }
 
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson2 = parent.GetPrettyJSONString();
+
+
+    ok = parent3.Parse(newRawJson2.c_str(), error);
+
+    JSON& json3 = parent3.Get<Object>();
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    if ( json3.Get<IntField1>() != 500) {
+        log << "Invalid value for field1: " << json3.Get<IntField1>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<IntField2>() != -500) {
+        log << "Invalid value for field2: " << json3.Get<IntField2>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<DoubleField1>() != 500) {
+        log << "Invalid value for double 1: " << json3.Get<DoubleField1>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<DoubleField2>() != -500) {
+        log << "Invalid value for double 2: " << json3.Get<DoubleField2>() << endl;
+        return 1;
+    }
+
     return 0;
 }
 
@@ -767,7 +1136,7 @@ int ParseEmbededArrayInt(testLogger& log) {
     > JSON;
 
     NewObjectArray(Objects,JSON);
-    SimpleParsedJSON<Objects> parent, parent2;
+    SimpleParsedJSON<Objects> parent, parent2, parent3;
 
     std::string error;
 
@@ -830,7 +1199,7 @@ int ParseEmbededArrayInt(testLogger& log) {
 
     log << "Re-building JSON>..." << endl;
 
-    string newRawJson = parent.GetJSONString();
+    string newRawJson = parent.GetJSONString(true);
 
     ok = parent2.Parse(newRawJson.c_str(), error);
 
@@ -861,6 +1230,39 @@ int ParseEmbededArrayInt(testLogger& log) {
         return 1;
     }
 
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson2 = parent.GetPrettyJSONString();
+
+    ok = parent3.Parse(newRawJson2.c_str(), error);
+
+    JSON& json3 = *parent3.Get<Objects>()[1];
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    if ( json3.Get<IntField1>() != 500) {
+        log << "Invalid value for field1: " << json3.Get<IntField1>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<IntField2>() != -500) {
+        log << "Invalid value for field2: " << json3.Get<IntField2>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<DoubleField1>() != 500) {
+        log << "Invalid value for double 1: " << json3.Get<DoubleField1>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<DoubleField2>() != -500) {
+        log << "Invalid value for double 2: " << json3.Get<DoubleField2>() << endl;
+        return 1;
+    }
+
     return 0;
 }
 
@@ -883,7 +1285,7 @@ int ParseI64(testLogger& log) {
         I64Field4,
         DoubleField1,
         DoubleField2
-    > json, json2;
+    > json, json2, json3;
 
     std::string error;
 
@@ -926,7 +1328,7 @@ int ParseI64(testLogger& log) {
 
     log << "Re-building JSON>..." << endl;
 
-    string newRawJson = json.GetJSONString();
+    string newRawJson = json.GetJSONString(true);
 
     ok = json2.Parse(newRawJson.c_str(), error);
 
@@ -965,8 +1367,154 @@ int ParseI64(testLogger& log) {
         return 1;
     }
 
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson2 = json.GetPrettyJSONString();
+
+    ok = json3.Parse(newRawJson2.c_str(), error);
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    if ( json3.Get<I64Field1>() != -500) {
+        log << "Invalid value for field1: " << json3.Get<I64Field1>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<I64Field2>() != 500) {
+        log << "Invalid value for field2: " << json3.Get<I64Field2>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<I64Field3>() != 5147483658) {
+        log << "Invalid value for field3: " << json3.Get<I64Field3>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<I64Field4>() != -2147483658) {
+        log << "Invalid value for field4: " << json3.Get<I64Field4>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<DoubleField1>() != 5147483658) {
+        log << "Invalid value for double 1: " << json3.Get<DoubleField1>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<DoubleField2>() != -2147483658) {
+        log << "Invalid value for double 2: " << json3.Get<DoubleField2>() << endl;
+        return 1;
+    }
+
     return 0;
 }
+
+int ParseI64Array(testLogger& log) {
+    std::string rawJson = R"JSON( 
+        {
+            "I64ArrayField1": [
+                -500,
+                500,
+                5147483658,
+                -2147483658
+            ],
+            "I64ArrayField2": []
+        }
+    )JSON";
+
+    SimpleParsedJSON<I64ArrayField1, I64ArrayField2> json, json2, json3;
+
+    std::string error;
+
+    bool ok = json.Parse(rawJson.c_str(),error);
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    const vector<int64_t>& v1 = json.Get<I64ArrayField1>();
+    const vector<int64_t>& v2 = json.Get<I64ArrayField2>();
+
+    auto f = [&] (const vector<int64_t>& v1, const vector<int64_t>& v2) -> int {
+        if ( v1.size() != 4 ) {
+            log << "Invalid size for field1: " << v1.size() << endl;
+            return 1;
+        }
+
+        if ( v1[0] != -500) {
+            log << "Invalid value for int 0: " << v1[0] << endl;
+            return 1;
+        }
+
+        if ( v1[1] != 500) {
+            log << "Invalid value for int 1: " << v1[1] << endl;
+            return 1;
+        }
+
+        if ( v1[2] != 5147483658) {
+            log << "Invalid value for int 2: " << v1[2] << endl;
+            return 1;
+        }
+
+        if ( v1[3] != -2147483658) {
+            log << "Invalid value for int 3: " << v1[3] << endl;
+            return 1;
+        }
+
+        if ( v2.size() != 0 ) {
+            log << "Invalid size for field2: " << v2.size() << endl;
+            return 1;
+        }
+
+        return 0;
+    };
+
+    if ( f(v1,v2) != 0 ) {
+        return 1;
+    }
+
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson = json.GetJSONString(true);
+
+    ok = json2.Parse(newRawJson.c_str(), error);
+
+    if (!ok) {
+        log << "Failed to parse JSON!" << endl;
+        return 1;
+    }
+
+    const vector<int64_t>& v21 = json2.Get<I64ArrayField1>();
+    const vector<int64_t>& v22 = json2.Get<I64ArrayField2>();
+
+    if ( f(v21,v22) != 0 ) {
+        return 1;
+    }
+
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson2 = json.GetPrettyJSONString();
+
+    ok = json3.Parse(newRawJson2.c_str(), error);
+
+    if (!ok) {
+        log << "Failed to parse JSON!" << endl;
+        return 1;
+    }
+
+    const vector<int64_t>& v31 = json3.Get<I64ArrayField1>();
+    const vector<int64_t>& v32 = json3.Get<I64ArrayField2>();
+
+    if ( f(v31,v32) != 0 ) {
+        return 1;
+    }
+
+    return 0;
+}
+
 
 int ParseEmbededI64(testLogger& log) {
     std::string rawJson = R"JSON({
@@ -991,7 +1539,7 @@ int ParseEmbededI64(testLogger& log) {
     > JSON;
 
     NewEmbededObject(Object,JSON);
-    SimpleParsedJSON<Object> parent, parent2;
+    SimpleParsedJSON<Object> parent, parent2, parent3;
 
     std::string error;
 
@@ -1036,7 +1584,7 @@ int ParseEmbededI64(testLogger& log) {
 
     log << "Re-building JSON>..." << endl;
 
-    string newRawJson = parent.GetJSONString();
+    string newRawJson = parent.GetJSONString(true);
 
     ok = parent2.Parse(newRawJson.c_str(), error);
 
@@ -1074,6 +1622,49 @@ int ParseEmbededI64(testLogger& log) {
 
     if ( json2.Get<DoubleField2>() != -2147483658) {
         log << "Invalid value for double 2: " << json2.Get<DoubleField2>() << endl;
+        return 1;
+    }
+
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson2 = parent.GetPrettyJSONString();
+
+    ok = parent3.Parse(newRawJson2.c_str(), error);
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    JSON& json3 = parent3.Get<Object>();
+
+    if ( json3.Get<I64Field1>() != -500) {
+        log << "Invalid value for field1: " << json3.Get<I64Field1>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<I64Field2>() != 500) {
+        log << "Invalid value for field2: " << json3.Get<I64Field2>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<I64Field3>() != 5147483658) {
+        log << "Invalid value for field3: " << json3.Get<I64Field3>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<I64Field4>() != -2147483658) {
+        log << "Invalid value for field4: " << json3.Get<I64Field4>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<DoubleField1>() != 5147483658) {
+        log << "Invalid value for double 1: " << json3.Get<DoubleField1>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<DoubleField2>() != -2147483658) {
+        log << "Invalid value for double 2: " << json3.Get<DoubleField2>() << endl;
         return 1;
     }
 
@@ -1119,7 +1710,7 @@ int ParseEmbededArrayI64(testLogger& log) {
     > JSON;
 
     NewObjectArray(Objects,JSON);
-    SimpleParsedJSON<Objects> parent, parent2;
+    SimpleParsedJSON<Objects> parent, parent2, parent3;
 
     std::string error;
 
@@ -1164,7 +1755,7 @@ int ParseEmbededArrayI64(testLogger& log) {
 
     log << "Re-building JSON>..." << endl;
 
-    string newRawJson = parent.GetJSONString();
+    string newRawJson = parent.GetJSONString(true);
 
     ok = parent2.Parse(newRawJson.c_str(), error);
 
@@ -1205,6 +1796,49 @@ int ParseEmbededArrayI64(testLogger& log) {
         return 1;
     }
 
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson22 = parent.GetPrettyJSONString();
+
+    ok = parent3.Parse(newRawJson22.c_str(), error);
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    JSON& json3 = *parent3.Get<Objects>()[1];
+
+    if ( json3.Get<I64Field1>() != -500) {
+        log << "Invalid value for field1: " << json3.Get<I64Field1>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<I64Field2>() != 500) {
+        log << "Invalid value for field2: " << json3.Get<I64Field2>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<I64Field3>() != 5147483658) {
+        log << "Invalid value for field3: " << json3.Get<I64Field3>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<I64Field4>() != -2147483658) {
+        log << "Invalid value for field4: " << json3.Get<I64Field4>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<DoubleField1>() != 5147483658) {
+        log << "Invalid value for double 1: " << json3.Get<DoubleField1>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<DoubleField2>() != -2147483658) {
+        log << "Invalid value for double 2: " << json3.Get<DoubleField2>() << endl;
+        return 1;
+    }
+
     return 0;
 }
 
@@ -1223,7 +1857,7 @@ int ParseUI64(testLogger& log) {
     SimpleParsedJSON<
         UI64Field1,
         UI64Field2
-    > json, json2;
+    > json, json2, json3;
 
     std::string error;
 
@@ -1246,7 +1880,7 @@ int ParseUI64(testLogger& log) {
 
     log << "Re-building JSON>..." << endl;
 
-    string newRawJson = json.GetJSONString();
+    string newRawJson = json.GetJSONString(true);
 
     ok = json2.Parse(newRawJson.c_str(), error);
 
@@ -1262,6 +1896,125 @@ int ParseUI64(testLogger& log) {
 
     if ( json2.Get<UI64Field2>() != value2) {
         log << "Invalid value for field2: " << json2.Get<UI64Field2>() << endl;
+        return 1;
+    }
+
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson2 = json.GetPrettyJSONString();
+
+    ok = json3.Parse(newRawJson2.c_str(), error);
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    if ( json3.Get<UI64Field1>() != value1) {
+        log << "Invalid value for field1: " << json3.Get<UI64Field1>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<UI64Field2>() != value2) {
+        log << "Invalid value for field2: " << json3.Get<UI64Field2>() << endl;
+        return 1;
+    }
+
+    return 0;
+}
+
+int ParseUI64Array(testLogger& log) {
+    std::string rawJson = R"JSON( 
+        {
+            "UI64ArrayField1": [
+                500,
+                12514748365008,
+                0
+            ],
+            "UI64ArrayField2": []
+        }
+    )JSON";
+
+    SimpleParsedJSON<UI64ArrayField1, UI64ArrayField2> json, json2, json3;
+
+    std::string error;
+
+    bool ok = json.Parse(rawJson.c_str(),error);
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    const vector<uint64_t>& v1 = json.Get<UI64ArrayField1>();
+    const vector<uint64_t>& v2 = json.Get<UI64ArrayField2>();
+
+    auto f = [&] (const vector<uint64_t>& v1, const vector<uint64_t>& v2) -> int {
+        if ( v1.size() != 3 ) {
+            log << "Invalid size for field1: " << v1.size() << endl;
+            return 1;
+        }
+
+        if ( v1[0] != 500) {
+            log << "Invalid value for int 0: " << v1[0] << endl;
+            return 1;
+        }
+
+        if ( v1[1] != 12514748365008) {
+            log << "Invalid value for int 1: " << v1[1] << endl;
+            return 1;
+        }
+
+        if ( v1[2] != 0) {
+            log << "Invalid value for int 1: " << v1[2] << endl;
+            return 1;
+        }
+
+        if ( v2.size() != 0 ) {
+            log << "Invalid size for field2: " << v2.size() << endl;
+            return 1;
+        }
+
+        return 0;
+    };
+
+    if ( f(v1,v2) != 0 ) {
+        return 1;
+    }
+
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson = json.GetJSONString(true);
+
+    ok = json2.Parse(newRawJson.c_str(), error);
+
+    if (!ok) {
+        log << "Failed to parse JSON!" << endl;
+        return 1;
+    }
+
+    const vector<uint64_t>& v21 = json2.Get<UI64ArrayField1>();
+    const vector<uint64_t>& v22 = json2.Get<UI64ArrayField2>();
+
+    if ( f(v21,v22) != 0 ) {
+        return 1;
+    }
+
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson2 = json.GetPrettyJSONString();
+
+    ok = json3.Parse(newRawJson2.c_str(), error);
+
+    if (!ok) {
+        log << "Failed to parse JSON!" << endl;
+        return 1;
+    }
+
+    const vector<uint64_t>& v31 = json3.Get<UI64ArrayField1>();
+    const vector<uint64_t>& v32 = json3.Get<UI64ArrayField2>();
+
+    if ( f(v31,v32) != 0 ) {
         return 1;
     }
 
@@ -1286,7 +2039,7 @@ int ParseEmbededUI64(testLogger& log) {
     > JSON;
 
     NewEmbededObject(Object,JSON);
-    SimpleParsedJSON<Object> parent, parent2;
+    SimpleParsedJSON<Object> parent, parent2, parent3;
 
     std::string error;
 
@@ -1311,7 +2064,7 @@ int ParseEmbededUI64(testLogger& log) {
 
     log << "Re-building JSON>..." << endl;
 
-    string newRawJson = parent.GetJSONString();
+    string newRawJson = parent.GetJSONString(true);
 
     ok = parent2.Parse(newRawJson.c_str(), error);
 
@@ -1329,6 +2082,29 @@ int ParseEmbededUI64(testLogger& log) {
 
     if ( json2.Get<UI64Field2>() != value2) {
         log << "Invalid value for field2: " << json2.Get<UI64Field2>() << endl;
+        return 1;
+    }
+
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson2 = parent.GetPrettyJSONString();
+
+    ok = parent3.Parse(newRawJson2.c_str(), error);
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    JSON& json3 = parent3.Get<Object>();
+
+    if ( json3.Get<UI64Field1>() != value1) {
+        log << "Invalid value for field1: " << json3.Get<UI64Field1>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<UI64Field2>() != value2) {
+        log << "Invalid value for field2: " << json3.Get<UI64Field2>() << endl;
         return 1;
     }
 
@@ -1362,7 +2138,7 @@ int ParseEmbededArrayUI64(testLogger& log) {
     > JSON;
 
     NewObjectArray(Objects,JSON);
-    SimpleParsedJSON<Objects> parent, parent2;
+    SimpleParsedJSON<Objects> parent, parent2, parent3;
 
     std::string error;
 
@@ -1387,7 +2163,7 @@ int ParseEmbededArrayUI64(testLogger& log) {
 
     log << "Re-building JSON>..." << endl;
 
-    string newRawJson = parent.GetJSONString();
+    string newRawJson = parent.GetJSONString(true);
 
     ok = parent2.Parse(newRawJson.c_str(), error);
 
@@ -1408,6 +2184,29 @@ int ParseEmbededArrayUI64(testLogger& log) {
         return 1;
     }
 
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson22 = parent.GetPrettyJSONString();
+
+    ok = parent3.Parse(newRawJson22.c_str(), error);
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    JSON& json3 = *parent3.Get<Objects>()[1];
+
+    if ( json3.Get<UI64Field1>() != value1) {
+        log << "Invalid value for field1: " << json3.Get<UI64Field1>() << endl;
+        return 1;
+    }
+
+    if ( json3.Get<UI64Field2>() != value2) {
+        log << "Invalid value for field2: " << json3.Get<UI64Field2>() << endl;
+        return 1;
+    }
+
     return 0;
 }
 
@@ -1418,7 +2217,7 @@ int ParseUnsigned(testLogger& log) {
     }
     )JSON";
 
-    SimpleParsedJSON<UIntField1> json, json2;
+    SimpleParsedJSON<UIntField1> json, json2, json3;
 
     std::string error;
 
@@ -1436,7 +2235,7 @@ int ParseUnsigned(testLogger& log) {
 
     log << "Re-building JSON>..." << endl;
 
-    string newRawJson = json.GetJSONString();
+    string newRawJson = json.GetJSONString(true);
 
     ok = json2.Parse(newRawJson.c_str(), error);
 
@@ -1447,6 +2246,307 @@ int ParseUnsigned(testLogger& log) {
 
     if ( json2.Get<UIntField1>() != 500) {
         log << "Invalid value for field1: " << json2.Get<UIntField1>() << endl;
+        return 1;
+    }
+
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson2 = json.GetPrettyJSONString();
+
+    ok = json3.Parse(newRawJson2.c_str(), error);
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    if ( json3.Get<UIntField1>() != 500) {
+        log << "Invalid value for field1: " << json3.Get<UIntField1>() << endl;
+        return 1;
+    }
+
+    return 0;
+}
+
+int ParseUnsignedArray(testLogger& log) {
+    std::string rawJson = R"JSON( 
+    {
+        "UIntArrayField1": [
+           500,
+           0,
+           123
+        ],
+        "UIntArrayField2": []
+
+    }
+    )JSON";
+
+    SimpleParsedJSON<UIntArrayField1, UIntArrayField2> json1, json2, json3;
+
+    std::string error;
+
+    bool ok = json1.Parse(rawJson.c_str(),error);
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    auto f = [&] (const vector<unsigned>& v1, const vector<unsigned>& v2) -> int {
+        if ( v1.size() != 3 ) {
+            log << "Invalid size for field1: " << v1.size() << endl;
+            return 1;
+        }
+
+        if ( v1[0] != 500) {
+            log << "Invalid value for int 0: " << v1[0] << endl;
+            return 1;
+        }
+
+        if ( v1[1] != 0) {
+            log << "Invalid value for int 1: " << v1[1] << endl;
+            return 1;
+        }
+
+        if ( v1[2] != 123) {
+            log << "Invalid value for int 2: " << v1[2] << endl;
+            return 1;
+        }
+
+        if ( v2.size() != 0 ) {
+            log << "Invalid size for field2: " << v2.size() << endl;
+            return 1;
+        }
+
+        return 0;
+    };
+
+    const vector<unsigned>& v1 = json1.Get<UIntArrayField1>();
+    const vector<unsigned>& v2 = json1.Get<UIntArrayField2>();
+
+    if ( f(v1,v2) != 0 ) {
+        return 1;
+    }
+
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson = json1.GetJSONString(true);
+
+    ok = json2.Parse(newRawJson.c_str(), error);
+
+    const vector<unsigned>& v21 = json2.Get<UIntArrayField1>();
+    const vector<unsigned>& v22 = json2.Get<UIntArrayField2>();
+
+    if ( f(v21,v22) != 0 ) {
+        return 1;
+    }
+
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson2 = json1.GetPrettyJSONString();
+
+    ok = json3.Parse(newRawJson2.c_str(), error);
+
+    const vector<unsigned>& v31 = json3.Get<UIntArrayField1>();
+    const vector<unsigned>& v32 = json3.Get<UIntArrayField2>();
+
+    if ( f(v31,v32) != 0 ) {
+        return 1;
+    }
+
+    return 0;
+}
+
+int ParseBoolArray(testLogger& log) {
+    std::string rawJson = R"JSON( 
+    {
+        "BoolArrayField1": [
+            true,
+            false,
+            1,
+            0
+        ],
+        "BoolArrayField2": []
+
+    }
+    )JSON";
+
+    SimpleParsedJSON<BoolArrayField1, BoolArrayField2> json1, json2, json3;
+
+    std::string error;
+
+    bool ok = json1.Parse(rawJson.c_str(),error);
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    auto f = [&] (const vector<bool>& v1, const vector<bool>& v2) -> int {
+        if ( v1.size() != 4 ) {
+            log << "Invalid size for field1: " << v1.size() << endl;
+            return 1;
+        }
+
+        if ( v1[0] != true) {
+            log << "Invalid value for int 0: " << v1[0] << endl;
+            return 1;
+        }
+
+        if ( v1[1] != false) {
+            log << "Invalid value for int 1: " << v1[1] << endl;
+            return 1;
+        }
+
+        if ( v1[2] != true) {
+            log << "Invalid value for int 2: " << v1[2] << endl;
+            return 1;
+        }
+
+        if ( v1[3] != false) {
+            log << "Invalid value for int 3: " << v1[3] << endl;
+            return 1;
+        }
+
+        if ( v2.size() != 0 ) {
+            log << "Invalid size for field2: " << v2.size() << endl;
+            return 1;
+        }
+
+        return 0;
+    };
+
+    const vector<bool>& v1 = json1.Get<BoolArrayField1>();
+    const vector<bool>& v2 = json1.Get<BoolArrayField2>();
+
+    if ( f(v1,v2) != 0 ) {
+        return 1;
+    }
+
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson = json1.GetJSONString(true);
+
+    ok = json2.Parse(newRawJson.c_str(), error);
+
+    const vector<bool>& v21 = json2.Get<BoolArrayField1>();
+    const vector<bool>& v22 = json2.Get<BoolArrayField2>();
+
+    if ( f(v21,v22) != 0 ) {
+        return 1;
+    }
+
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson2 = json1.GetPrettyJSONString();
+
+    ok = json3.Parse(newRawJson2.c_str(), error);
+
+    const vector<bool>& v31 = json3.Get<BoolArrayField1>();
+    const vector<bool>& v32 = json3.Get<BoolArrayField2>();
+
+    if ( f(v31,v32) != 0 ) {
+        return 1;
+    }
+
+    return 0;
+}
+
+int ParseDoubleArray(testLogger& log) {
+    std::string rawJson = R"JSON( 
+    {
+        "DoubleArrayField1": [
+           5.5,
+           5,
+           -5,
+           2000000000000,
+          -2000000000001
+        ],
+        "DoubleArrayField2": []
+
+    }
+    )JSON";
+
+    SimpleParsedJSON<DoubleArrayField1, DoubleArrayField2> json1, json2, json3;
+
+    std::string error;
+
+    bool ok = json1.Parse(rawJson.c_str(),error);
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    auto f = [&] (const vector<double>& v1, const vector<double>& v2) -> int {
+        if ( v1.size() != 5 ) {
+            log << "Invalid size for field1: " << v1.size() << endl;
+            return 1;
+        }
+
+        if ( v1[0] != 5.5) {
+            log << "Invalid value for item 0: " << v1[0] << endl;
+            return 1;
+        }
+
+        if ( v1[1] != 5) {
+            log << "Invalid value for item 1: " << v1[1] << endl;
+            return 1;
+        }
+
+        if ( v1[2] != -5) {
+            log << "Invalid value for item 2: " << v1[2] << endl;
+            return 1;
+        }
+
+        if ( v1[3] != 2000000000000L) {
+            log << "Invalid value for item 3: " << v1[3] << endl;
+            return 1;
+        }
+
+        if ( v1[4] != -2000000000001L) {
+            log << "Invalid value for item 4: " << v1[4] << endl;
+            return 1;
+        }
+
+        if ( v2.size() != 0 ) {
+            log << "Invalid size for field2: " << v2.size() << endl;
+            return 1;
+        }
+
+        return 0;
+    };
+
+    const vector<double>& v1 = json1.Get<DoubleArrayField1>();
+    const vector<double>& v2 = json1.Get<DoubleArrayField2>();
+
+    if ( f(v1,v2) != 0 ) {
+        return 1;
+    }
+
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson = json1.GetJSONString(true);
+
+    ok = json2.Parse(newRawJson.c_str(), error);
+
+    const vector<double>& v21 = json2.Get<DoubleArrayField1>();
+    const vector<double>& v22 = json2.Get<DoubleArrayField2>();
+
+    if ( f(v21,v22) != 0 ) {
+        return 1;
+    }
+
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson2 = json1.GetPrettyJSONString();
+
+    ok = json3.Parse(newRawJson2.c_str(), error);
+
+    const vector<double>& v31 = json3.Get<DoubleArrayField1>();
+    const vector<double>& v32 = json3.Get<DoubleArrayField2>();
+
+    if ( f(v31,v32) != 0 ) {
         return 1;
     }
 
@@ -1464,7 +2564,7 @@ int ParseEmbededUnsigned(testLogger& log) {
     typedef SimpleParsedJSON<UIntField1> JSON;
     NewEmbededObject(Object,JSON);
 
-    SimpleParsedJSON<Object> parent, parent2;
+    SimpleParsedJSON<Object> parent, parent2, parent3;
     std::string error;
 
     bool ok = parent.Parse(rawJson.c_str(),error);
@@ -1483,7 +2583,7 @@ int ParseEmbededUnsigned(testLogger& log) {
 
     log << "Re-building JSON>..." << endl;
 
-    string newRawJson = parent.GetJSONString();
+    string newRawJson = parent.GetJSONString(true);
 
     ok = parent2.Parse(newRawJson.c_str(), error);
 
@@ -1496,6 +2596,24 @@ int ParseEmbededUnsigned(testLogger& log) {
 
     if ( json2.Get<UIntField1>() != 500) {
         log << "Invalid value for field1: " << json2.Get<UIntField1>() << endl;
+        return 1;
+    }
+
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson2 = parent.GetPrettyJSONString();
+
+    ok = parent3.Parse(newRawJson2.c_str(), error);
+
+    JSON& json3 = parent3.Get<Object>();
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    if ( json3.Get<UIntField1>() != 500) {
+        log << "Invalid value for field1: " << json3.Get<UIntField1>() << endl;
         return 1;
     }
 
@@ -1519,7 +2637,7 @@ int ParseEmbededArrayUnsigned(testLogger& log) {
     typedef SimpleParsedJSON<UIntField1> JSON;
     NewObjectArray(Objects,JSON);
 
-    SimpleParsedJSON<Objects> parent, parent2;
+    SimpleParsedJSON<Objects> parent, parent2, parent3;
     std::string error;
 
     bool ok = parent.Parse(rawJson.c_str(),error);
@@ -1543,7 +2661,7 @@ int ParseEmbededArrayUnsigned(testLogger& log) {
 
     log << "Re-building JSON>..." << endl;
 
-    string newRawJson = parent.GetJSONString();
+    string newRawJson = parent.GetJSONString(true);
 
     ok = parent2.Parse(newRawJson.c_str(), error);
 
@@ -1556,6 +2674,24 @@ int ParseEmbededArrayUnsigned(testLogger& log) {
 
     if ( json2.Get<UIntField1>() != 500) {
         log << "Invalid value for field1: " << json2.Get<UIntField1>() << endl;
+        return 1;
+    }
+
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson2 = parent.GetPrettyJSONString();
+
+    ok = parent3.Parse(newRawJson2.c_str(), error);
+
+    JSON& json3 = *parent3.Get<Objects>()[1];
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    if ( json3.Get<UIntField1>() != 500) {
+        log << "Invalid value for field1: " << json3.Get<UIntField1>() << endl;
         return 1;
     }
 
@@ -1657,7 +2793,7 @@ int ParseEmbededBool(testLogger& log) {
     > JSON;
 
     NewEmbededObject(Object,JSON);
-    SimpleParsedJSON<Object> parent, parent2;
+    SimpleParsedJSON<Object> parent, parent2, parent3;
 
     std::string error;
 
@@ -1694,7 +2830,7 @@ int ParseEmbededBool(testLogger& log) {
 
     log << "Re-building JSON>..." << endl;
 
-    string newRawJson = parent.GetJSONString();
+    string newRawJson = parent.GetJSONString(true);
 
     ok = parent2.Parse(newRawJson.c_str(), error);
 
@@ -1722,6 +2858,40 @@ int ParseEmbededBool(testLogger& log) {
     }
 
     if (!json2.Get<BoolField4>()) {
+        log << "Field4 returned false!";
+        return 1;
+    }
+
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson2 = parent.GetPrettyJSONString();
+
+    ok = parent3.Parse(newRawJson2.c_str(), error);
+
+    if ( !ok ) {
+        log << "Failed to parse bools!" << endl;
+        log << error << endl;
+        return 1;
+    }
+
+    JSON& json3 = parent3.Get<Object>();
+
+    if (json3.Get<BoolField1>()) {
+        log << "Field1 returned true!";
+        return 1;
+    }
+
+    if (!json3.Get<BoolField2>()) {
+        log << "Field2 returned false!";
+        return 1;
+    }
+
+    if (json3.Get<BoolField3>()) {
+        log << "Field3 returned true!";
+        return 1;
+    }
+
+    if (!json3.Get<BoolField4>()) {
         log << "Field4 returned false!";
         return 1;
     }
@@ -1760,7 +2930,7 @@ int ParseEmbededArrayBool(testLogger& log) {
     > JSON;
 
     NewObjectArray(Objects,JSON);
-    SimpleParsedJSON<Objects> parent, parent2;
+    SimpleParsedJSON<Objects> parent, parent2, parent3;
 
     std::string error;
 
@@ -1797,7 +2967,7 @@ int ParseEmbededArrayBool(testLogger& log) {
 
     log << "Re-building JSON>..." << endl;
 
-    string newRawJson = parent.GetJSONString();
+    string newRawJson = parent.GetJSONString(true);
 
     ok = parent2.Parse(newRawJson.c_str(), error);
 
@@ -1829,6 +2999,40 @@ int ParseEmbededArrayBool(testLogger& log) {
         return 1;
     }
 
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson2 = parent.GetPrettyJSONString();
+
+    ok = parent3.Parse(newRawJson2.c_str(), error);
+
+    if ( !ok ) {
+        log << "Failed to parse bools!" << endl;
+        log << error << endl;
+        return 1;
+    }
+
+    JSON& json3 = *parent3.Get<Objects>()[1];
+
+    if (json3.Get<BoolField1>()) {
+        log << "Field1 returned true!";
+        return 1;
+    }
+
+    if (!json3.Get<BoolField2>()) {
+        log << "Field2 returned false!";
+        return 1;
+    }
+
+    if (json3.Get<BoolField3>()) {
+        log << "Field3 returned true!";
+        return 1;
+    }
+
+    if (!json3.Get<BoolField4>()) {
+        log << "Field4 returned false!";
+        return 1;
+    }
+
     return 0;
 }
 int ParseBool(testLogger& log) {
@@ -1846,7 +3050,7 @@ int ParseBool(testLogger& log) {
         BoolField2,
         BoolField3,
         BoolField4
-    > json, json2;
+    > json, json2, json3;
 
     std::string error;
 
@@ -1881,7 +3085,7 @@ int ParseBool(testLogger& log) {
 
     log << "Re-building JSON>..." << endl;
 
-    string newRawJson = json.GetJSONString();
+    string newRawJson = json.GetJSONString(true);
 
     ok = json2.Parse(newRawJson.c_str(), error);
 
@@ -1911,6 +3115,37 @@ int ParseBool(testLogger& log) {
         return 1;
     }
 
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson2 = json.GetPrettyJSONString();
+
+    ok = json3.Parse(newRawJson2.c_str(), error);
+
+    if ( !ok ) {
+        log << "Failed to parse bools!" << endl;
+        log << error << endl;
+        return 1;
+    }
+
+    if (json3.Get<BoolField1>()) {
+        log << "Field1 returned true!";
+        return 1;
+    }
+
+    if (!json3.Get<BoolField2>()) {
+        log << "Field2 returned false!";
+        return 1;
+    }
+
+    if (json3.Get<BoolField3>()) {
+        log << "Field3 returned true!";
+        return 1;
+    }
+
+    if (!json3.Get<BoolField4>()) {
+        log << "Field4 returned false!";
+        return 1;
+    }
     return 0;
 }
 
@@ -1920,14 +3155,20 @@ int ParseDouble(testLogger& log) {
         "DoubleField1": 5.5,
         "DoubleField2": 5,
         "DoubleField3": -5,
+        "DoubleField4": 2000000000000,
+        "DoubleField5": -2000000000001,
     }
     )JSON";
 
-    SimpleParsedJSON<
+    typedef SimpleParsedJSON<
         DoubleField1,
         DoubleField2,
-        DoubleField3
-        > json, json2;
+        DoubleField3,
+        DoubleField4,
+        DoubleField5
+        > JSON;
+        
+    JSON json, json2, json3;
 
     std::string error;
 
@@ -1938,14 +3179,42 @@ int ParseDouble(testLogger& log) {
         return 1;
     }
 
-    if ( json.Get<DoubleField1>() != 5.5) {
-        log << "Invalid value for field1: " << json.Get<DoubleField1>() << endl;
+    auto f = [&] (JSON& json) -> int {
+        if ( json.Get<DoubleField1>() != 5.5) {
+            log << "Invalid value for field1: " << json.Get<DoubleField1>() << endl;
+            return 1;
+        }
+
+        if ( json.Get<DoubleField2>() != 5) {
+            log << "Invalid value for field2: " << json.Get<DoubleField2>() << endl;
+            return 1;
+        }
+
+        if ( json.Get<DoubleField3>() != -5) {
+            log << "Invalid value for field3: " << json.Get<DoubleField3>() << endl;
+            return 1;
+        }
+
+        if ( json.Get<DoubleField4>() != 2000000000000L) {
+            log << "Invalid value for field4: " << json.Get<DoubleField4>() << endl;
+            return 1;
+        }
+
+        if ( json.Get<DoubleField5>() != -2000000000001L) {
+            log << "Invalid value for field5: " << json.Get<DoubleField5>() << endl;
+            return 1;
+        }
+
+        return 0;
+    };
+
+    if ( f(json) != 0 ) {
         return 1;
     }
 
     log << "Re-building JSON>..." << endl;
 
-    string newRawJson = json.GetJSONString();
+    string newRawJson = json.GetJSONString(true);
 
     ok = json2.Parse(newRawJson.c_str(), error);
 
@@ -1954,8 +3223,22 @@ int ParseDouble(testLogger& log) {
         return 1;
     }
 
-    if ( json2.Get<DoubleField1>() != 5.5) {
-        log << "Invalid value for field1: " << json2.Get<DoubleField1>() << endl;
+    if ( f(json2) != 0 ) {
+        return 1;
+    }
+
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson2 = json.GetPrettyJSONString();
+
+    ok = json3.Parse(newRawJson2.c_str(), error);
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    if ( f(json3) != 0 ) {
         return 1;
     }
 
@@ -1978,7 +3261,7 @@ int ParseEmbededDouble(testLogger& log) {
         DoubleField3
         > JSON;
     NewEmbededObject(Object,JSON);
-    SimpleParsedJSON<Object> parent, parent2;
+    SimpleParsedJSON<Object> parent, parent2, parent3;
 
     std::string error;
 
@@ -1998,7 +3281,7 @@ int ParseEmbededDouble(testLogger& log) {
 
     log << "Re-building JSON>..." << endl;
 
-    string newRawJson = parent.GetJSONString();
+    string newRawJson = parent.GetJSONString(true);
 
     ok = parent2.Parse(newRawJson.c_str(), error);
 
@@ -2011,6 +3294,24 @@ int ParseEmbededDouble(testLogger& log) {
 
     if ( json2.Get<DoubleField1>() != 5.5) {
         log << "Invalid value for field1: " << json2.Get<DoubleField1>() << endl;
+        return 1;
+    }
+
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson2 = parent.GetPrettyJSONString();
+
+    ok = parent3.Parse(newRawJson2.c_str(), error);
+
+    JSON& json3 = parent3.Get<Object>();
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    if ( json3.Get<DoubleField1>() != 5.5) {
+        log << "Invalid value for field1: " << json3.Get<DoubleField1>() << endl;
         return 1;
     }
 
@@ -2043,7 +3344,7 @@ int ParseEmbededArrayDouble(testLogger& log) {
         DoubleField3
         > JSON;
     NewObjectArray(Objects,JSON);
-    SimpleParsedJSON<Objects> parent, parent2;
+    SimpleParsedJSON<Objects> parent, parent2, parent3;
 
     std::string error;
 
@@ -2063,7 +3364,7 @@ int ParseEmbededArrayDouble(testLogger& log) {
 
     log << "Re-building JSON>..." << endl;
 
-    string newRawJson = parent.GetJSONString();
+    string newRawJson = parent.GetJSONString(true);
 
     ok = parent2.Parse(newRawJson.c_str(), error);
 
@@ -2076,6 +3377,24 @@ int ParseEmbededArrayDouble(testLogger& log) {
 
     if ( json2.Get<DoubleField1>() != 5.5) {
         log << "Invalid value for field1: " << json2.Get<DoubleField1>() << endl;
+        return 1;
+    }
+
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson2 = parent.GetPrettyJSONString();
+
+    ok = parent3.Parse(newRawJson2.c_str(), error);
+
+    JSON& json3 = *parent3.Get<Objects>()[1];
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    if ( json3.Get<DoubleField1>() != 5.5) {
+        log << "Invalid value for field1: " << json3.Get<DoubleField1>() << endl;
         return 1;
     }
 
@@ -2146,6 +3465,90 @@ int Clear(testLogger& log) {
             << json.Get<StringArrayField1>().size() << endl;
         return 1;
     }
+
+    if ( json.Supplied<IntField1>()) {
+        log << "Int supplied!" << endl;
+        return 1;
+    }
+
+    if ( json.Supplied<UIntField1>()) {
+        log << "UInt supplied!" << endl;
+        return 1;
+    }
+
+    if ( json.Supplied<I64Field1>()) {
+        log << "I64 supplied!" << endl;
+        return 1;
+    }
+
+    if ( json.Supplied<UI64Field1>()) {
+        log << "UI64 supplied!" << endl;
+        return 1;
+    }
+
+    if ( json.Supplied<DoubleField1>()) {
+        log << "Double supplied!" << endl;
+        return 1;
+    }
+
+    if ( json.Supplied<BoolField1>()) {
+        log << "Bool supplied!" << endl;
+        return 1;
+    }
+
+    if ( json.Supplied<Field1>()) {
+        log << "String supplied!" << endl;
+        return 1;
+    }
+
+    if ( json.Supplied<StringArrayField1>()) {
+        log << "String Array supplied!" << endl;
+        return 1;
+    }
+
+    string ExpNotNull =
+R"RAW({
+    "StringArrayField1": [],
+    "Field1": "",
+    "BoolField1": false,
+    "DoubleField1": 0.0,
+    "UI64Field1": 0,
+    "I64Field1": 0,
+    "UIntField1": 0,
+    "IntField1": 0
+})RAW";
+    string notNull = json.GetPrettyJSONString(false);
+    if ( notNull != ExpNotNull) {
+        log << "Incorrect JSON found for not-null print!" << endl;
+        log << "Expected: " << endl;
+        log << ExpNotNull << endl;
+        log << "Actual: " << endl;
+        log << notNull << endl;
+        return 1;
+    }
+
+    string ExpNull =
+R"RAW({
+    "StringArrayField1": null,
+    "Field1": null,
+    "BoolField1": null,
+    "DoubleField1": null,
+    "UI64Field1": null,
+    "I64Field1": null,
+    "UIntField1": null,
+    "IntField1": null
+})RAW";
+
+    string null = json.GetPrettyJSONString(true);
+    if ( null != ExpNull) {
+        log << "Incorrect JSON found for null print!" << endl;
+        log << "Expected: " << endl;
+        log << ExpNull << endl;
+        log << "Actual: " << endl;
+        log << null << endl;
+        return 1;
+    }
+
     return 0;
 }
 
@@ -2217,6 +3620,45 @@ int EmbededClear(testLogger& log) {
             << json.Get<StringArrayField1>().size() << endl;
         return 1;
     }
+
+    string ExpNotNull =
+R"RAW({
+    "Object": {
+        "StringArrayField1": [],
+        "Field1": "",
+        "BoolField1": false,
+        "DoubleField1": 0.0,
+        "UI64Field1": 0,
+        "I64Field1": 0,
+        "UIntField1": 0,
+        "IntField1": 0
+    }
+})RAW";
+    string notNull = parent.GetPrettyJSONString(false);
+    if ( notNull != ExpNotNull) {
+        log << "Incorrect JSON found for not-null print!" << endl;
+        log << "Expected: " << endl;
+        log << ExpNotNull << endl;
+        log << "Actual: " << endl;
+        log << notNull << endl;
+        return 1;
+    }
+
+    string ExpNull =
+R"RAW({
+    "Object": null
+})RAW";
+
+    string null = parent.GetPrettyJSONString(true);
+    if ( null != ExpNull) {
+        log << "Incorrect JSON found for null print!" << endl;
+        log << "Expected: " << endl;
+        log << ExpNull << endl;
+        log << "Actual: " << endl;
+        log << null << endl;
+        return 1;
+    }
+
     return 0;
 }
 
@@ -2337,7 +3779,7 @@ int TrippleEmbededObject(testLogger& log) {
     typedef SimpleParsedJSON<Object2> JSON3;
     NewEmbededObject(Object3,JSON3);
 
-    SimpleParsedJSON<Object3> parent, parent2;
+    SimpleParsedJSON<Object3> parent, parent2, parent3;
 
     std::string error;
     bool ok = parent.Parse(rawJson.c_str(),error);
@@ -2356,7 +3798,7 @@ int TrippleEmbededObject(testLogger& log) {
 
     log << "Re-building JSON>..." << endl;
 
-    string newRawJson = parent.GetJSONString();
+    string newRawJson = parent.GetJSONString(true);
 
     ok = parent2.Parse(newRawJson.c_str(), error);
 
@@ -2369,6 +3811,24 @@ int TrippleEmbededObject(testLogger& log) {
 
     if ( json2.Get<DoubleField1>() != 5.5) {
         log << "Invalid value for field1: " << json2.Get<DoubleField1>() << endl;
+        return 1;
+    }
+
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson2 = parent.GetPrettyJSONString();
+
+    ok = parent3.Parse(newRawJson2.c_str(), error);
+
+    JSON& json3 = parent3.Get<Object3>().Get<Object2>().Get<Object>();
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    if ( json3.Get<DoubleField1>() != 5.5) {
+        log << "Invalid value for field1: " << json3.Get<DoubleField1>() << endl;
         return 1;
     }
 
@@ -2422,7 +3882,7 @@ int EmbededObjectInArray(testLogger& log) {
         return 1;
     } else {
         log << ">> " << rawJson << endl;
-        log << "<< " << json.GetJSONString() << endl;
+        log << "<< " << json.GetJSONString(true) << endl;
     }
 
     auto& outerObjects = json.Get<OuterObjects>();
@@ -2477,6 +3937,562 @@ int EmbededObjectInArray(testLogger& log) {
 
     if ( object5.Get<IntField1>() != 5 ) {
         log << "Invalid value for object5: " << object5.Get<IntField1>() << endl;
+        return 1;
+    }
+
+    return 0;
+}
+
+namespace Supplied_JSON {
+    NewBoolField(BoolField1);
+    NewDoubleArrayField(DoubleArrayField1);
+    NewDoubleField(DoubleField1);
+    NewStringField(Field1);
+    NewI64ArrayField(I64ArrayField1);
+    NewUIntField(I64Field1);
+    NewIntArrayField(IntArrayField1);
+    NewUIntField(IntField1);
+    NewStringArrayField(StringArrayField1);
+    NewUI64ArrayField(UI64ArrayField1);
+    NewUIntField(UI64Field1);
+    NewUIntArrayField(UIntArrayField1);
+    NewUIntField(UIntField1);
+    NewBoolField(BoolField2);
+    NewDoubleArrayField(DoubleArrayField2);
+    NewDoubleField(DoubleField2);
+    NewStringField(Field2);
+    NewI64ArrayField(I64ArrayField2);
+    NewUIntField(I64Field2);
+    NewIntArrayField(IntArrayField2);
+    NewUIntField(IntField2);
+    NewStringArrayField(StringArrayField2);
+    NewUI64ArrayField(UI64ArrayField2);
+    NewUIntField(UI64Field2);
+    NewUIntArrayField(UIntArrayField2);
+    NewUIntField(UIntField2);
+    NewBoolField(BoolField3);
+    NewDoubleArrayField(DoubleArrayField3);
+    NewDoubleField(DoubleField3);
+    NewStringField(Field3);
+    NewI64ArrayField(I64ArrayField3);
+    NewUIntField(I64Field3);
+    NewIntArrayField(IntArrayField3);
+    NewUIntField(IntField3);
+    NewStringArrayField(StringArrayField3);
+    NewUI64ArrayField(UI64ArrayField3);
+    NewUIntField(UI64Field3);
+    NewUIntArrayField(UIntArrayField3);
+    NewUIntField(UIntField3);
+
+    typedef SimpleParsedJSON<
+        BoolField1,
+        DoubleArrayField1,
+        DoubleField1,
+        Field1,
+        I64ArrayField1,
+        I64Field1,
+        IntArrayField1,
+        IntField1,
+        StringArrayField1,
+        UI64ArrayField1,
+        UI64Field1,
+        UIntArrayField1,
+        UIntField1,
+        BoolField2,
+        DoubleArrayField2,
+        DoubleField2,
+        Field2,
+        I64ArrayField2,
+        I64Field2,
+        IntArrayField2,
+        IntField2,
+        StringArrayField2,
+        UI64ArrayField2,
+        UI64Field2,
+        UIntArrayField2,
+        UIntField2,
+        BoolField3,
+        DoubleArrayField3,
+        DoubleField3,
+        Field3,
+        I64ArrayField3,
+        I64Field3,
+        IntArrayField3,
+        IntField3,
+        StringArrayField3,
+        UI64ArrayField3,
+        UI64Field3,
+        UIntArrayField3,
+        UIntField3
+    > OutputJSON;
+
+};
+int Supplied(testLogger& log) {
+    using namespace Supplied_JSON;
+    string inputJSON =
+R"RAW({
+    "UIntField1": 1,
+    "UIntArrayField1": [
+        100
+    ],
+    "UI64Field1": 1,
+    "UI64ArrayField1": [
+        3423423432487
+    ],
+    "StringArrayField1": [
+        "initial value"
+    ],
+    "IntField1": 1,
+    "IntArrayField1": [
+        -100
+    ],
+    "I64Field1": 1,
+    "I64ArrayField1": [
+        -3423423432487
+    ],
+    "Field1": "field1",
+    "DoubleField1": 5.5,
+    "DoubleArrayField1": [
+        0.5
+    ],
+    "BoolField1": true,
+    "UIntField2": null,
+    "UIntArrayField2": null,
+    "UI64Field2": null,
+    "UI64ArrayField2": null,
+    "StringArrayField2": null,
+    "IntField2": null,
+    "IntArrayField2": null,
+    "I64Field2": null,
+    "I64ArrayField2": null,
+    "Field2": null,
+    "DoubleField2": null,
+    "DoubleArrayField2": null,
+    "BoolField2": null,
+})RAW";
+    string expOutput =
+R"RAW({
+    "UIntField3": null,
+    "UIntArrayField3": null,
+    "UI64Field3": null,
+    "UI64ArrayField3": null,
+    "StringArrayField3": null,
+    "IntField3": null,
+    "IntArrayField3": null,
+    "I64Field3": null,
+    "I64ArrayField3": null,
+    "Field3": null,
+    "DoubleField3": null,
+    "DoubleArrayField3": null,
+    "BoolField3": null,
+    "UIntField2": null,
+    "UIntArrayField2": null,
+    "UI64Field2": null,
+    "UI64ArrayField2": null,
+    "StringArrayField2": null,
+    "IntField2": null,
+    "IntArrayField2": null,
+    "I64Field2": null,
+    "I64ArrayField2": null,
+    "Field2": null,
+    "DoubleField2": null,
+    "DoubleArrayField2": null,
+    "BoolField2": null,
+    "UIntField1": 1,
+    "UIntArrayField1": [
+        100
+    ],
+    "UI64Field1": 1,
+    "UI64ArrayField1": [
+        3423423432487
+    ],
+    "StringArrayField1": [
+        "initial value"
+    ],
+    "IntField1": 1,
+    "IntArrayField1": [
+        -100
+    ],
+    "I64Field1": 1,
+    "I64ArrayField1": [
+        -3423423432487
+    ],
+    "Field1": "field1",
+    "DoubleField1": 5.5,
+    "DoubleArrayField1": [
+        0.5
+    ],
+    "BoolField1": true
+})RAW";
+    string allNull =
+R"RAW({
+    "UIntField3": null,
+    "UIntArrayField3": null,
+    "UI64Field3": null,
+    "UI64ArrayField3": null,
+    "StringArrayField3": null,
+    "IntField3": null,
+    "IntArrayField3": null,
+    "I64Field3": null,
+    "I64ArrayField3": null,
+    "Field3": null,
+    "DoubleField3": null,
+    "DoubleArrayField3": null,
+    "BoolField3": null,
+    "UIntField2": null,
+    "UIntArrayField2": null,
+    "UI64Field2": null,
+    "UI64ArrayField2": null,
+    "StringArrayField2": null,
+    "IntField2": null,
+    "IntArrayField2": null,
+    "I64Field2": null,
+    "I64ArrayField2": null,
+    "Field2": null,
+    "DoubleField2": null,
+    "DoubleArrayField2": null,
+    "BoolField2": null,
+    "UIntField1": null,
+    "UIntArrayField1": null,
+    "UI64Field1": null,
+    "UI64ArrayField1": null,
+    "StringArrayField1": null,
+    "IntField1": null,
+    "IntArrayField1": null,
+    "I64Field1": null,
+    "I64ArrayField1": null,
+    "Field1": null,
+    "DoubleField1": null,
+    "DoubleArrayField1": null,
+    "BoolField1": null
+})RAW";
+    OutputJSON json;
+    string error;
+    if ( !json.Parse(inputJSON.c_str(), error) ) {
+        log << "Failed to parse JSON: " << error << endl;
+        return 1;
+    }
+    string output = json.GetPrettyJSONString(true);
+
+    if ( output != expOutput ) {
+        log << "Invalid output after parse" << endl;
+        log << "Expected: " << endl << expOutput << endl;
+        log << "Got:      " << endl << output << endl;
+        return 1;
+    }
+
+    json.Clear();
+    output = json.GetPrettyJSONString(true);
+
+    if ( output != allNull ) {
+        log << "Invalid output after clear" << endl;
+        log << "Expected: " << endl << allNull << endl;
+        log << "Got:      " << endl << output << endl;
+        return 1;
+    }
+
+    return 0;
+}
+
+namespace Supplied_Embeded {
+
+    namespace ObjectA1_fields {
+
+        namespace ObjectB1_fields {
+
+            namespace ObjectC1_fields {
+                NewDoubleField(DoubleFieldA1);
+                NewUIntField(DoubleFieldB1);
+                NewIntField(DoubleFieldC1);
+
+                typedef SimpleParsedJSON<
+                    DoubleFieldA1,
+                    DoubleFieldB1,
+                    DoubleFieldC1
+                > JSON;
+            }
+            NewEmbededObject(ObjectC1, ObjectC1_fields::JSON);
+
+            typedef SimpleParsedJSON<
+                ObjectC1
+            > JSON;
+        }
+        NewEmbededObject(ObjectB1, ObjectB1_fields::JSON);
+
+        typedef SimpleParsedJSON<
+            ObjectB1
+        > JSON;
+    }
+    NewEmbededObject(ObjectA1, ObjectA1_fields::JSON);
+
+    namespace ObjectA2_fields {
+
+        namespace ObjectB2_fields {
+
+            namespace ObjectC2_fields {
+                NewDoubleField(DoubleFieldA2);
+                NewUIntField(DoubleFieldB2);
+                NewIntField(DoubleFieldC2);
+
+                typedef SimpleParsedJSON<
+                    DoubleFieldA2,
+                    DoubleFieldB2,
+                    DoubleFieldC2
+                > JSON;
+            }
+            NewEmbededObject(ObjectC2, ObjectC2_fields::JSON);
+
+            typedef SimpleParsedJSON<
+                ObjectC2
+            > JSON;
+        }
+        NewEmbededObject(ObjectB2, ObjectB2_fields::JSON);
+
+        typedef SimpleParsedJSON<
+            ObjectB2
+        > JSON;
+    }
+    NewEmbededObject(ObjectA2, ObjectA2_fields::JSON);
+
+    namespace ObjectA3_fields {
+
+        namespace ObjectB3_fields {
+
+            namespace ObjectC3_fields {
+                NewDoubleField(DoubleFieldA3);
+                NewUIntField(DoubleFieldB3);
+                NewIntField(DoubleFieldC3);
+
+                typedef SimpleParsedJSON<
+                    DoubleFieldA3,
+                    DoubleFieldB3,
+                    DoubleFieldC3
+                > JSON;
+            }
+            NewEmbededObject(ObjectC3, ObjectC3_fields::JSON);
+
+            typedef SimpleParsedJSON<
+                ObjectC3
+            > JSON;
+        }
+        NewEmbededObject(ObjectB3, ObjectB3_fields::JSON);
+
+        typedef SimpleParsedJSON<
+            ObjectB3
+        > JSON;
+    }
+    NewEmbededObject(ObjectA3, ObjectA3_fields::JSON);
+
+    namespace ObjectA4_fields {
+
+        namespace ObjectB4_fields {
+
+            namespace ObjectC4_fields {
+                NewDoubleField(DoubleFieldA4);
+                NewUIntField(DoubleFieldB4);
+                NewIntField(DoubleFieldC4);
+
+                typedef SimpleParsedJSON<
+                    DoubleFieldA4,
+                    DoubleFieldB4,
+                    DoubleFieldC4
+                > JSON;
+            }
+            NewEmbededObject(ObjectC4, ObjectC4_fields::JSON);
+
+            typedef SimpleParsedJSON<
+                ObjectC4
+            > JSON;
+        }
+        NewEmbededObject(ObjectB4, ObjectB4_fields::JSON);
+
+        typedef SimpleParsedJSON<
+            ObjectB4
+        > JSON;
+    }
+    NewEmbededObject(ObjectA4, ObjectA4_fields::JSON);
+
+    typedef SimpleParsedJSON<
+        ObjectA1,
+        ObjectA2,
+        ObjectA3,
+        ObjectA4
+    > OutputJSON;
+};
+
+int SuppliedEmbeded(testLogger& log) {
+    using namespace Supplied_Embeded;
+    string input =
+R"RAW({
+    "ObjectA1": {
+        "ObjectB1": { 
+            "ObjectC1": {
+                "DoubleFieldA1": 5.5,
+                "DoubleFieldB1": null
+            }
+        }
+    },
+    "ObjectA2": {
+    },
+    "ObjectA3": {
+        "ObjectB3": null
+    },
+    "ObjectA4": null
+})RAW";
+    string expOutput =
+R"RAW({
+    "ObjectA4": null,
+    "ObjectA3": {
+        "ObjectB3": null
+    },
+    "ObjectA2": {
+        "ObjectB2": null
+    },
+    "ObjectA1": {
+        "ObjectB1": {
+            "ObjectC1": {
+                "DoubleFieldC1": null,
+                "DoubleFieldB1": null,
+                "DoubleFieldA1": 5.5
+            }
+        }
+    }
+})RAW";
+    string allNull =
+R"RAW({
+    "ObjectA4": null,
+    "ObjectA3": null,
+    "ObjectA2": null,
+    "ObjectA1": null
+})RAW";
+    OutputJSON json;
+    string error;
+    if ( !json.Parse(input.c_str(), error) ) {
+        log << "Failed to parse JSON: " << error << endl;
+        return 1;
+    }
+
+    string output = json.GetPrettyJSONString(true);
+
+    if ( output != expOutput ) {
+        log << "Invalid output after parse" << endl;
+        log << "Expected: " << endl << expOutput << endl;
+        log << "Got:      " << endl << output << endl;
+        return 1;
+    }
+
+    json.Clear();
+    output = json.GetPrettyJSONString(true);
+
+    if ( output != allNull ) {
+        log << "Invalid output after clear" << endl;
+        log << "Expected: " << endl << allNull << endl;
+        log << "Got:      " << endl << output << endl;
+        return 1;
+    }
+    return 0;
+}
+
+namespace Supplied_EmbededInArray {
+    namespace OuterObjects_fields {
+        namespace Objects_fields {
+            NewUIntField(IntField1);
+
+            typedef SimpleParsedJSON<
+                IntField1
+            > JSON;
+        }
+        NewObjectArray(Objects, Objects_fields::JSON);
+
+        typedef SimpleParsedJSON<
+            Objects
+        > JSON;
+    }
+    NewObjectArray(OuterObjects, OuterObjects_fields::JSON);
+
+    typedef SimpleParsedJSON<
+        OuterObjects
+    > OutputJSON;
+};
+
+int SuppliedEmbededObjectInArray(testLogger& log) {
+    using namespace Supplied_EmbededInArray;
+
+    string input = R"RAW(
+       {
+            "OuterObjects": [
+                {
+                    "Objects": [ 
+                        {
+                            "IntField1": 1
+                        },
+                        {
+                            "IntField1": null
+                        },
+                        {
+                        }
+                    ]
+                },
+                {
+                    "Objects": null
+                },
+                {
+                }
+            ]
+       }
+    )RAW";
+
+    string expOutput =
+R"RAW({
+    "OuterObjects": [
+        {
+            "Objects": [
+                {
+                    "IntField1": 1
+                },
+                {
+                    "IntField1": null
+                },
+                {
+                    "IntField1": null
+                }
+            ]
+        },
+        {
+            "Objects": null
+        },
+        {
+            "Objects": null
+        }
+    ]
+})RAW";
+    string allNull =
+R"RAW({
+    "OuterObjects": null
+})RAW";
+    OutputJSON json;
+    string error;
+    if ( !json.Parse(input.c_str(), error) ) {
+        log << "Failed to parse JSON: " << error << endl;
+        return 1;
+    }
+
+    string output = json.GetPrettyJSONString(true);
+
+    if ( output != expOutput ) {
+        log << "Invalid output after parse" << endl;
+        log << "Expected: " << endl << expOutput << endl;
+        log << "Got:      " << endl << output << endl;
+        return 1;
+    }
+
+    json.Clear();
+    output = json.GetPrettyJSONString(true);
+
+    if ( output != allNull ) {
+        log << "Invalid output after clear" << endl;
+        log << "Expected: " << endl << allNull << endl;
+        log << "Got:      " << endl << output << endl;
         return 1;
     }
 

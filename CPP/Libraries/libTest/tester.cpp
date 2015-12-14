@@ -7,6 +7,7 @@
 #include "util_time.h"
 #include "stdWriter.h"
 #include "env.h"
+#include <algorithm>
 
 const size_t MAX_QUEUE_SIZE = 1e7;
 
@@ -194,5 +195,51 @@ void DefaultTestLogger::LogMessage(const Message& message) {
     {
         ffull_log << messageText;
         ffull_log.flush();
+    }
+}
+
+void DefaultTestLogger::ReportStringDiff(
+          const string& expected,
+          const string actual)
+{
+    size_t len = 0;
+    size_t diffIndex = 0;
+    if ( expected != actual ) {
+        (*this) << "Expected:" << expected << std::endl;
+        (*this) << "Actual:" << actual << std::endl;
+        (*this) << "String Miss-Match!" << std::endl;
+        (*this) << "Expected Length: " << expected.length() << std::endl;
+        (*this) << "Actual Length: " << actual.length() << std::endl;
+
+        if ( expected.length() < actual.length() ) {
+            len = expected.length();
+        } else {
+            len = actual.length();
+        }
+
+        for (; 
+             diffIndex < len && (expected[diffIndex] == actual[diffIndex]);
+             ++diffIndex) 
+        {
+        }
+
+        if (diffIndex == len ) {
+            (*this) << "No miss-match in shared section" << std::endl;
+        } else {
+            (*this) << "Diff detected: " << std::endl;
+            size_t diffStart = len -25;
+            size_t diffEnd = len +25;
+
+            if ( diffStart < 0 ) {
+                diffStart = 0;
+            }
+
+            if ( diffEnd > len ) {
+                diffEnd = len;
+            }
+
+            (*this) << ">> " << expected.substr(diffStart,(diffEnd-diffStart)) << std::endl;
+            (*this) << "<< " << actual.substr(diffStart,(diffEnd-diffStart)) << std::endl;
+        }
     }
 }

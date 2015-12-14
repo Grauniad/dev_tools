@@ -36,6 +36,9 @@ endif
 ifndef COMPILER_CPP11
     $(error COMPILER_CPP11 must be specified!)
 endif
+ifndef COMPILER_CPP14
+    $(error COMPILER_CPP14 must be specified!)
+endif
 ifndef COMPILER_ALL_WARNINGS
     $(error COMPILER_ALL_WARNINGS must be specified!)
 endif
