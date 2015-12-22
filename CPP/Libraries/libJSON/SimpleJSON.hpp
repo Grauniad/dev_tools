@@ -753,7 +753,7 @@ bool SimpleParsedJSON<Fields...>::Parse(const char* json, std::string& errMsg) {
     try {
         reader.Parse(ss,*this);
         ok = true;
-    } catch (UnknownFieldError& extraField) {
+    } catch (spJSON::UnknownFieldError extraField) {
         errMsg = "Unknown extra field: " + extraField.field;
     } catch (spJSON::ValueError& value) {
         errMsg = "Invalid value for field: " + value.field;
@@ -847,7 +847,7 @@ bool SimpleParsedJSON<Fields...>::Key(
         currentField = Get(str);
 
         if (!currentField) {
-            throw UnknownFieldError {str} ;
+            throw spJSON::UnknownFieldError {str} ;
         }
 
         currentField->field->supplied = true;
