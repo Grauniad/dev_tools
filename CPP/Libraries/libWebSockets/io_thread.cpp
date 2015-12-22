@@ -49,10 +49,10 @@ void IOThread::NewIO() {
 }
 
 bool IOThread::IOContinue() {
-    std::cout << "IOContinue: Waiting for trigger..." << std::endl;
-    IOLock lock(io_mutex);
-    io_trigger.wait(lock);
-    std::cout << "IOContinue: Got Trigger..." << std::endl;
+    if (io_continue) {
+        IOLock lock(io_mutex);
+        io_trigger.wait(lock);
+    }
     return io_continue;
 }
 
