@@ -35,13 +35,13 @@ void PipeSubscriber<Message>::PushMessage(const Message& msg) {
 
 template <class Message>
 bool PipeSubscriber<Message>::GetNextMessage(Message& msg) {
-    bool read = false;
+    bool gotMsg = false;
     if ( messages.pop(msg) ) {
-        read = true;
+        gotMsg = true;
         ++read;
     }
 
-    return read;
+    return gotMsg;
 }
 
 template <class Message>

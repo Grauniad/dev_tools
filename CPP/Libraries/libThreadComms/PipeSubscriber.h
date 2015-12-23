@@ -26,13 +26,6 @@ class PipePublisher;
 template <class Message>
 class PipeSubscriber { 
 public:
-    /**
-     * Create a new consumer.
-     *
-     * @param maxSize  Maximum unread messages before an exception is
-     *                 triggered on the producer.
-     */
-    PipeSubscriber(PipePublisher<Message>* parent, size_t maxSize);
 
     ~PipeSubscriber();
 
@@ -67,6 +60,14 @@ private:
     /*********************************
      *   Interface for Publisher
      *********************************/
+    /**
+     * Create a new consumer.
+     *
+     * @param maxSize  Maximum unread messages before an exception is
+     *                 triggered on the producer.
+     */
+    PipeSubscriber(PipePublisher<Message>* parent, size_t maxSize);
+
      struct PushToFullQueueException {
          Message msg;
      };
