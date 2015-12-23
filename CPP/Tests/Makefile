@@ -6,11 +6,11 @@ MAKE_DIRS= IOInterface\
 		   csv \
 		     \
 		      \
-		    \
 		   commands \
 		   regex \
 		   strings  \
-		   JSON
+		   JSON \
+		   ThreadComms
 
 MODE=CPP
 

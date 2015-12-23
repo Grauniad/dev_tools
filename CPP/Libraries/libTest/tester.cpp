@@ -230,7 +230,7 @@ void DefaultTestLogger::ReportStringDiff(
             size_t diffStart = len -25;
             size_t diffEnd = len +25;
 
-            if ( diffStart < 0 ) {
+            if ( len < 25 ) {
                 diffStart = 0;
             }
 
