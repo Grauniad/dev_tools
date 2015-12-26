@@ -87,7 +87,7 @@ void PipeSubscriber<Message>::OnNextMessage(
 {
     std::unique_lock<std::mutex> notifyLock(onNotifyMutex);
     if ( read < written ) {
-        f();
+        target->PostTask(f);
         notifyOnWrite = false;
         onNotify = nullptr;
         targetToNotify = nullptr;

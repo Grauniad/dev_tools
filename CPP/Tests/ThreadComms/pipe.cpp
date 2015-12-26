@@ -200,6 +200,21 @@ int PublishPostNotify(testLogger& log) {
         return 1;
     }
 
+
+    got.clear();
+    publisher.Publish(expected[0]);
+
+    client->OnNextMessage(f,&dummy_event_loop);
+
+    if (!MessagesMatch(log,expected,got)) {
+        return 1;
+    }
+
+    if ( dummy_event_loop.posted_count != 2) {
+        log << "Task was not posted!" << endl;
+        return 1;
+    }
+
     return 0;
 }
 
