@@ -15,6 +15,7 @@
 
 template <class Message>
 class PipePublisher;
+class IPostable;
 
 /**
  * Consumes data down a single-producer / single-consumer pipe.
@@ -33,7 +34,7 @@ public:
      * Pop the next message off the queue and populate
      * msg with the result.
      *
-     * If there is no messasge to pop, msg is left unchanged
+     * If there is no message to pop, msg is left unchanged
      *
      * @param msg   The message to populate.
      *
@@ -49,11 +50,40 @@ public:
      *
      * This callback will be triggered exactly once. 
      *
+     * NOITE: No unread message notifications will be triggered whilst message
+     *        forwarding has been enabled.
+     *
      * NOTE: This callback may be triggered immediately (before returning) on
      *        the current thread if there is already unread data on the queue.
      */
-    typedef std::function<void(void)> NextMessasgCallback;
-    void OnNextMessasge(NextMessasgCallback&& f);
+    typedef std::function<void(void)> NextMessageCallback;
+    void OnNextMessage(const NextMessageCallback& f);
+
+    /**
+     * Variant of the OnNextMessage callback which posts the task to another 
+     * event loop.
+     *
+     *  @param  f          The callback to trigger
+     *  @param  target     The object to post the task to.
+     */
+     void OnNextMessage(const NextMessageCallback& f, IPostable* target);
+
+    /**
+     * Trigger a callback function for each new message received by the
+     * subsciber. The function will be called from the **PUBLISHER THREAD**.
+     *
+     * If there are any unread message currently in the queue, these will be 
+     * triggered on the **CURRENT THREAD** before this function returns. 
+     *
+     * NOITE: Setting up a message forward via OnNewMessage implicitly
+     *        suprresses the OnNextMessage callback since there will never be
+     *        any unread data.
+     *
+     * NOTE: To preserve ordering this function will lock out the publisher thread
+     *       until call-backss for all existing messages haeve been completed.
+     */
+    typedef std::function<void(const Message&)> NewMessasgCallback;
+    void OnNewMessage(const NewMessasgCallback&  f);
 
 private:
     friend class PipePublisher<Message>;
@@ -83,6 +113,20 @@ private:
       * @param msg  The message to add to the queue.
       */ 
      void PushMessage(const Message& msg);
+
+    /***********************************
+     * Unread data Notification
+     ***********************************/
+    std::atomic<bool>    notifyOnWrite;
+    NextMessageCallback  onNotify;
+    IPostable*           targetToNotify;
+
+    /***********************************
+     * Forward Messages
+     ***********************************/
+    std::atomic<bool>    forwardMessage;
+    NewMessasgCallback   onNewMessage;
+
     /*********************************
      *           Data
      *********************************/
@@ -90,8 +134,6 @@ private:
     std::atomic<size_t>  written;
 
     std::mutex           onNotifyMutex;
-    std::atomic<bool>    notifyOnWrite;
-    NextMessasgCallback  onNotify;
 
     boost::lockfree::spsc_queue<Message>  messages;
 

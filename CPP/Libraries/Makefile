@@ -8,8 +8,8 @@ MAKE_DIRS= libIOInterface\
 		   libScreen \
 		   libMeta \
 		   libCommands \
-		   libWebSockets \
-           libThreadComms
+           libThreadComms\
+		   libWebSockets 
 
 MODE=CPP
 

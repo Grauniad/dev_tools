@@ -1,6 +1,7 @@
 #include "tester.h"
 #include <PipePublisher.h>
 #include <thread>
+#include <IPostable.h>
 
 
 using namespace std;
@@ -8,6 +9,9 @@ using namespace std;
 int PublishSingleConsumer(testLogger& log);
 int PublishDoubleConsumer(testLogger& log);
 int PublishNotify(testLogger& log);
+int PublishPostNotify(testLogger& log);
+int PublishForEachData(testLogger& log);
+int PublishForEachDataUnread(testLogger& log);
 
 
 int main(int argc, const char *argv[])
@@ -15,6 +19,9 @@ int main(int argc, const char *argv[])
     Test("Publish to a single consumer",PublishSingleConsumer).RunTest();
     Test("Publish to two consumers",PublishDoubleConsumer).RunTest();
     Test("On Next Message Callback",PublishNotify).RunTest();
+    Test("On Next Message Callback, post variant",PublishPostNotify).RunTest();
+    Test("On data callback",PublishForEachData).RunTest();
+    Test("On data callback, unread data",PublishForEachDataUnread).RunTest();
     return 0;
 }
 
@@ -113,7 +120,7 @@ int PublishNotify(testLogger& log) {
         }
     };
     
-    client->OnNextMessasge(f);
+    client->OnNextMessage(f);
 
     for (auto& msg : toSend ) {
         publisher.Publish(msg);
@@ -127,9 +134,69 @@ int PublishNotify(testLogger& log) {
         return 1;
     }
 
-    client->OnNextMessasge(f);
+    client->OnNextMessage(f);
 
     if (!MessagesMatch(log,toSend,got)) {
+        return 1;
+    }
+
+    return 0;
+}
+
+int PublishPostNotify(testLogger& log) {
+    PipePublisher<Msg> publisher;
+    std::unique_ptr<PipeSubscriber<Msg>> client(publisher.NewClient(1024));
+    std::vector<Msg> toSend = {
+        {"Message 1"},
+        {"Mesasge 2"},
+        {"Hello World!"}
+    };
+    
+    struct PostableTarget: public IPostable {
+        PostableTarget() : posted_count(0) { } 
+        void PostTask(const Task& task) {
+            ++posted_count;
+            task();
+        }
+
+        size_t posted_count;
+    } dummy_event_loop;
+
+    std::vector<Msg> got;
+    auto f = [&] () -> void {
+        Msg recvMsg;
+        while(client->GetNextMessage(recvMsg)) {
+            got.push_back(recvMsg);
+        }
+    };
+    
+    client->OnNextMessage(f,&dummy_event_loop);
+
+    for (auto& msg : toSend ) {
+        publisher.Publish(msg);
+    }
+
+    std::vector<Msg> expected = {
+        {"Message 1"}
+    };
+
+    if (!MessagesMatch(log,expected,got)) {
+        return 1;
+    }
+
+    if ( dummy_event_loop.posted_count != 1) {
+        log << "Task was not posted!" << endl;
+        return 1;
+    }
+
+    client->OnNextMessage(f);
+
+    if (!MessagesMatch(log,toSend,got)) {
+        return 1;
+    }
+
+    if ( dummy_event_loop.posted_count != 1) {
+        log << "Task was posted again!" << endl;
         return 1;
     }
 
@@ -201,6 +268,77 @@ int PublishDoubleConsumer(testLogger& log) {
         return 1;
     }
 
+
+    return 0;
+}
+
+int PublishForEachData(testLogger& log) {
+    PipePublisher<Msg> publisher;
+    std::unique_ptr<PipeSubscriber<Msg>> client(publisher.NewClient(1024));
+    std::vector<Msg> toSend = {
+        {"Message 1"},
+        {"Mesasge 2"},
+        {"Hello World!"}
+    };
+
+    std::vector<Msg> got;
+    auto f = [&] (const Msg& newMsg) -> void {
+        got.push_back(newMsg);
+    };
+    
+    client->OnNewMessage(f);
+
+    for (auto& msg : toSend ) {
+        publisher.Publish(msg);
+    }
+
+    if (!MessagesMatch(log,toSend,got)) {
+        return 1;
+    }
+
+    return 0;
+}
+
+int PublishForEachDataUnread(testLogger& log) {
+    PipePublisher<Msg> publisher;
+    std::unique_ptr<PipeSubscriber<Msg>> client(publisher.NewClient(1024));
+    std::vector<Msg> toSend = {
+        {"Message 1"},
+        {"Mesasge 2"}
+    };
+
+    std::vector<Msg> toSend2 = {
+        {"Hello World!"}
+    };
+
+    std::vector<Msg> end_result = {
+        {"Message 1"},
+        {"Mesasge 2"},
+        {"Hello World!"}
+    };
+
+    std::vector<Msg> got;
+    auto f = [&] (const Msg& newMsg) -> void {
+        got.push_back(newMsg);
+    };
+    
+    for (auto& msg : toSend ) {
+        publisher.Publish(msg);
+    }
+
+    client->OnNewMessage(f);
+
+    if (!MessagesMatch(log,toSend,got)) {
+        return 1;
+    }
+
+    for (auto& msg : toSend2 ) {
+        publisher.Publish(msg);
+    }
+
+    if (!MessagesMatch(log,end_result,got)) {
+        return 1;
+    }
 
     return 0;
 }

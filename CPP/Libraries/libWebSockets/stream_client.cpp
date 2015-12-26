@@ -10,6 +10,8 @@ typedef websocketpp::client<websocketpp::config::asio_tls_client> client;
 typedef websocketpp::lib::shared_ptr<boost::asio::ssl::context> context_ptr;
 typedef client::connection_ptr connection_ptr;
 
+using namespace std;
+
 StreamClientThread::StreamClientThread(const std::string& url)
    : StreamClient(url),
      io_thread([=] () -> void { this->Run(); })

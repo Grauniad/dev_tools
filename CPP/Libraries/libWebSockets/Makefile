@@ -2,7 +2,7 @@ EXPORT_INCLUDES=$(shell echo *.h)
 SOURCES=$(shell echo *.cpp)
 
 TARGET_LIB=libWebSockets
-LINKED_LIBS=libString libUtils libIOInterface libJSON
+LINKED_LIBS=libThreadComms libString libUtils libIOInterface libJSON
 TAGS_FILE=dev_tools_libraries_libWebSockets-c++.tags
 
 MODE=CPP

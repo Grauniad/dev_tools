@@ -4,7 +4,12 @@
 #include <http_client.h>
 #include <future>
 
-class HTTPRequest: public AsyncHTTPSClient
+class HTTPMessageProvider { 
+public:
+    virtual const HTTPMessage& WaitForMessage() = 0;
+};
+
+class HTTPRequest: public HTTPMessageProvider, public AsyncHTTPSClient
 {
 public: 
     /**
@@ -28,7 +33,7 @@ public:
     /**
      * Waits for request to complete before returning the result
      */
-    const HTTPMessage& WaitForMessage();
+    virtual const HTTPMessage& WaitForMessage();
 
 
 private:
