@@ -22,41 +22,29 @@ protected:
     };
 };
 
-typedef websocketpp::server<websocketpp::config::asio> server;
 
 class SubscriptionHandler {
 public:
     virtual ~SubscriptionHandler() {}
 
-protected:
-    friend class RequestServer;
-
-    class Request {
+    class SubRequest {
     public:
-        Request(
-            const std::string& req,
-            server* s,
-            websocketpp::connection_hdl c);
-        const char* Message();
+        virtual void SendMessage(const std::string& msg) = 0;
 
-        /**
-         * Send a data update, a JSON message, down the pipe
-         */
-        void SendMessage(const std::string& msg);
-
-    private:
-        std::string                 request;
-        server*                     serv;
-        websocketpp::connection_hdl conn;
+        virtual const char* RequestMessasge() = 0;
     };
 
-    virtual void OnRequest(Request request) = 0;
+    typedef std::shared_ptr<SubRequest> RequestHandle;
 
     struct InvalidRequestException {
         int code;
         std::string errMsg;
     };
+
+    virtual std::string OnRequest(RequestHandle hdl) = 0;
 };
+
+typedef websocketpp::server<websocketpp::config::asio> server;
 
 /**
  *  The request server 
@@ -83,7 +71,7 @@ public:
     }
 
     /**
-     * Run the event loop, handle any incoming requets or posted tasks
+     * Run the event loop, handle any incoming requests or posted tasks
      */
     void HandleRequests(unsigned short port);
 

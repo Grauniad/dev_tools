@@ -27,6 +27,7 @@ namespace {
         response += errJSON.GetJSONString();
         return response;
     }
+
 }
 
 using websocketpp::lib::placeholders::_1;
@@ -45,6 +46,36 @@ void on_message(RequestServer* s, server* raw_server, websocketpp::connection_hd
         raw_server->send(hdl,reply,websocketpp::frame::opcode::TEXT);
     }
 }
+
+/**************************************************************
+ *                Data Subscriptions
+ **************************************************************/
+class Request: public SubscriptionHandler::SubRequest {
+public:
+    Request(
+        const std::string& req,
+        server* s,
+        websocketpp::connection_hdl c)
+    : request(req), serv(s), conn(c)
+    {
+    }
+
+    const char* RequestMessasge() {
+        return request.c_str();
+    }
+
+    /**
+     * Send a data update, a JSON message, down the pipe
+     */
+    void SendMessage(const std::string& msg) {
+        serv->send(conn,msg,websocketpp::frame::opcode::TEXT);
+    }
+
+private:
+    std::string                 request;
+    server*                     serv;
+    websocketpp::connection_hdl conn;
+};
 
 /**************************************************************
  *                Request Serve
@@ -121,7 +152,9 @@ std::string RequestServer::HandleSubscriptionMessage(
         jsonRequest = request.c_str() + offset;
     }
     try {
-        handler.OnRequest({jsonRequest,raw_server,hdl});
+        SubscriptionHandler::RequestHandle reqHdl(
+            new Request(jsonRequest,raw_server,hdl));
+        response = handler.OnRequest(reqHdl);
     } catch (const SubscriptionHandler::InvalidRequestException& e) {
         response = ErrorMessage(e.errMsg);
     }
@@ -149,19 +182,4 @@ void RequestServer::PostTask(const RequestServer::InteruptHandler& f) {
     boost::asio::io_service& serv = echo_server.get_io_service();
     
     serv.post(f);
-}
-
-/**************************************************************
- *                Data Subscriptions
- **************************************************************/
-SubscriptionHandler::Request::Request(
-     const std::string& req,
-     server* s,
-     websocketpp::connection_hdl c)
-    : request(req), serv(s), conn(c)
-{
-}
-
-void SubscriptionHandler::Request::SendMessage(const std::string& msg) {
-    serv->send(conn,msg,websocketpp::frame::opcode::TEXT);
 }

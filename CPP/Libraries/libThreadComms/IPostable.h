@@ -8,6 +8,7 @@
 
 #ifndef DEV_TOOLS_CPP_LIBRARIES_LIB_THEAD_COMMS_INTERFACE_POSTABLE_H__
 #define DEV_TOOLS_CPP_LIBRARIES_LIB_THEAD_COMMS_INTERFACE_POSTABLE_H__
+#include <functional>
 
 /**
  * By implementing this interface, a class declares that it
