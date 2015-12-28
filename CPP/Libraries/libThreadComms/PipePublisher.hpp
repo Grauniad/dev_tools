@@ -34,15 +34,16 @@ void PipePublisher<Message>::Publish(const Message& msg) {
 }
 
 template <class Message>
-PipeSubscriber<Message>* PipePublisher<Message>::NewClient(size_t maxSize) {
+template <class Client>
+Client* PipePublisher<Message>::NewClient(size_t maxSize) {
     // Lock out the publisher thread until we have finished with the client
     // list
     std::unique_lock<std::mutex> clientLock(subscriptionMutex);
 
-    PipeSubscriber<Message>* client = 
-        new PipeSubscriber<Message>(this,maxSize);
+    Client* client = new Client(this,maxSize);
 
-    clients.insert(client);
+    // up cast back to the base class for insertion...
+    clients.insert(static_cast<PipeSubscriber<Message>*>(client));
 
     return client;
 

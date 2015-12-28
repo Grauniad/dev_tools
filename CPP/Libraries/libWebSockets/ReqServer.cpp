@@ -6,6 +6,7 @@
 #include <sstream>
 
 #include <SimpleJSON.h>
+#include <logger.h>
 
 /**************************************************************
  *                Utilities
@@ -41,10 +42,23 @@ void on_message(RequestServer* s, server* raw_server, websocketpp::connection_hd
     if (msg->get_payload() == "stop-listening") {
         raw_server->stop_listening();
     } else {
+        SLOG_FROM(LOG_VERBOSE,">> ReqServer::on_message",
+        "Received message from: " << hdl.lock().get() << endl <<
+        "Message: " << msg->get_payload() << endl);
         const std::string& reply = s->HandleMessage(msg->get_payload(),raw_server,hdl);
 
-        raw_server->send(hdl,reply,websocketpp::frame::opcode::TEXT);
+        if (reply != "") {
+            SLOG_FROM(LOG_VERBOSE,"<< ReqServer::on_message",
+            "Sending Message to:" << hdl.lock().get() << endl <<
+            "Message: " << reply << endl);
+            raw_server->send(hdl,reply,websocketpp::frame::opcode::TEXT);
+        }
     }
+}
+
+void on_close(websocketpp::connection_hdl hdl) {
+    SLOG_FROM(LOG_VERBOSE,"ReqServer::on_close",
+    "Closing session to: " << hdl.lock().get() << endl);
 }
 
 /**************************************************************
@@ -56,7 +70,7 @@ public:
         const std::string& req,
         server* s,
         websocketpp::connection_hdl c)
-    : request(req), serv(s), conn(c)
+    : request(req), serv(s), conn(serv->get_con_from_hdl(c))
     {
     }
 
@@ -68,13 +82,16 @@ public:
      * Send a data update, a JSON message, down the pipe
      */
     void SendMessage(const std::string& msg) {
+        SLOG_FROM(LOG_VERBOSE,"<< Request::SendMessage",
+        "Sending Message to:" << conn.get() << endl <<
+        "Message: " << msg << endl);
         serv->send(conn,msg,websocketpp::frame::opcode::TEXT);
     }
 
 private:
     std::string                 request;
     server*                     serv;
-    websocketpp::connection_hdl conn;
+    server::connection_ptr      conn;
 };
 
 /**************************************************************
@@ -87,6 +104,20 @@ RequestServer::RequestServer() {
     echo_server.clear_access_channels(websocketpp::log::alevel::frame_payload);
 
     echo_server.init_asio();
+}
+
+void RequestServer::AddHandler(
+         const std::string& requestName, 
+         std::unique_ptr<RequestReplyHandler>&& handler) 
+{
+    req_handlers[requestName].reset(handler.release());
+}
+
+void RequestServer::AddHandler(
+         const std::string& requestName, 
+         std::unique_ptr<SubscriptionHandler>&& handler)
+{
+    sub_handlers[requestName].reset(handler.release());
 }
 
 std::string RequestServer::HandleMessage(
@@ -154,7 +185,7 @@ std::string RequestServer::HandleSubscriptionMessage(
     try {
         SubscriptionHandler::RequestHandle reqHdl(
             new Request(jsonRequest,raw_server,hdl));
-        response = handler.OnRequest(reqHdl);
+        handler.OnRequest(reqHdl);
     } catch (const SubscriptionHandler::InvalidRequestException& e) {
         response = ErrorMessage(e.errMsg);
     }
@@ -166,6 +197,7 @@ std::string RequestServer::HandleSubscriptionMessage(
 void RequestServer::HandleRequests(unsigned short port) {
     try {
         echo_server.set_message_handler(bind(&on_message,this,&echo_server,::_1,::_2));
+        echo_server.set_close_handler(bind(&on_close,::_1));
 
         echo_server.listen(port);
 
@@ -174,7 +206,9 @@ void RequestServer::HandleRequests(unsigned short port) {
         // Start the ASIO io_service run loop
         echo_server.run();
     } catch (websocketpp::exception const & e) {
-        std::cout << e.what() << std::endl;
+        std::cout << "******************************************************" << std::endl;
+        std::cout << "Web Sockets ERROR: " << e.what() << std::endl;
+        std::cout << "******************************************************" << std::endl;
     }
 }
 

@@ -41,7 +41,7 @@ public:
         std::string errMsg;
     };
 
-    virtual std::string OnRequest(RequestHandle hdl) = 0;
+    virtual void OnRequest(RequestHandle hdl) = 0;
 };
 
 typedef websocketpp::server<websocketpp::config::asio> server;
@@ -65,10 +65,11 @@ public:
      */
     void AddHandler(
              const std::string& requestName, 
-             std::unique_ptr<RequestReplyHandler>&& handler) 
-    {
-        req_handlers[requestName].reset(handler.release());
-    }
+             std::unique_ptr<RequestReplyHandler>&& handler);
+
+    void AddHandler(
+             const std::string& requestName, 
+             std::unique_ptr<SubscriptionHandler>&& handler);
 
     /**
      * Run the event loop, handle any incoming requests or posted tasks

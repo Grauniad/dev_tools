@@ -29,14 +29,15 @@ class PipePublisher {
 public:
     PipePublisher();
 
-    ~PipePublisher();
+    virtual ~PipePublisher();
 
     /**
      * Create a new subscription to the publisher.
      *
      * @param  maxSize  Maximum number of unread messages
      */
-    PipeSubscriber<Message>* NewClient(size_t maxSize);
+    template <class Client = PipeSubscriber<Message>>
+    Client* NewClient(size_t maxSize);
 
     /**
      * Publish a new message to all clients.

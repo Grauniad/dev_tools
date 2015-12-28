@@ -28,7 +28,7 @@ template <class Message>
 class PipeSubscriber { 
 public:
 
-    ~PipeSubscriber();
+    virtual ~PipeSubscriber();
 
     /** 
      * Pop the next message off the queue and populate
@@ -85,7 +85,7 @@ public:
     typedef std::function<void(const Message&)> NewMessasgCallback;
     void OnNewMessage(const NewMessasgCallback&  f);
 
-private:
+protected:
     friend class PipePublisher<Message>;
     /*********************************
      *   Interface for Publisher
@@ -112,7 +112,8 @@ private:
       *
       * @param msg  The message to add to the queue.
       */ 
-     void PushMessage(const Message& msg);
+     virtual void PushMessage(const Message& msg);
+private:
 
     /***********************************
      * Unread data Notification
