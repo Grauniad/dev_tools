@@ -3,7 +3,7 @@ LINKED_LIBS= libUtils  \
 			 libTest \
 			 libString
  
-BUILD_TIME_TESTS=os binaryData time search dynStruct
+BUILD_TIME_TESTS=os binaryData time search dynStruct enum
 CPP_TAGS_FILE=utilTests-c++.tags
 
 BOOST_MODULES+=filesystem system regex
