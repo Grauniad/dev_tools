@@ -34,7 +34,9 @@ protected:
     };
 
     /** 
-     * Create a new HTTP request
+     * Create a pending HTTP request
+     *
+     * The request can be sent by calling StartRequest
      *
      * @param io_service   The IO service to run the request on
      * @param server       The server to send the request to
@@ -49,6 +51,8 @@ protected:
                   const HeaderMap& headers,
                   const std::string& data);
 
+    void StartRequest();
+
     virtual void OnComplete(HTTPMessage& msg) = 0;
 
     /**
@@ -57,6 +61,7 @@ protected:
      * Use before OnComplete is undefined, and stupid.
      */
     const HTTPMessage& GetMessage() { return message; }
+
 private:
     /** CALLBACK: Triggered by sync_handshake
      * ----------------------------------------
@@ -148,6 +153,7 @@ private:
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket> socket_;
     boost::asio::streambuf request_;
     boost::asio::streambuf response_;
+    const std::string server_;
 };
 
 #endif

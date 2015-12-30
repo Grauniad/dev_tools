@@ -23,7 +23,8 @@ AsyncHTTPSClient::AsyncHTTPSClient(
         const std::string& data)
     : resolver_(io_service),
       ctx(boost::asio::ssl::context::tlsv12),
-      socket_(io_service, ctx)
+      socket_(io_service, ctx),
+      server_(server)
 {
    ctx.set_default_verify_paths();
 
@@ -60,9 +61,12 @@ AsyncHTTPSClient::AsyncHTTPSClient(
     std::ostream frequest_stream(&request_);
     frequest_stream << msg;
 
+}
+
+void AsyncHTTPSClient::StartRequest() {
     // Start an asynchronous resolve to translate the server and service names
     // into a list of endpoints.
-    tcp::resolver::query query(server, "https");
+    tcp::resolver::query query(server_, "https");
     resolver_.async_resolve(query,
             boost::bind(&AsyncHTTPSClient::handle_resolve, this,
                 boost::asio::placeholders::error,

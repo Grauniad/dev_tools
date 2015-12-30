@@ -4,8 +4,11 @@ HTTPRequest::HTTPRequest(boost::asio::io_service& io_service,
                          const std::string& server,
                          const std::string& path)
    : AsyncHTTPSClient(REQUEST_MODE_GET, io_service, server, path, {}, ""),
-     statusFuture(statusFlag.get_future())
+     statusFuture(statusFlag.get_future()),
+     ready(false),
+     notify(false)
 {
+    StartRequest();
 }
 
 HTTPRequest::~HTTPRequest() {
@@ -28,5 +31,27 @@ const HTTPMessage& HTTPRequest::WaitForMessage() {
 }
 
 void HTTPRequest::OnComplete(HTTPMessage& msg) {
+    std::unique_lock<std::mutex> notify_lock(notifyMutex);
+
+    ready = true;
+
     statusFlag.set_value(msg.status_code);
+
+    if (notify) {
+        notification();
+    }
+}
+
+void HTTPRequest::OnMessage(const Task& _notification)
+
+{
+    std::unique_lock<std::mutex> notify_lock(notifyMutex);
+
+    notify = true;
+    notification = _notification;
+
+    if (ready) {
+        notification();
+    }
+
 }
