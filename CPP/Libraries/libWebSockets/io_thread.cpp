@@ -61,6 +61,7 @@ void IOThread::IOLoop() {
         try
         {
             std::cout << "IOLoop: start" << std::endl;
+            boost::asio::io_service::work work(io_service);
             io_service.run();
             io_service.reset();
             std::cout << "IOLoop: done" << std::endl;

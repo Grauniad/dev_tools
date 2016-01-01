@@ -1,4 +1,5 @@
 #include "http_request.h"
+#include <logger.h>
 
 HTTPRequest::HTTPRequest(boost::asio::io_service& io_service,
                          const std::string& server,
@@ -23,6 +24,7 @@ HTTPRequest::HTTPRequest(boost::asio::io_service& io_service,
    : AsyncHTTPSClient(REQUEST_MODE_POST, io_service, server, path, headers, data),
      statusFuture(statusFlag.get_future())
 {
+    StartRequest();
 }
 
 const HTTPMessage& HTTPRequest::WaitForMessage() {
@@ -31,9 +33,13 @@ const HTTPMessage& HTTPRequest::WaitForMessage() {
 }
 
 void HTTPRequest::OnComplete(HTTPMessage& msg) {
+    SLOG_FROM(LOG_VERBOSE,"HTTPRequest::OnComplete",
+         "Got response: " << msg.content.str());
+
     std::unique_lock<std::mutex> notify_lock(notifyMutex);
 
     ready = true;
+
 
     statusFlag.set_value(msg.status_code);
 

@@ -12,7 +12,6 @@ class RequestReplyHandler {
 public:
     virtual ~RequestReplyHandler() {}
 
-protected:
     friend class RequestServer;
     virtual std::string OnRequest(const char* request) = 0;
 
