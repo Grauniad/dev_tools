@@ -9,10 +9,12 @@ public:
     Time ();
     Time (const Time& othertime);
     Time (const std::string& timestamp);
+    Time (const char* timestamp);
     Time (const struct timeval& tv);
     Time( const long& usecs);
     Time& operator=(const Time& rhs);
     Time& operator=(const std::string& timestamp);
+    Time& operator=(const char* timestamp);
     Time& operator=(const struct timeval& tv);
     Time& operator=(const long& usecs);
 
@@ -38,10 +40,36 @@ public:
     int EpochSecs() const;
 
     std::string Timestamp() const;
+    std::string ISO8601Timestamp() const;
     std::string FileTimestamp() const;
+
+    static constexpr auto EpochTimestamp =  "19700101 00:00:00.000000";
+
+    void InitialiseFromString(const char* str, size_t len);
 private:
     void MakeReady() const;
     void SetTmFromTimeval() const;
+
+
+    /**
+     * Initialise from a timestamp in the format provided by Timestamp();
+     *
+     * @param buf  A copy of the timestamp, will be edited by the function.
+     */
+    void InitialiseFromTimestamp(char* buf);
+
+    /**
+     * Initialise from a timestamp in the format provided by ISO8601Timestamp();
+     *
+     * @param buf  A copy of the timestamp, will be edited by the function.
+     */
+    void InitialiseFromISOTimestamp(char* buf);
+
+    void InitialiseBlank();
+
+    /**
+     *  Data
+     */ 
     struct timeval tv;
     mutable struct tm time;
     bool   ready;

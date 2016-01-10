@@ -98,7 +98,7 @@ public:
      * Return the current object as a JSON string, and reset the builder.
      */
     std::string GetAndClear();
-private:
+
     /*****************************************************
      *       Add Anonymous Data
      ****************************************************/
@@ -115,6 +115,8 @@ private:
     void Add(const double& value);
 
     void Add(const bool& value);
+
+private:
 
     /*****************************************************
      * Data
@@ -235,6 +237,7 @@ struct FieldArrayBase: public FieldBase {
  * NOTE: The FieldName will need to be unique...
  */
 #define NewStringField(FieldName) struct FieldName: public StringField  { const char * Name() { return #FieldName; } };
+#define NewTimeField(FieldName)   struct FieldName: public TimeField    { const char * Name() { return #FieldName; } };
 #define NewIntField(FieldName)    struct FieldName: public IntField     { const char * Name() { return #FieldName; } };
 #define NewI64Field(FieldName)    struct FieldName: public I64Field     { const char * Name() { return #FieldName; } };
 #define NewUIntField(FieldName)   struct FieldName: public UIntField    { const char * Name() { return #FieldName; } };
@@ -243,6 +246,7 @@ struct FieldArrayBase: public FieldBase {
 #define NewBoolField(FieldName)   struct FieldName: public BoolField    { const char * Name() { return #FieldName; } };
 
 #define NewStringArrayField(FieldName) struct FieldName: public StringArrayField  { const char * Name() { return #FieldName; } };
+#define NewTimeArrayField(FieldName) struct FieldName: public TimeArrayField  { const char * Name() { return #FieldName; } };
 #define NewIntArrayField(FieldName)    struct FieldName: public IntArrayField     { const char * Name() { return #FieldName; } };
 #define NewUIntArrayField(FieldName)   struct FieldName: public UIntArrayField    { const char * Name() { return #FieldName; } };
 #define NewDoubleArrayField(FieldName) struct FieldName: public DoubleArrayField  { const char * Name() { return #FieldName; } };

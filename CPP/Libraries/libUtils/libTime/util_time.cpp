@@ -3,8 +3,35 @@
 #include <sstream>
 #include <iomanip>
 #include <algorithm>
+#include <cstring>
+
 
 using namespace std;
+
+namespace {
+    const time_t& get_epoch() {
+        thread_local time_t epoch;
+        thread_local bool initialised = false;
+
+        if (!initialised) {
+            struct tm epoch_tm;
+            epoch_tm.tm_sec = 0;
+            epoch_tm.tm_min = 0;
+            epoch_tm.tm_hour= 0;
+            epoch_tm.tm_mday= 1;
+            epoch_tm.tm_mon=0;
+            epoch_tm.tm_year=70;
+            epoch_tm.tm_isdst=-1; // <0 = unknown
+            epoch_tm.tm_gmtoff = 0;
+
+            epoch = mktime(&epoch_tm);
+
+            initialised = true;
+        }
+
+        return epoch;
+    }
+}
 
 Time::Time() {
     SetNow();
@@ -15,6 +42,10 @@ Time::Time(const Time& rhs) {
 }
 
 Time::Time(const std::string& timestamp) {
+    (*this) = timestamp;
+}
+
+Time::Time(const char* timestamp) {
     (*this) = timestamp;
 }
 
@@ -46,7 +77,42 @@ Time& Time::operator=(const Time& rhs) {
 }
 
 Time& Time::operator=(const std::string& timestamp) {
+    InitialiseFromString(timestamp.c_str(),timestamp.length());
+    return *this;
+}
 
+Time& Time::operator=(const char* timestamp) {
+    InitialiseFromString(timestamp,strlen(timestamp));
+    return *this;
+}
+
+void Time::InitialiseFromString(const char* str, size_t len) {
+
+    if (len >= 24)
+    {
+        char buf[28];
+        strncpy(buf,str,27);
+        buf[27] = 0;
+
+        if ( len >= 27 && buf[4] == '-' )
+        {
+            InitialiseFromISOTimestamp(buf);
+        }
+        else
+        {
+            InitialiseFromTimestamp(buf);
+        }
+    }
+    else
+    {
+        InitialiseBlank();
+    }
+
+    ready = true;
+}
+
+void Time::InitialiseFromTimestamp(char* buf)
+{
     /*
      * Initialise the time to Midnight on the 1st of January 1970
      * ----------------------------------------------------------
@@ -69,41 +135,133 @@ Time& Time::operator=(const std::string& timestamp) {
      * ---------------------
      *  Exected format: YYYYMMDD HH:MM:SS.UUUUUU
      *  Index:          012345678901234567890123
-     *  (Until gcc 4.9 we can't regex our way out of this :( )
      */
 
     /*
-     * atoi (whilst nasty) is ok here since c_str() guarentees null termination
-     * and substr guarentess the number is short enough not to overflow
+     * atoi (whilst nasty) is ok here since we are sure of null termination.
      *
-     * In the case where they provide garbage, atoi will return 0, which is
+     * In the case where we have garbage, atoi will return 0, which is
      * good enough to represent garbage data.
      */
-    time.tm_year = atoi(timestamp.substr(0,4).c_str()); 
+    tv.tv_usec =  atoi(buf + 18);
+    buf[17] = 0;
+    time.tm_sec  = atoi(buf+15);
+
+    buf[14] = 0;
+    time.tm_min  = atoi(buf+12);
+
+    buf[11] = 0;
+    time.tm_hour = atoi(buf+9);
+
+    buf[8] = 0;
+    time.tm_mday = atoi(buf+6);
+
+    buf[6] = 0;
+    time.tm_mon = atoi(buf+4);
+
+    buf[4] = 0;
+    time.tm_year = atoi(buf);
+
     if ( time.tm_year != 0 ) {
         time.tm_year -=1900;
     }
 
-    time.tm_mon = atoi(timestamp.substr(4,2).c_str());  
     if ( time.tm_mon != 0 ) {
         --time.tm_mon;
     }
-
-    time.tm_mday = atoi(timestamp.substr(6,2).c_str());
-    time.tm_hour = atoi(timestamp.substr(9,2).c_str());
-    time.tm_min  = atoi(timestamp.substr(12,2).c_str());
-    time.tm_sec  = atoi(timestamp.substr(15,2).c_str());
 
      /*
      * calculate timeval...
      * --------------------
      */   
-     tv.tv_sec = difftime(mktime(&time),mktime(&epoch));
-     tv.tv_usec =  atoi(timestamp.substr(18,6).c_str());
+     tv.tv_sec = difftime(mktime(&time),get_epoch());
+}
 
-     ready = true;
+void Time::InitialiseFromISOTimestamp(char* buf)
+{
+    /*
+     * Initialise the time to Midnight on the 1st of January 1970
+     * ----------------------------------------------------------
+     */
+    struct tm epoch;
+    epoch.tm_sec = 0;
+    epoch.tm_min = 0;
+    epoch.tm_hour= 0;
+    epoch.tm_mday= 1;
+    epoch.tm_mon=0;
+    epoch.tm_year=70;
+    epoch.tm_isdst=-1; // <0 = unknown
+    epoch.tm_gmtoff = 0;
+    //epoch.tm_wday: Not used by mktime
+    //epoch.tm_yday: Not used by mktime
+    time = epoch;
 
-    return *this;
+    /*
+     * Pull apart the string
+     * ---------------------
+     *  Exected format: YYYY-MM-DDTHH:MM:SS.UUUUUUZ
+     *  Index:          012345678901234567890123456
+     */
+
+    /*
+     * atoi (whilst nasty) is ok here since we are sure of null termination.
+     *
+     * In the case where we have garbage, atoi will return 0, which is
+     * good enough to represent garbage data.
+     */
+    buf[26] = 0;
+    tv.tv_usec =  atoi(buf + 20);
+
+    buf[19] = 0;
+    time.tm_sec  = atoi(buf+17);
+
+    buf[16] = 0;
+    time.tm_min  = atoi(buf+14);
+
+    buf[13] = 0;
+    time.tm_hour = atoi(buf+11);
+
+    buf[10] = 0;
+    time.tm_mday = atoi(buf+8);
+
+    buf[7] = 0;
+    time.tm_mon = atoi(buf+5);
+
+    buf[4] = 0;
+    time.tm_year = atoi(buf);
+
+    if ( time.tm_year != 0 ) {
+        time.tm_year -=1900;
+    }
+
+    if ( time.tm_mon != 0 ) {
+        --time.tm_mon;
+    }
+
+     /*
+     * calculate timeval...
+     * --------------------
+     */   
+     tv.tv_sec = difftime(mktime(&time),get_epoch());
+}
+
+void Time::InitialiseBlank()
+{
+    struct tm epoch;
+    epoch.tm_sec = 0;
+    epoch.tm_min = 0;
+    epoch.tm_hour= 0;
+    epoch.tm_mday= 1;
+    epoch.tm_mon=0;
+    epoch.tm_year=70;
+    epoch.tm_isdst=-1; // <0 = unknown
+    epoch.tm_gmtoff = 0;
+    //epoch.tm_wday: Not used by mktime
+    //epoch.tm_yday: Not used by mktime
+    time = epoch;
+
+     tv.tv_sec = difftime(get_epoch(),get_epoch());
+     tv.tv_usec =  0;
 }
 
 Time& Time::SetNow() {
@@ -120,6 +278,26 @@ void Time::MakeReady() const {
 
 void Time::SetTmFromTimeval() const {
     gmtime_r(&tv.tv_sec,&time);
+}
+
+string Time::ISO8601Timestamp() const {
+    MakeReady();
+    stringstream strtime;
+    strtime << Year();
+    strtime << setw(1) << "-";
+    strtime << setw(2) << setfill ('0') << Month();
+    strtime << setw(1) << "-";
+    strtime << setw(2) << setfill('0') << MDay();
+    strtime << setw(1) << "T";
+    strtime << setw(2) << setfill('0') << Hour();
+    strtime << setw(1) << ":";
+    strtime << setw(2) << Minute(); 
+    strtime << setw(1) << ":";
+    strtime << setw(2) << setfill('0') << Second();
+    strtime << setw(1) << ".";
+    strtime << setw(6) <<  setfill('0') << USec();
+    strtime << "Z";
+    return strtime.str();
 }
 
 string Time::Timestamp() const {

@@ -2,6 +2,7 @@
 #include <SimpleJSON.h>
 
 int SingleStringGen(testLogger& log);
+int SingleTimeGen(testLogger& log);
 int MultipleStringGen(testLogger& log);
 int SingleUI64(testLogger& log);
 int SingleI64(testLogger& log);
@@ -16,6 +17,7 @@ int UIntArray(testLogger& log);
 int UI64Array(testLogger& log);
 int DoubleArray(testLogger& log);
 int StringArray(testLogger& log);
+int TimeArray(testLogger& log);
 int SingleEmbededObjectWithArrays(testLogger& log);
 int DoublyEmbededObject(testLogger& log);
 int ArrayOfObjects(testLogger& log);
@@ -27,6 +29,7 @@ namespace {
 int main(int argc, const char *argv[])
 {
     Test("Testing generation of single string object",SingleStringGen).RunTest();
+    Test("Testing generation of single time object",SingleTimeGen).RunTest();
     Test("Testing generation of multiple string object",MultipleStringGen).RunTest();
     Test("Testing generation of single large unsigned int object",SingleUI64).RunTest();
     Test("Testing generation of single large int object",SingleI64).RunTest();
@@ -41,6 +44,7 @@ int main(int argc, const char *argv[])
     Test("Testing generation of an object with a large unsigned int array",UI64Array).RunTest();
     Test("Testing generation of an object with a double array",DoubleArray).RunTest();
     Test("Testing generation of an object with a string array",StringArray).RunTest();
+    Test("Testing generation of an object with a time array",TimeArray).RunTest();
     Test("Testing generation of a single embeded object with arrays",SingleEmbededObjectWithArrays).RunTest();
     Test("Testing generation of a doubley embeded object",DoublyEmbededObject).RunTest();
     Test("Testing generation of array of objects",ArrayOfObjects).RunTest();
@@ -61,6 +65,32 @@ int SingleStringGen(testLogger& log) {
 "\n"
 "    typedef SimpleParsedJSON<\n"
 "        stringField1\n"
+"    > OutputJSON;\n";
+    string output = spJSON::Gen("OutputJSON", input);
+
+    if (output != expected) {
+        log << "Missmatch in generated code" << endl;
+        log << "Expected: " << endl;
+        log << expected << endl;
+        log << endl;
+        log << "Got: " << endl;
+        log << output << endl;
+        return 1;
+    }
+    return 0;
+}
+
+int SingleTimeGen(testLogger& log) {
+    string input = R"RAW(
+       {
+           "timeField1": "2015-07-13T05:38:17.33640392Z"
+       }
+    )RAW";
+    string expected =
+"    NewTimeField(timeField1);\n"
+"\n"
+"    typedef SimpleParsedJSON<\n"
+"        timeField1\n"
 "    > OutputJSON;\n";
     string output = spJSON::Gen("OutputJSON", input);
 
@@ -310,6 +340,35 @@ int StringArray(testLogger& log) {
     )RAW";
     string expected =
 "    NewStringArrayField(ids);\n"
+"\n"
+"    typedef SimpleParsedJSON<\n"
+"        ids\n"
+"    > OutputJSON;\n";
+    string output = spJSON::Gen("OutputJSON", input);
+
+    if (output != expected) {
+        log << "Missmatch in generated code" << endl;
+        log << "Expected: " << endl;
+        log << expected << endl;
+        log << endl;
+        log << "Got: " << endl;
+        log << output << endl;
+        return 1;
+    }
+    return 0;
+}
+
+int TimeArray(testLogger& log) {
+    string input = R"RAW(
+       {
+          "ids": [
+              "2015-07-13T05:38:17.33640392Z",
+              ""
+          ]
+       }
+    )RAW";
+    string expected =
+"    NewTimeArrayField(ids);\n"
 "\n"
 "    typedef SimpleParsedJSON<\n"
 "        ids\n"

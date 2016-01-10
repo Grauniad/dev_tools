@@ -1,22 +1,38 @@
+
 #include "tester.h"
 #include "util_time.h"
 #include "logger.h"
 
+#include <iostream>
+
 const string reftime = "20140403 10:11:02.294930";
+const string reftime_iso8601 = "2014-04-03T10:11:02.294930Z";
 int CheckTime(testLogger& log, const Time& time); 
 int ReadFromTimestamp(testLogger& log);
+int ReadInvalidTimestamp(testLogger& log);
+int ReadFromTimestamp2(testLogger& log);
+int ReadFromISOTimestamp(testLogger& log);
 int Copy(testLogger& log);
 int DiffSeconds(testLogger& log);
 int DiffUSeconds(testLogger& log);
 int USecsEpoch (testLogger& log);
 
+int ReadFromTimestampPerformance();
+int ReadFromISOTimestampPerformance();
+
 int main(int argc, const char *argv[])
 {
     Test("Initialising from timestamp...",ReadFromTimestamp).RunTest();
+    Test("Initialising broken timestamp",ReadInvalidTimestamp).RunTest();
+    Test("Initialising from timestamp, now we have cached epoch...",ReadFromTimestamp2).RunTest();
+    Test("Initialising from ISO timestamp...",ReadFromISOTimestamp).RunTest();
     Test("Copy Constructing...",Copy).RunTest();
     Test("Testing Diff in seconds",DiffSeconds).RunTest();
     Test("Testing Diff in useconds",DiffUSeconds).RunTest();
     Test("Testing Epoch handling...",USecsEpoch).RunTest();
+
+    ReadFromTimestampPerformance();
+    ReadFromISOTimestampPerformance();
     return 0;
 }
 
@@ -63,11 +79,86 @@ int CheckTime(testLogger&log, const Time& testTime) {
         log << "Timestamp missmatch!" << endl;
         return 1;
     }
+
+    if ( testTime.ISO8601Timestamp() != reftime_iso8601) {
+        log << "ISO Timestamp missmatch!" << endl;
+        log.ReportStringDiff(reftime_iso8601,testTime.ISO8601Timestamp());
+        return 1;
+    }
     return 0;
 }
 
 int ReadFromTimestamp(testLogger& log) {
     Time testTime(reftime);
+    return CheckTime(log,testTime);
+}
+
+int ReadInvalidTimestamp(testLogger& log) {
+    Time testTime("");
+
+    if (testTime.Timestamp() != Time::EpochTimestamp ) {
+        log << "Did not get epoch time from invalid timestamp!" << endl;
+        log.ReportStringDiff(Time::EpochTimestamp,testTime.Timestamp());
+
+        return 1;
+    }
+    return 0;
+}
+
+int ReadFromTimestamp2(testLogger& log) {
+    Time testTime(reftime);
+    return CheckTime(log,testTime);
+}
+
+int ReadFromTimestampPerformance() {
+    std::cout << "   **********************************************" << endl;
+    std::cout << "   **     Timestamp Parsing (String)          **" << endl;
+    std::cout << "   **********************************************" << endl;
+    Time start;
+    const size_t parses = 100000;
+    for (size_t i = 0; i < parses; ++i) {
+        Time testTime(reftime);
+    }
+    Time stop;
+    long us = stop.DiffUSecs(start);
+    std::cout << "    * 100,000 parses: " << us << "us " << endl;
+    std::cout << "    * one parse: " << us / parses << "us " << endl;
+    std::cout << "    **********************************************" << endl;
+
+    std::cout << "   **********************************************" << endl;
+    std::cout << "   **     Timestamp Parsing (c-string)         **" << endl;
+    std::cout << "   **********************************************" << endl;
+    start.SetNow();
+    for (size_t i = 0; i < parses; ++i) {
+        Time testTime(reftime.c_str());
+    }
+    stop.SetNow();
+    us = stop.DiffUSecs(start);
+    std::cout << "    * 100,000 parses: " << us << "us " << endl;
+    std::cout << "    * one parse: " << us / parses << "us " << endl;
+    std::cout << "    **********************************************" << endl;
+    return 0;
+}
+
+int ReadFromISOTimestampPerformance() {
+    std::cout << "   **********************************************" << endl;
+    std::cout << "   **        ISO Timestamp Parsing             **" << endl;
+    std::cout << "   **********************************************" << endl;
+    Time start;
+    const size_t parses = 100000;
+    for (size_t i = 0; i < parses; ++i) {
+        Time testTime(reftime_iso8601);
+    }
+    Time stop;
+    long us = stop.DiffUSecs(start);
+    std::cout << "    * 100,000 parses: " << us << "us " << endl;
+    std::cout << "    * one parse: " << us / parses << "us " << endl;
+    std::cout << "    **********************************************" << endl;
+    return 0;
+}
+
+int ReadFromISOTimestamp(testLogger& log) {
+    Time testTime(reftime_iso8601);
     return CheckTime(log,testTime);
 }
 

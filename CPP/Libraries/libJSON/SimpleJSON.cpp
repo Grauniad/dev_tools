@@ -3,6 +3,7 @@
 #include "logger.h"
 
 #include <sstream>
+#include <regex>
 
 using namespace std;
 
@@ -121,6 +122,19 @@ public:
         nsIndent = indent.substr(0,nsIndentSize);
     }
 
+    bool IsIsoTimestamp(const std::string& str) {
+        bool isTime = false;
+
+        static std::regex timestamp("[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9]\\.[0-9]*Z");
+        std::smatch match;
+
+        if (std::regex_match(str,match,timestamp)) {
+            isTime = true;
+        }
+
+        return isTime;
+    }
+
     SimpleParsedJSON_Generator& ActiveObject() {
         SimpleParsedJSON_Generator* obj = childObject.get();
 
@@ -150,22 +164,41 @@ public:
         auto& active = ActiveObject();
         if ( active.isArray ) {
             if (!active.arrayTyped) {
-                SLOG_FROM(
-                    LOG_VERY_VERBOSE,
-                    "SimpleParsedJSON_Generator::String",
-                    "Array " << active.namespaceName << "::" << active.current->first << " is a String.");
+                if (IsIsoTimestamp(str)) {
+                    SLOG_FROM(
+                        LOG_VERY_VERBOSE,
+                        "SimpleParsedJSON_Generator::String",
+                        "Array " << active.namespaceName << "::" << active.current->first << " is a Time.");
 
-                active.current->second =   active.indent + "NewStringArrayField(" 
-                                         + active.current->first + ");";
+                    active.current->second =   active.indent + "NewTimeArrayField(" 
+                                             + active.current->first + ");";
+                } else {
+                    SLOG_FROM(
+                        LOG_VERY_VERBOSE,
+                        "SimpleParsedJSON_Generator::String",
+                        "Array " << active.namespaceName << "::" << active.current->first << " is a String.");
+
+                    active.current->second =   active.indent + "NewStringArrayField(" 
+                                             + active.current->first + ");";
+                }
                 active.arrayTyped = true;
             }
         } else {
-            SLOG_FROM(
-                LOG_VERY_VERBOSE,
-                "SimpleParsedJSON_Generator::String",
-                "Field " << active.namespaceName << "::" << active.current->first << " is a String.");
-            active.current->second =   active.indent + "NewStringField(" 
-                                     + active.current->first + ");";
+            if (IsIsoTimestamp(str)) {
+                SLOG_FROM(
+                    LOG_VERY_VERBOSE,
+                    "SimpleParsedJSON_Generator::String",
+                    "Field " << active.namespaceName << "::" << active.current->first << " is a Time.");
+                active.current->second =   active.indent + "NewTimeField(" 
+                                         + active.current->first + ");";
+            } else {
+                SLOG_FROM(
+                    LOG_VERY_VERBOSE,
+                    "SimpleParsedJSON_Generator::String",
+                    "Field " << active.namespaceName << "::" << active.current->first << " is a String.");
+                active.current->second =   active.indent + "NewStringField(" 
+                                         + active.current->first + ");";
+            }
         }
         return true;
     }

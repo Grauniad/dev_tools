@@ -15,6 +15,12 @@ int ParseEmbededArrayString(testLogger& log);
 int ParseStringArray(testLogger& log);
 int ParseEmbededStringArray(testLogger& log);
 
+int ParseTime(testLogger& log);
+int ParseEmbededTime(testLogger& log);
+int ParseEmbededArrayTime(testLogger& log);
+
+int ParseTimeArray(testLogger& log);
+
 int ParseInt(testLogger& log);
 int ParseEmbededInt(testLogger& log);
 int ParseEmbededArrayInt(testLogger& log);
@@ -115,6 +121,10 @@ int main(int argc, const char *argv[])
     Test("Checking supplied handling for fields in the root object",Supplied).RunTest();
     Test("Checking supplied handling for fields in embeded objects",SuppliedEmbeded).RunTest();
     Test("Checking supplied handling for fields in embeded objects in arrays",SuppliedEmbededObjectInArray).RunTest();
+    Test("Parsing a Time string json",ParseTime).RunTest();
+    Test("Parsing an embeded Time string json",ParseEmbededTime).RunTest();
+    Test("Parsing an array of embeded time json",ParseEmbededArrayTime).RunTest();
+    Test("Parsing an array of times json",ParseTimeArray).RunTest();
     return 0;
 }
 
@@ -211,6 +221,10 @@ NewI64ArrayField(I64ArrayField1);
 NewI64ArrayField(I64ArrayField2);
 NewUI64ArrayField(UI64ArrayField1);
 NewUI64ArrayField(UI64ArrayField2);
+NewTimeField(TimeField1)
+NewTimeField(TimeField2)
+NewTimeArrayField(TimeArrayField1);
+NewTimeArrayField(TimeArrayField2);
 
 int ParseString(testLogger& log) {
     std::string rawJson = R"JSON( 
@@ -278,6 +292,75 @@ int ParseString(testLogger& log) {
         log << "2 Invalid value for field2: " << json3.Get<Field2>() << endl;
         return 1;
     }
+    return 0;
+}
+
+int ParseTime(testLogger& log) {
+    std::string rawJson = R"JSON( 
+    {
+        "TimeField1": "2015-07-13T05:38:17.33640392Z",
+        "TimeField2": "",
+    }
+    )JSON";
+
+    SimpleParsedJSON<TimeField1,TimeField2> json, json2, json3;
+
+    std::string error;
+
+    bool ok = json.Parse(rawJson.c_str(),error);
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    const std::string expTime = "2015-07-13T05:38:17.336403Z";
+    if ( json.Get<TimeField1>().ISO8601Timestamp() != expTime) {
+        log << "Invalid value for field1: " << endl;
+        log.ReportStringDiff(expTime,json.Get<TimeField1>().ISO8601Timestamp());
+        return 1;
+    }
+
+    if ( json.Get<TimeField2>().Timestamp() != Time::EpochTimestamp) {
+        log << "Invalid value for field2: " << endl;
+        log.ReportStringDiff(Time::EpochTimestamp, json.Get<TimeField2>().Timestamp());
+        return 1;
+    }
+
+    string newRawJson = json.GetJSONString();
+
+    log << newRawJson << endl;
+
+    ok = json2.Parse(newRawJson.c_str(), error);
+
+    if ( json2.Get<TimeField1>().ISO8601Timestamp() != expTime) {
+        log << "2 Invalid value for field1: " << endl;
+        log.ReportStringDiff(expTime,json2.Get<TimeField1>().ISO8601Timestamp());
+        return 1;
+    }
+
+    if ( json2.Get<TimeField2>().Timestamp() != Time::EpochTimestamp) {
+        log << "2 Invalid value for field2: " << endl;
+        log.ReportStringDiff(Time::EpochTimestamp, json2.Get<TimeField2>().Timestamp());
+        return 1;
+    }
+
+    string newRawJson2 = json.GetPrettyJSONString();
+
+    ok = json3.Parse(newRawJson2.c_str(), error);
+
+    if ( json3.Get<TimeField1>().ISO8601Timestamp() != expTime) {
+        log << "3 Invalid value for field1: " << endl;
+        log.ReportStringDiff(expTime,json3.Get<TimeField1>().ISO8601Timestamp());
+        return 1;
+    }
+
+    if ( json3.Get<TimeField2>().Timestamp() != Time::EpochTimestamp) {
+        log << "3 Invalid value for field2: " << endl;
+        log.ReportStringDiff(Time::EpochTimestamp, json3.Get<TimeField2>().Timestamp());
+        return 1;
+    }
+
     return 0;
 }
 
@@ -360,6 +443,97 @@ int ParseEmbededString(testLogger& log) {
         log << "2 Invalid value for field2: " << json3.Get<Field2>() << endl;
         return 1;
     }
+    return 0;
+}
+
+int ParseEmbededTime(testLogger& log) {
+    std::string rawJson = R"JSON(
+    {
+        "Object" : {
+            "TimeField1": "2015-07-13T05:38:17.33640392Z",
+            "TimeField2": "",
+        }
+    }
+    )JSON";
+
+    typedef SimpleParsedJSON<TimeField1,TimeField2> JSON; 
+    NewEmbededObject(Object,JSON);
+    SimpleParsedJSON<Object> parent, parent2, parent3;
+
+
+    std::string error;
+
+    bool ok = parent.Parse(rawJson.c_str(),error);
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    JSON& json = parent.Get<Object>();
+
+    const std::string expTime = "2015-07-13T05:38:17.336403Z";
+    if ( json.Get<TimeField1>().ISO8601Timestamp() != expTime) {
+        log << "Invalid value for field1: " << endl;
+        log.ReportStringDiff(expTime,json.Get<TimeField1>().ISO8601Timestamp());
+        return 1;
+    }
+
+    if ( json.Get<TimeField2>().Timestamp() != Time::EpochTimestamp) {
+        log << "Invalid value for field2: " << endl;
+        log.ReportStringDiff(Time::EpochTimestamp, json.Get<TimeField2>().Timestamp());
+        return 1;
+    }
+
+    string newRawJson = parent.GetJSONString(true);
+    log << "Raw JSON:" << endl << newRawJson << endl;
+
+    ok = parent2.Parse(newRawJson.c_str(), error);
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    JSON& json2 = parent2.Get<Object>();
+
+
+    if ( json2.Get<TimeField1>().ISO8601Timestamp() != expTime) {
+        log << "2 Invalid value for field1: " << endl;
+        log.ReportStringDiff(expTime,json2.Get<TimeField1>().ISO8601Timestamp());
+        return 1;
+    }
+
+    if ( json2.Get<TimeField2>().Timestamp() != Time::EpochTimestamp) {
+        log << "2 Invalid value for field2: " << endl;
+        log.ReportStringDiff(Time::EpochTimestamp, json2.Get<TimeField2>().Timestamp());
+        return 1;
+    }
+
+    string newRawJson2 = parent.GetPrettyJSONString();
+    log << "Raw JSON:" << endl << newRawJson2 << endl;
+
+    ok = parent3.Parse(newRawJson2.c_str(), error);
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    JSON& json3 = parent3.Get<Object>();
+
+    if ( json3.Get<TimeField1>().ISO8601Timestamp() != expTime) {
+        log << "3 Invalid value for field1: " << endl;
+        log.ReportStringDiff(expTime,json3.Get<TimeField1>().ISO8601Timestamp());
+        return 1;
+    }
+
+    if ( json3.Get<TimeField2>().Timestamp() != Time::EpochTimestamp) {
+        log << "3 Invalid value for field2: " << endl;
+        log.ReportStringDiff(Time::EpochTimestamp, json3.Get<TimeField2>().Timestamp());
+        return 1;
+    }
+
     return 0;
 }
 
@@ -475,6 +649,142 @@ int ParseEmbededArrayString(testLogger& log) {
 
     if ( bjson3.Get<Field2>() != "Not a blank string") {
         log << "Invalid value for field2: " << bjson3.Get<Field2>() << endl;
+        return 1;
+    }
+
+    return 0;
+}
+
+int ParseEmbededArrayTime(testLogger& log) {
+    std::string rawJson = R"JSON(
+    {
+        "Objects": [{
+            "TimeField1": "2015-07-13T05:38:17.33640392Z",
+            "TimeField2": ""
+        }, {
+            "TimeField1": "2016-07-13T05:38:17.33640392Z",
+            "TimeField2": "2017-07-13T05:38:17.33640392Z"
+        }]
+    }
+    )JSON";
+
+    typedef SimpleParsedJSON<TimeField1,TimeField2> JSON; 
+    NewObjectArray(Objects,JSON);
+    SimpleParsedJSON<Objects> parent, parent2, parent3;
+
+    std::string error;
+
+    bool ok = parent.Parse(rawJson.c_str(),error);
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    JSON& json = *parent.Get<Objects>()[0];
+    JSON& bjson = *parent.Get<Objects>()[1];
+
+    const std::string expTime = "2015-07-13T05:38:17.336403Z";
+    const std::string expTimeb1 = "2016-07-13T05:38:17.336403Z";
+    const std::string expTimeb2 = "2017-07-13T05:38:17.336403Z";
+
+    if ( json.Get<TimeField1>().ISO8601Timestamp() != expTime) {
+        log << "Invalid value for field1: " << endl;
+        log.ReportStringDiff(expTime,json.Get<TimeField1>().ISO8601Timestamp());
+        return 1;
+    }
+
+    if ( json.Get<TimeField2>().Timestamp() != Time::EpochTimestamp) {
+        log << "Invalid value for field2: " << endl;
+        log.ReportStringDiff(Time::EpochTimestamp, json.Get<TimeField2>().Timestamp());
+        return 1;
+    }
+
+    if ( bjson.Get<TimeField1>().ISO8601Timestamp() != expTimeb1) {
+        log << "b Invalid value for field1: " << endl;
+        log.ReportStringDiff(expTimeb1,bjson.Get<TimeField1>().ISO8601Timestamp());
+        return 1;
+    }
+
+    if ( bjson.Get<TimeField2>().ISO8601Timestamp() != expTimeb2) {
+        log << "b Invalid value for field1: " << endl;
+        log.ReportStringDiff(expTimeb2,bjson.Get<TimeField1>().ISO8601Timestamp());
+        return 1;
+    }
+
+
+    string newRawJson = parent.GetJSONString(true);
+    log << "Raw JSON:" << endl << newRawJson << endl;
+
+    ok = parent2.Parse(newRawJson.c_str(),error);
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    JSON& json2 = *parent.Get<Objects>()[0];
+    JSON& bjson2 = *parent.Get<Objects>()[1];
+
+    if ( json2.Get<TimeField1>().ISO8601Timestamp() != expTime) {
+        log << "2 Invalid value for field1: " << endl;
+        log.ReportStringDiff(expTime,json2.Get<TimeField1>().ISO8601Timestamp());
+        return 1;
+    }
+
+    if ( json2.Get<TimeField2>().Timestamp() != Time::EpochTimestamp) {
+        log << "2 Invalid value for field2: " << endl;
+        log.ReportStringDiff(Time::EpochTimestamp, json2.Get<TimeField2>().Timestamp());
+        return 1;
+    }
+
+    if ( bjson2.Get<TimeField1>().ISO8601Timestamp() != expTimeb1) {
+        log << "2 b Invalid value for field1: " << endl;
+        log.ReportStringDiff(expTimeb1,bjson2.Get<TimeField1>().ISO8601Timestamp());
+        return 1;
+    }
+
+    if ( bjson2.Get<TimeField2>().ISO8601Timestamp() != expTimeb2) {
+        log << "2 b Invalid value for field1: " << endl;
+        log.ReportStringDiff(expTimeb2,bjson2.Get<TimeField1>().ISO8601Timestamp());
+        return 1;
+    }
+
+
+    string newRawJson2 = parent.GetPrettyJSONString();
+    log << "Raw JSON:" << endl << newRawJson2 << endl;
+
+    ok = parent3.Parse(newRawJson2.c_str(),error);
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    JSON& json3 = *parent.Get<Objects>()[0];
+    JSON& bjson3 = *parent.Get<Objects>()[1];
+
+    if ( json3.Get<TimeField1>().ISO8601Timestamp() != expTime) {
+        log << "3 Invalid value for field1: " << endl;
+        log.ReportStringDiff(expTime,json3.Get<TimeField1>().ISO8601Timestamp());
+        return 1;
+    }
+
+    if ( json3.Get<TimeField2>().Timestamp() != Time::EpochTimestamp) {
+        log << "3 Invalid value for field2: " << endl;
+        log.ReportStringDiff(Time::EpochTimestamp, json3.Get<TimeField2>().Timestamp());
+        return 1;
+    }
+
+    if ( bjson3.Get<TimeField1>().ISO8601Timestamp() != expTimeb1) {
+        log << "3 b Invalid value for field1: " << endl;
+        log.ReportStringDiff(expTimeb1,bjson3.Get<TimeField1>().ISO8601Timestamp());
+        return 1;
+    }
+
+    if ( bjson3.Get<TimeField2>().ISO8601Timestamp() != expTimeb2) {
+        log << "3 b Invalid value for field1: " << endl;
+        log.ReportStringDiff(expTimeb2,bjson3.Get<TimeField1>().ISO8601Timestamp());
         return 1;
     }
 
@@ -623,6 +933,115 @@ int ParseStringArray(testLogger& log) {
 
     if ( v22.size() != 0 ) {
         log << "Invalid size for field2: " << v22.size() << endl;
+        return 1;
+    }
+
+    return 0;
+}
+
+int ParseTimeArray(testLogger& log) {
+    std::string rawJson = R"JSON( 
+        {
+            "TimeArrayField1": [
+                "2015-07-13T05:38:17.33640392Z",
+                "",
+                "2016-07-13T05:38:17.33640392Z",
+                "2017-07-13T05:38:17.33640392Z"
+            ],
+            "TimeArrayField2": []
+        }
+    )JSON";
+
+    SimpleParsedJSON<TimeArrayField1, TimeArrayField2> json, json2, json3;
+
+    std::string error;
+
+    bool ok = json.Parse(rawJson.c_str(),error);
+
+    if (!ok) {
+        log << "Failed to parse: " << error;
+        return 1;
+    }
+
+    auto checker = [&log] (const vector<Time>& v1, const vector<Time>& v2) -> bool
+    {
+        if ( v1.size() != 4 ) {
+            log << "Invalid size for field1: " << v1.size() << endl;
+            return false;
+        }
+
+        const std::string expTime = "2015-07-13T05:38:17.336403Z";
+        const std::string expTime1 = "2016-07-13T05:38:17.336403Z";
+        const std::string expTime2 = "2017-07-13T05:38:17.336403Z";
+
+        if ( v1[0].ISO8601Timestamp() != expTime) {
+            log << "Invalid value for time 0: " << v1[0].ISO8601Timestamp() << endl;
+            return false;
+        }
+
+        if ( v1[1].Timestamp() != Time::EpochTimestamp) {
+            log << "Invalid value for time 1: " << v1[1].Timestamp() << endl;
+            return false;
+        }
+
+        if ( v1[2].ISO8601Timestamp() != expTime1) {
+            log << "Invalid value for time 2: " << v1[2].ISO8601Timestamp() << endl;
+            return false;
+        }
+
+        if ( v1[3].ISO8601Timestamp() != expTime2) {
+            log << "Invalid value for time 2: " << v1[3].ISO8601Timestamp() << endl;
+            return false;
+        }
+
+        if ( v2.size() != 0 ) {
+            log << "Invalid size for field2: " << v2.size() << endl;
+            return false;
+        }
+
+        return true;
+    };
+
+    const vector<Time>& v1 = json.Get<TimeArrayField1>();
+    const vector<Time>& v2 = json.Get<TimeArrayField2>();
+
+    if ( !checker(v1,v2)) {
+        return 1;
+    }
+
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson = json.GetJSONString(true);
+
+    ok = json2.Parse(newRawJson.c_str(), error);
+
+    if (!ok) {
+        log << "Failed to parse JSON!" << endl;
+        return 1;
+    }
+
+    const vector<Time>& v31 = json2.Get<TimeArrayField1>();
+    const vector<Time>& v32 = json2.Get<TimeArrayField2>();
+
+    if ( !checker(v31,v32)) {
+        return 1;
+    }
+
+    log << "Re-building JSON>..." << endl;
+
+    string newRawJson2 = json.GetPrettyJSONString();
+
+    ok = json3.Parse(newRawJson2.c_str(), error);
+
+    if (!ok) {
+        log << "Failed to parse JSON!" << endl;
+        return 1;
+    }
+
+    const vector<Time>& v21 = json3.Get<TimeArrayField1>();
+    const vector<Time>& v22 = json3.Get<TimeArrayField2>();
+
+    if ( !checker(v21,v22)) {
         return 1;
     }
 
@@ -3410,7 +3829,8 @@ int Clear(testLogger& log) {
         DoubleField1,
         BoolField1,
         Field1,
-        StringArrayField1
+        StringArrayField1,
+        TimeField1
         > json;
 
     json.Get<IntField1>() = 23;
@@ -3421,6 +3841,7 @@ int Clear(testLogger& log) {
     json.Get<BoolField1>() = true;
     json.Get<Field1>() = "Hello!";
     json.Get<StringArrayField1>().push_back("Hello!");
+    json.Get<TimeField1>() = "2015-07-13T05:38:17.336403Z";
 
 
     json.Clear();
@@ -3506,8 +3927,16 @@ int Clear(testLogger& log) {
         return 1;
     }
 
+    if ( json.Get<TimeField1>().Timestamp() != Time::EpochTimestamp) {
+        log << "Invalid value for cleared time!"
+            << json.Get<TimeField1>().Timestamp() << endl;
+        return 1;
+    }
+
+
     string ExpNotNull =
 R"RAW({
+    "TimeField1": "1970-01-01T00:00:00.000000Z",
     "StringArrayField1": [],
     "Field1": "",
     "BoolField1": false,
@@ -3529,6 +3958,7 @@ R"RAW({
 
     string ExpNull =
 R"RAW({
+    "TimeField1": null,
     "StringArrayField1": null,
     "Field1": null,
     "BoolField1": null,
@@ -3561,7 +3991,8 @@ int EmbededClear(testLogger& log) {
         DoubleField1,
         BoolField1,
         Field1,
-        StringArrayField1
+        StringArrayField1,
+        TimeField1
         > JSON;
 
     NewEmbededObject(Object,JSON);
@@ -3576,6 +4007,7 @@ int EmbededClear(testLogger& log) {
     json.Get<BoolField1>() = true;
     json.Get<Field1>() = "Hello!";
     json.Get<StringArrayField1>().push_back("Hello!");
+    json.Get<TimeField1>() = "2015-07-13T05:38:17.336403Z";
 
     parent.Clear();
 
@@ -3621,9 +4053,16 @@ int EmbededClear(testLogger& log) {
         return 1;
     }
 
+    if ( json.Get<TimeField1>().Timestamp() != Time::EpochTimestamp) {
+        log << "Invalid value for cleared time!"
+            << json.Get<TimeField1>().Timestamp() << endl;
+        return 1;
+    }
+
     string ExpNotNull =
 R"RAW({
     "Object": {
+        "TimeField1": "1970-01-01T00:00:00.000000Z",
         "StringArrayField1": [],
         "Field1": "",
         "BoolField1": false,
@@ -3671,7 +4110,8 @@ int EmbededArrayClear(testLogger& log) {
         DoubleField1,
         BoolField1,
         Field1,
-        StringArrayField1
+        StringArrayField1,
+        TimeField1
         > JSON;
 
     NewObjectArray(Objects,JSON);
@@ -3718,6 +4158,12 @@ int EmbededArrayClear(testLogger& log) {
     if ( json.Get<StringArrayField1>().size() != 0) {
         log << "Invalid size for strign array: "
             << json.Get<StringArrayField1>().size() << endl;
+        return 1;
+    }
+
+    if ( json.Get<TimeField1>().Timestamp() != Time::EpochTimestamp) {
+        log << "Invalid value for cleared time!"
+            << json.Get<TimeField1>().Timestamp() << endl;
         return 1;
     }
 

@@ -10,6 +10,7 @@
 
 #include <limits>
 #include <type_traits>
+#include <util_time.h>
 
 /*****************************************************************************
  *                          JSON Builder
@@ -164,6 +165,35 @@ struct StringField: public FieldBase {
     }
 };
 
+struct TimeField: public FieldBase {
+    typedef Time ValueType;
+    Time value;
+
+    TimeField(): value("") { } 
+
+    virtual void Clear() {
+        FieldBase::Clear();
+        value.InitialiseFromString("",0);
+    }
+
+    bool String(const char* str, rapidjson::SizeType length, bool copy) {
+        value.InitialiseFromString(str,length);
+        return true;
+    }
+
+    template <class Builder>
+    void AddToJSON(Builder& builder, bool nullIfNotSupplied) {
+        if ( supplied || !nullIfNotSupplied )
+        {
+            builder.Add(Name(),value.ISO8601Timestamp());
+        }
+        else
+        {
+            builder.AddNullField(Name());
+        }
+    }
+};
+
 struct StringArrayField: public FieldArrayBase<std::string> {
 
     bool String(const char* str, rapidjson::SizeType length, bool copy) {
@@ -173,6 +203,35 @@ struct StringArrayField: public FieldArrayBase<std::string> {
             throw spJSON::WrongTypeError{Name()};
         }
         return true;
+    }
+};
+
+struct TimeArrayField: public FieldArrayBase<Time> {
+
+    bool String(const char* str, rapidjson::SizeType length, bool copy) {
+        if (inArray) {
+            value.emplace_back(str);
+        } else {
+            throw spJSON::WrongTypeError{Name()};
+        }
+        return true;
+    }
+
+    template <class Builder>
+    void AddToJSON(Builder& builder, bool nullIfNotSupplied) {
+        if ( supplied || !nullIfNotSupplied )
+        {
+            builder.StartArray(Name());
+            for (Time& t: value) {
+                builder.Add(t.ISO8601Timestamp());
+            }
+            builder.EndArray();
+        }
+        else
+        {
+            builder.AddNullField(Name());
+        }
+
     }
 };
 
