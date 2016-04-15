@@ -56,9 +56,10 @@ void on_message(RequestServer* s, server* raw_server, websocketpp::connection_hd
     }
 }
 
-void on_close(websocketpp::connection_hdl hdl) {
+void on_close(RequestServer*s, websocketpp::connection_hdl hdl) {
     SLOG_FROM(LOG_VERBOSE,"ReqServer::on_close",
     "Closing session to: " << hdl.lock().get() << endl);
+    s->HandleClose(hdl);
 }
 
 /**************************************************************
@@ -70,9 +71,11 @@ public:
         const std::string& req,
         server* s,
         websocketpp::connection_hdl c)
-    : request(req), serv(s), conn(serv->get_con_from_hdl(c))
+    : request(req), serv(s), conn(serv->get_con_from_hdl(c)), open(true)
     {
     }
+
+    virtual ~Request() { };
 
     const char* RequestMessasge() {
         return request.c_str();
@@ -88,10 +91,17 @@ public:
         serv->send(conn,msg,websocketpp::frame::opcode::TEXT);
     }
 
+    bool Ok() const { return open; }
+
+    void Close () {
+        open = false;
+    }
+
 private:
     std::string                 request;
     server*                     serv;
     server::connection_ptr      conn;
+    bool                        open;
 };
 
 /**************************************************************
@@ -168,6 +178,18 @@ std::string RequestServer::HandleRequestReplyMessage(
     return response;
 }
 
+void RequestServer::HandleClose(websocketpp::connection_hdl hdl) {
+    void* conn = hdl.lock().get();
+
+    auto it = conn_map.find(conn);
+
+    if (it != conn_map.end()) {
+        it->second->Close();
+        conn_map.erase(it);
+    }
+
+}
+
 std::string RequestServer::HandleSubscriptionMessage(
                     const std::string& reqName,
                     const std::string& request,
@@ -197,7 +219,7 @@ std::string RequestServer::HandleSubscriptionMessage(
 void RequestServer::HandleRequests(unsigned short port) {
     try {
         echo_server.set_message_handler(bind(&on_message,this,&echo_server,::_1,::_2));
-        echo_server.set_close_handler(bind(&on_close,::_1));
+        echo_server.set_close_handler(bind(&on_close,this,::_1));
 
         echo_server.listen(port);
 

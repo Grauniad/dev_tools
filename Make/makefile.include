@@ -206,10 +206,13 @@ ifndef VALGRIND_OPTIONS
     VALGRIND_OPTIONS+=--error-exitcode=1
     # Report any file handles that haven't been cleaned up
     VALGRIND_OPTIONS+=--track-fds=yes
-    # Using a (vim!) wrapper that allows us to easily handle large call stacks
+    # Using a vim wrapper that allows us to easily handle large call stacks
     VALGRIND_OPTIONS+=--num-callers=50
     # For easy debugging
     VALGRIND_OPTIONS+=--fullpath-after=
+    ifeq ($(findstring gdbmemtest,$(MAKECMDGOALS)),gdbmemtest)
+        DEBUG_VALGRIND=YES
+    endif
 endif
 
 ifndef HELGRIND_OPTIONS
@@ -707,6 +710,7 @@ endif
 
 all: $(BUILD_DEPS) $(TO_COPY) $(POST_BUILD_DEPS)
 memtest: all
+gdbmemtest: memtest
 threadtest: all
 gdbtest: all
 cover: all 
@@ -733,6 +737,8 @@ PRINT_BOOST_MODULES:
 	for f in $$(find $(DEV_TOOLS_BOOST_MODULES_DIR) -maxdepth 1 -type d | sort); do \
 	    basename $$f; \
 	done
+
+memgdb_attach: 
 
 profileview:
 	$(PROFILE_VIEWER)

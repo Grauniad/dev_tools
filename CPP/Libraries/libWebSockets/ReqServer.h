@@ -31,6 +31,20 @@ public:
         virtual void SendMessage(const std::string& msg) = 0;
 
         virtual const char* RequestMessasge() = 0;
+
+        /**
+         * Returns true if the subscription is still active, and can be written
+         * to.
+         *
+         * Valid ONLY on the original request thread.
+         */
+        virtual bool Ok() const = 0;
+
+        /**
+         * Callback to notify that this request is no longer active...
+         */
+        virtual void Close() = 0;
+
     };
 
     typedef std::shared_ptr<SubRequest> RequestHandle;
@@ -94,6 +108,11 @@ public:
          server*  raw_server,
          websocketpp::connection_hdl hdl);
 
+
+    /**
+     * Handle an on_close even on an active connection.
+     */
+    void HandleClose(websocketpp::connection_hdl hdl);
 private:
     std::string HandleRequestReplyMessage(
                     const std::string& reqName,
@@ -111,6 +130,11 @@ private:
 
     std::map<std::string,std::unique_ptr<RequestReplyHandler>> req_handlers;
     std::map<std::string,std::unique_ptr<SubscriptionHandler>> sub_handlers;
+
+    /*
+     * Maps an active connection to
+     */
+    std::map<void*,SubscriptionHandler::RequestHandle> conn_map;
 };
 
 

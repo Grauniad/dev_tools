@@ -53,6 +53,8 @@ public:
 
     void ReportStringDiff(const string& expected, const string actual) {
     }
+
+    void FlushQueue() { }
 }; 
 class DefaultTestLogger: LogDevice {
 public:

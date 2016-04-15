@@ -12,21 +12,119 @@
 #include <atomic>
 #include <mutex>
 #include <functional>
+#include <condition_variable>
+#include <bitset>
+#include <thread>
 
 template <class Message>
 class PipePublisher;
 class IPostable;
 
+template <class Message>
+class IPipeConsumer {
+public:
+    IPipeConsumer();
+
+
+    virtual ~IPipeConsumer() {}
+
+    /**
+     * Notify publishers that no further updates should be posted.
+     *
+     * NOTE: This operation is not synchronised, and it is possible due to
+     *       re-ordering, that updates or published after the completion of
+     *       abort. Application that care should check the return value of
+     *       State() when handling an update.
+     */
+    void Abort();
+protected:
+    /**
+     * Callback triggered by a new publication.
+     */
+    virtual void PushMessage(const Message& ) = 0;
+
+    enum STATE {
+        CONSUMING, // Consuming updates from the publisher, as normal
+        FINSIHED,  // All updates have been consumed
+        ABORTING,  // Abort requested, waiting for the publisher(s) to
+                   // acknowledge, until ABORTED is declared.
+        ABORTED    // Abort successful, no more updates will be published.
+    };
+
+    /**
+     * Callback to indicate the state of the consumer has changed.
+     *
+     * Implementations may safely choose to ignore this callback, it is provided
+     * to allow for lock-free optimizations.
+     *
+     * NOTE: This will be called from the thread which triggered the state
+     *       change:
+     *
+     *          CONSUMING -> ABORTING: The aborting thread.
+     *          ABORTING -> ABORTED:   The publisher's thread.
+     */
+    virtual void OnStateChange() { };
+
+    /**
+     * Thread safe check to observe the current state of the consumer.
+     */
+    STATE State() {
+        return state;
+    }
+
+    /**
+     * Callback from the publisher indicating that it has started a new batch.
+     *
+     * EndBatch will be called when it has finished.  Implementation of this
+     * interface is voluntary, clients may choose to continue to process updates
+     * as they are presented by the publisher, or wait until EndBatch if they
+     * can afford to wait, and this more efficient.
+     *
+     * NOTE: This will be triggered on the publisher's thread
+     */
+    virtual void StartBatch() {};
+
+    /**
+     * The batch has finished.
+     *
+     * NOTE: This will be triggered on the publisher's thread
+     */
+    virtual void EndBatch() {}
+private:
+    /**
+     *
+     *
+     * @param current  The state to change from, will be populated with the current
+     *                 state in the event of a failure.
+     *
+     * @param to    The state to transition to.
+     *
+     * @returns true If the state was changed, false otherwise.
+     */
+    bool ChangeState(STATE& current, STATE to);
+
+    /**
+     * Called by the publisher to indicate that no more
+     */
+    void Done();
+
+    std::atomic<STATE> state;
+    friend class PipePublisher<Message>;
+    std::vector<PipePublisher<Message>*> publishers;
+};
+
+
 /**
  * Consumes data down a single-producer / single-consumer pipe.
  *
  * The pipe is lockless, except for the configuration and dispatch of the
- * onMessage notification. (Chossing not to use trigger results in a lockless
+ * onMessage notification. (Choosing not to use trigger results in a lockless
  * pipe.
  */
 template <class Message>
-class PipeSubscriber { 
+class PipeSubscriber: public IPipeConsumer<Message> {
 public:
+    typedef PipeSubscriber<Message> Type;
 
     virtual ~PipeSubscriber();
 
@@ -91,12 +189,14 @@ protected:
      *   Interface for Publisher
      *********************************/
     /**
-     * Create a new consumer.
+     * Create a new consumer:
      *
      * @param maxSize  Maximum unread messages before an exception is
      *                 triggered on the producer.
      */
-    PipeSubscriber(PipePublisher<Message>* parent, size_t maxSize);
+    PipeSubscriber(
+        PipePublisher<Message>* parent,
+        size_t maxSize);
 
      struct PushToFullQueueException {
          Message msg;
@@ -113,33 +213,46 @@ protected:
       * @param msg  The message to add to the queue.
       */ 
      virtual void PushMessage(const Message& msg);
+
 private:
+    /***********************************
+     *     Interface Implementation
+     ***********************************/
+     virtual void OnStateChange() final;
+     virtual void StartBatch() final;
+     virtual void EndBatch() final;
+    void NotifyNextMessage();
+
+    /***********************************
+     *          Synchronisation
+     ***********************************/
+    typedef std::unique_lock<std::mutex> Lock;
+    std::mutex                           onNotifyMutex;
 
     /***********************************
      * Unread data Notification
      ***********************************/
-    std::atomic<bool>    notifyOnWrite;
     NextMessageCallback  onNotify;
     IPostable*           targetToNotify;
+    size_t               batchSize;
+    std::atomic<bool>    notifyOnMessage;
+
 
     /***********************************
      * Forward Messages
      ***********************************/
-    std::atomic<bool>    forwardMessage;
     NewMessasgCallback   onNewMessage;
+    std::atomic<bool>    forwardMessage;
 
     /*********************************
      *           Data
      *********************************/
-    std::atomic<size_t>  read;
-    std::atomic<size_t>  written;
-
-    std::mutex           onNotifyMutex;
+    bool                 batching;
+    bool                 aborted;
 
     boost::lockfree::spsc_queue<Message>  messages;
-
-    PipePublisher<Message>*    parent;
 };
+
 
 #include "PipeSubscriber.hpp"
 

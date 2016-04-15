@@ -1,6 +1,6 @@
 MAKE_DIRS= Libraries \
-           Binaries \
-           Tests 
+           Tests  \
+           Binaries
 
 MODE=CPP
 

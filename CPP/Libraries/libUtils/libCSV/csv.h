@@ -97,7 +97,7 @@ public:
 
     /*
      * Read the CSV in a line at a time, and get the boost iterator
-     * to properlly parse it for escaped quotes / commas etc...
+     * to properly parse it for escaped quotes / commas etc...
      */
     static CSV<Types...> LoadCSV(BinaryReader reader);
 

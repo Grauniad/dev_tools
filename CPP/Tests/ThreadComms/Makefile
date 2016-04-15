@@ -3,7 +3,7 @@ LINKED_LIBS= libThreadComms \
              libUtils\
 			 libTest
 
-BUILD_TIME_TESTS=pipe
+BUILD_TIME_TESTS=pipe worker
 CPP_TAGS_FILE=dev_tools_cpp_tests_thread-comms-c++.tags
 MODE=CPP
 

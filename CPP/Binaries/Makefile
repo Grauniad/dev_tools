@@ -1,4 +1,4 @@
-MAKE_DIRS= jsonGen
+MAKE_DIRS= jsonGen publisherSpeed
 
 MODE=CPP
 

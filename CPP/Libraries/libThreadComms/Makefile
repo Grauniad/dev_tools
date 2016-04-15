@@ -1,4 +1,5 @@
 EXPORT_INCLUDES=$(shell echo *.h *.hpp)
+SOURCES=$(shell echo *.cpp)
 
 TARGET_LIB=libThreadComms
 LINKED_LIBS=libString libUtils libIOInterface libJSON

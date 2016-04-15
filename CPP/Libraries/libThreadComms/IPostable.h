@@ -24,6 +24,8 @@ public:
      * @param t  The task to be run.
      */
     virtual void PostTask(const Task& t) = 0;
+
+    virtual ~IPostable() {}
 };
 
 #endif
