@@ -1,5 +1,5 @@
 #include "tester.h"
-#include "regex.h"
+#include "regex_utils.h"
 int GroupMatch(testLogger& log);
 int ArgMatch(testLogger& log);
 int Replace(testLogger& log);

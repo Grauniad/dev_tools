@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <set>
-#include "regex.h"
+#include "regex_utils.h"
 
 class Searcher {
 public:

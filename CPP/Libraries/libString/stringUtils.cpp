@@ -1,7 +1,7 @@
 #include "stringUtils.h"
 #include "tokenizor.h"
 #include <string>
-#include "regex.h"
+#include "regex_utils.h"
 #include "logger.h"
 #include <sstream>
 #include <boost/algorithm/string/trim.hpp>

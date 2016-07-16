@@ -1,5 +1,5 @@
-#include "regex.h"
 #include <boost/regex.hpp>
+#include "regex_utils.h"
 
 using namespace std;
 RegPattern::RegPattern (const string& needle)
