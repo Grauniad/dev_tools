@@ -21,10 +21,10 @@ namespace {
             epoch_tm.tm_mday= 1;
             epoch_tm.tm_mon=0;
             epoch_tm.tm_year=70;
-            epoch_tm.tm_isdst=-1; // <0 = unknown
+            epoch_tm.tm_isdst=0;
             epoch_tm.tm_gmtoff = 0;
 
-            epoch = mktime(&epoch_tm);
+            epoch = timegm(&epoch_tm);
 
             initialised = true;
         }
@@ -124,10 +124,10 @@ void Time::InitialiseFromTimestamp(char* buf)
     epoch.tm_mday= 1;
     epoch.tm_mon=0;
     epoch.tm_year=70;
-    epoch.tm_isdst=-1; // <0 = unknown
+    epoch.tm_isdst=0;
     epoch.tm_gmtoff = 0;
-    //epoch.tm_wday: Not used by mktime
-    //epoch.tm_yday: Not used by mktime
+    //epoch.tm_wday: Not used by timegm
+    //epoch.tm_yday: Not used by timegm
     time = epoch;
 
     /*
@@ -174,7 +174,7 @@ void Time::InitialiseFromTimestamp(char* buf)
      * calculate timeval...
      * --------------------
      */   
-     tv.tv_sec = difftime(mktime(&time),get_epoch());
+     tv.tv_sec = difftime(timegm(&time),get_epoch());
 }
 
 void Time::InitialiseFromISOTimestamp(char* buf)
@@ -190,10 +190,10 @@ void Time::InitialiseFromISOTimestamp(char* buf)
     epoch.tm_mday= 1;
     epoch.tm_mon=0;
     epoch.tm_year=70;
-    epoch.tm_isdst=-1; // <0 = unknown
+    epoch.tm_isdst=0;
     epoch.tm_gmtoff = 0;
-    //epoch.tm_wday: Not used by mktime
-    //epoch.tm_yday: Not used by mktime
+    //epoch.tm_wday: Not used by timegm
+    //epoch.tm_yday: Not used by timegm
     time = epoch;
 
     /*
@@ -242,7 +242,7 @@ void Time::InitialiseFromISOTimestamp(char* buf)
      * calculate timeval...
      * --------------------
      */   
-     tv.tv_sec = difftime(mktime(&time),get_epoch());
+     tv.tv_sec = difftime(timegm(&time),get_epoch());
 }
 
 void Time::InitialiseBlank()
@@ -254,10 +254,10 @@ void Time::InitialiseBlank()
     epoch.tm_mday= 1;
     epoch.tm_mon=0;
     epoch.tm_year=70;
-    epoch.tm_isdst=-1; // <0 = unknown
+    epoch.tm_isdst=0;
     epoch.tm_gmtoff = 0;
-    //epoch.tm_wday: Not used by mktime
-    //epoch.tm_yday: Not used by mktime
+    //epoch.tm_wday: Not used by timegm
+    //epoch.tm_yday: Not used by timegm
     time = epoch;
 
      tv.tv_sec = difftime(get_epoch(),get_epoch());
