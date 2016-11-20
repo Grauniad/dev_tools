@@ -1,7 +1,7 @@
-[submodule "EXTERNAL_INCLUDES/BOOST/lockfree//"]
+[submodule "EXTERNAL_INCLUDES/BOOST/lockfree"]
 	path = EXTERNAL_INCLUDES/BOOST/lockfree
 	url = https://github.com/boostorg/lockfree.git
-[submodule "EXTERNAL_INCLUDES/BOOST/align/"]
+[submodule "EXTERNAL_INCLUDES/BOOST/align"]
 	path = EXTERNAL_INCLUDES/BOOST/align
 	url = https://github.com/boostorg/align.git
 [submodule "CPP/Libraries/libDefer"]
