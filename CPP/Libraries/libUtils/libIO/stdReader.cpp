@@ -55,12 +55,13 @@ long StdReader::Next( long offset, unsigned char c) const {
 }
 long StdReader::Last( long offset, unsigned char c) const {
     for (long i=offset; i>=0; i--) {
-            // TODO: do some kind of buffering here?
-            this->file.seekg(i, ios_base::beg);
-            unsigned char got = static_cast<unsigned char>(file.get());
-            if ( got == c ) 
-                pos = offset - i;
-                return i;
+		// TODO: do some kind of buffering here?
+		this->file.seekg(i, ios_base::beg);
+		unsigned char got = static_cast<unsigned char>(file.get());
+		if ( got == c ) {
+			pos = offset - i;
+			return i;
+		}
     }
 
     pos = -1;

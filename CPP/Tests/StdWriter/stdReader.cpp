@@ -29,6 +29,8 @@ template<class Reader>
 int VerifyGet(testLogger& log);
 template<class Reader>
 int VerifyRead(testLogger& log);
+template<class Reader>
+int VerifyRFind(testLogger& log);
 
 int main(int argc, const char *argv[])
 {
@@ -41,6 +43,7 @@ int main(int argc, const char *argv[])
     Test("Basic gets",  (loggedTest)VerifyGet<IFStreamReader>).RunTest();
     Test("Read hunks",  (loggedTest)VerifyRead<IFStreamReader>).RunTest();
     Test("Read hunks",  (loggedTest)VerifyReadString<IFStreamReader>).RunTest();
+    Test("RFind",  (loggedTest)VerifyRFind<IFStreamReader>).RunTest();
     return 0;
 }
 
@@ -93,7 +96,7 @@ void Delete ( IFStreamReader* reader ) { remove(reader->Fname().c_str()); delete
 
 template<class Reader>
 int VerifyGet(testLogger& log) {
-	Reader *reader = Generator();
+    Reader *reader = Generator();
     // remember to clean up after ourselves:
     DEFER(Delete(reader);)
 
@@ -117,9 +120,36 @@ int VerifyGet(testLogger& log) {
 }
 
 template<class Reader>
+int VerifyRFind(testLogger& log) {
+    Reader *fileLikeReader = Generator();
+    DEFER(Delete(fileLikeReader);)
+
+    BinaryReader beg(*fileLikeReader);
+    BinaryReader end(*fileLikeReader, quote.length());
+    log << "End: " << end.Offset() << std::endl;
+
+    BinaryReader dot = end.RFind('.');
+
+    char result = static_cast<char>(dot.Get());
+    if (result != '.') {
+        log << "Unexpected dot: " << result << ", Offset: " << dot.Offset();
+        return 1;
+    }
+
+    BinaryReader missing = end.RFind('x');
+
+    if (missing != beg) {
+        log << "Invalid offset for missing char: " << missing.Offset();
+        return 1;
+    }
+
+    return 0;
+}
+
+template<class Reader>
 int VerifyRead(testLogger& log) {
 
-	Reader *reader = Generator();
+    Reader *reader = Generator();
     // remember to clean up after ourselves:
     DEFER(Delete(reader);)
 
@@ -150,7 +180,7 @@ int VerifyRead(testLogger& log) {
 
 template<class Reader>
 int VerifyReadString(testLogger& log) {
-	Reader *reader = Generator();
+    Reader *reader = Generator();
     // remember to clean up after ourselves:
     DEFER(Delete(reader);)
     
