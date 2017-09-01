@@ -115,7 +115,7 @@ int validatePutAndGrow( testLogger& log) {
 
 int validateWrite( testLogger& log){
     DataVector data(50);
-    unsigned char *source = new unsigned char[100];
+    unsigned char source[100];
     FillContainer(source,100,'*');
     FillContainer(data,50,'-');
 
@@ -130,7 +130,6 @@ int validateWrite( testLogger& log){
     }
     if ( data[45] != '-' ) 
         return 45;
-	delete[] source;
     return 0;
 }
 

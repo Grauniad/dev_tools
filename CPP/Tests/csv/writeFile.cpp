@@ -8,6 +8,7 @@
 #include "logger.h"
 #include "binaryDescribe.h"
 #include "stdReader.h"
+#include <cmath>
 
 
 using namespace std;

@@ -11,6 +11,7 @@
 #include <condition_variable>
 #include <WorkerThread.h>
 #include <map>
+#include <vector>
 
 struct Msg {
     long   i;

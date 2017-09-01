@@ -15,6 +15,7 @@
 #include <condition_variable>
 #include <bitset>
 #include <thread>
+#include <vector>
 
 template <class Message>
 class PipePublisher;

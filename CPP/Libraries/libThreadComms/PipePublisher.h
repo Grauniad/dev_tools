@@ -12,6 +12,7 @@
 #include <mutex>
 #include <map>
 #include <thread>
+#include <vector>
 
 #include <boost/lockfree/queue.hpp>
 
