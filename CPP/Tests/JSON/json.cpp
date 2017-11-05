@@ -1,190 +1,16 @@
-#include "tester.h"
+#include "gtest/gtest.h"
 #include <SimpleJSON.h>
-#include <vector>
-#include <string>
+#include <util_time.h>
+#include <iostream>
 
 using namespace std;
 
-//TODO : Embeded Objects!
-int WriteStringArray(testLogger& log);
+const std::string EpochTimestamp = Time::EpochTimestamp;
 
-int ParseString(testLogger& log);
-int ParseEmbededString(testLogger& log);
-int ParseEmbededArrayString(testLogger& log);
-
-int ParseStringArray(testLogger& log);
-int ParseEmbededStringArray(testLogger& log);
-
-int ParseTime(testLogger& log);
-int ParseEmbededTime(testLogger& log);
-int ParseEmbededArrayTime(testLogger& log);
-
-int ParseTimeArray(testLogger& log);
-
-int ParseInt(testLogger& log);
-int ParseEmbededInt(testLogger& log);
-int ParseEmbededArrayInt(testLogger& log);
-
-int ParseIntArray(testLogger& log);
-
-int ParseUnsigned(testLogger& log);
-int ParseEmbededUnsigned(testLogger& log);
-int ParseEmbededArrayUnsigned(testLogger& log);
-
-int ParseUnsignedArray(testLogger& log);
-
-int ParseDouble(testLogger& log);
-int ParseEmbededDouble(testLogger& log);
-int ParseEmbededArrayDouble(testLogger& log);
-
-int ParseDoubleArray(testLogger& log);
-
-int ParseBool(testLogger& log);
-int ParseEmbededBool(testLogger& log);
-int ParseEmbededArrayBool(testLogger& log);
-
-int ParseBoolArray(testLogger& log);
-
-int ParseI64(testLogger& log);
-int ParseEmbededI64(testLogger& log);
-int ParseEmbededArrayI64(testLogger& log);
-
-int ParseI64Array(testLogger& log);
-
-int ParseUI64(testLogger& log);
-int ParseEmbededUI64(testLogger& log);
-int ParseEmbededArrayUI64(testLogger& log);
-
-int ParseUI64Array(testLogger& log);
-
-int Clear(testLogger& log);
-int EmbededClear(testLogger& log);
-int EmbededArrayClear(testLogger& log);
-
-int LargeInt(testLogger& log);
-int LargeI64(testLogger& log);
-
-int ExtraField(testLogger& log);
-int EmbededObjectError(testLogger& log);
-
-int TrippleEmbededObject(testLogger& log);
-
-int EmbededObjectInArray(testLogger& log);
-
-int Supplied(testLogger& log);
-int SuppliedEmbeded(testLogger& log);
-int SuppliedEmbededObjectInArray(testLogger& log);
-
-//TODO Missing Field!
-
-int main(int argc, const char *argv[])
-{
-    Test("Parsing a single string json",ParseString).RunTest();
-    Test("Parsing a single emebded string json",ParseEmbededString).RunTest();
-    Test("Parsing an array of emebded string jsons",ParseEmbededArrayString).RunTest();
-    Test("Create a JSON object with a string array",WriteStringArray).RunTest();
-    Test("Parsing a json string array",ParseStringArray).RunTest();
-    Test("Parsing an embeded json string array",ParseEmbededStringArray).RunTest();
-    Test("Parsing a single int json",ParseInt).RunTest();
-    Test("Parsing a single embeded int json",ParseEmbededInt).RunTest();
-    Test("Parsing an array of embeded ints json",ParseEmbededArrayInt).RunTest();
-    Test("Parsing a json int array",ParseIntArray).RunTest();
-    Test("Parsing a single unsigned json",ParseUnsigned).RunTest();
-    Test("Parsing a json unsigned int array",ParseUnsignedArray).RunTest();
-    Test("Parsing a single embeded unsigned json",ParseEmbededUnsigned).RunTest();
-    Test("Parsing an array of embeded unsigneds json",ParseEmbededArrayUnsigned).RunTest();
-    Test("Parsing a bool from json",ParseBool).RunTest();
-    Test("Parsing a bool array from json",ParseBoolArray).RunTest();
-    Test("Parsing a bools from embeded json",ParseEmbededBool).RunTest();
-    Test("Parsing an array of bools from json",ParseEmbededArrayBool).RunTest();
-    Test("Parsing a single double json",ParseDouble).RunTest();
-    Test("Parsing a json double array",ParseDoubleArray).RunTest();
-    Test("Parsing a single double json",ParseEmbededDouble).RunTest();
-    Test("Parsing an array of doubles json",ParseEmbededArrayDouble).RunTest();
-    Test("Parsing I64s...",ParseI64).RunTest();
-    Test("Parsing array of I64s...",ParseI64Array).RunTest();
-    Test("Parsing Embeded I64s...",ParseEmbededI64).RunTest();
-    Test("Parsing Embeded I64 array...",ParseEmbededArrayI64).RunTest();
-    Test("Parsing UI64s...",ParseUI64).RunTest();
-    Test("Parsing array of UI64s...",ParseUI64Array).RunTest();
-    Test("Parsing embeded UI64s...",ParseEmbededUI64).RunTest();
-    Test("Parsing embeded UI64 array...",ParseEmbededArrayUI64).RunTest();
-    Test("Too large INT",LargeInt).RunTest();
-    Test("Too large I64",LargeI64).RunTest();
-    Test("Checking Reset...",Clear).RunTest();
-    Test("Checking Embeded Reset...",EmbededClear).RunTest();
-    Test("Checking Embeded Array Reset...",EmbededArrayClear).RunTest();
-    Test("Checking we get an error if an extra field is supplied",ExtraField).RunTest();
-    Test("Checking we get an error if an unexpected embeded object is found",EmbededObjectError).RunTest();
-    Test("Checking we handles objects within objects within objects",TrippleEmbededObject).RunTest();
-    Test("Checking we handles objects within arrays within objects",EmbededObjectInArray).RunTest();
-    Test("Checking supplied handling for fields in the root object",Supplied).RunTest();
-    Test("Checking supplied handling for fields in embeded objects",SuppliedEmbeded).RunTest();
-    Test("Checking supplied handling for fields in embeded objects in arrays",SuppliedEmbededObjectInArray).RunTest();
-    Test("Parsing a Time string json",ParseTime).RunTest();
-    Test("Parsing an embeded Time string json",ParseEmbededTime).RunTest();
-    Test("Parsing an array of embeded time json",ParseEmbededArrayTime).RunTest();
-    Test("Parsing an array of times json",ParseTimeArray).RunTest();
-    return 0;
-}
-
-int WriteStringArray(testLogger& log) {
-    SimpleJSONBuilder builder;
-    vector<string> strings = {
-        "string 1",
-        "A string with lots and lots of words...or something",
-        "A string with an embded \"quote from someone or other\"...",
-        R"RAW(
-          A raw, multi-line string
-        )RAW"
-    };
-
-    vector<string> strings2 = {
-        "string 2",
-        "Another random string",
-        "",
-        "More strings",
-        "\""
-    };
-
-    log << "Array 1..." << endl;
-
-    builder.Add("testArray", strings);
-    std::string result = builder.GetAndClear();
-    std::string expected =
-        R"JSON({"testArray":["string 1","A string with lots and lots of words...or something","A string with an embded \"quote from someone or other\"...","\n          A raw, multi-line string\n        "]})JSON";
-
-    if (  expected != result ) {
-        log << "Expected: " << expected << endl;
-        log << "Got:      " << result << endl;
-        return 1;
-    }
-    log << "Array 2..." << endl;
-
-    builder.Add("testArray2",strings2);
-    std::string result2 = builder.GetAndClear();
-    std::string expected2 =
-        R"JSON({"testArray2":["string 2","Another random string","","More strings","\""]})JSON";
-
-    if (  expected2 != result2 ) {
-        log << "Expected: " << expected2 << endl;
-        log << "Got:      " << result2 << endl;
-        return 1;
-    }
-
-    builder.Add("testArray2",strings2);
-    builder.Add("testArray",strings);
-
-    std::string result3 = builder.GetAndClear();
-    std::string expected3 =
-        R"JSON({"testArray2":["string 2","Another random string","","More strings","\""],"testArray":["string 1","A string with lots and lots of words...or something","A string with an embded \"quote from someone or other\"...","\n          A raw, multi-line string\n        "]})JSON";
-
-    if (  expected3 != result3 ) {
-        log << "Expected: " << expected3 << endl;
-        log << "Got:      " << result3 << endl;
-        return 1;
-    }
-    return 0;
+int main(int argc, char **argv) {
+    std::cout <<  EpochTimestamp << std::endl;
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }
 
 NewStringField(Field1)
@@ -221,16 +47,17 @@ NewI64ArrayField(I64ArrayField1);
 NewI64ArrayField(I64ArrayField2);
 NewUI64ArrayField(UI64ArrayField1);
 NewUI64ArrayField(UI64ArrayField2);
-NewTimeField(TimeField1)
-NewTimeField(TimeField2)
+NewTimeField(TimeField1);
+NewTimeField(TimeField2);
 NewTimeArrayField(TimeArrayField1);
 NewTimeArrayField(TimeArrayField2);
 
-int ParseString(testLogger& log) {
+
+TEST(JSONParsing, SingleString) {
     std::string rawJson = R"JSON( 
     {
         "Field1": "Hello World!",
-        "Field2": "",
+        "Field2": ""
     }
     )JSON";
 
@@ -240,62 +67,31 @@ int ParseString(testLogger& log) {
 
     bool ok = json.Parse(rawJson.c_str(),error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json.Get<Field1>() != "Hello World!") {
-        log << "Invalid value for field1: " << json.Get<Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ( json.Get<Field1>(), "Hello World!");
+    ASSERT_EQ( json.Get<Field2>() , "");
 
-    if ( json.Get<Field2>() != "") {
-        log << "Invalid value for field2: " << json.Get<Field2>() << endl;
-        return 1;
-    }
-
-    string newRawJson = json.GetJSONString(true);
+    std::string newRawJson = json.GetJSONString(true);
 
     ok = json2.Parse(newRawJson.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json2.Get<Field1>() != "Hello World!") {
-        log << "2 Invalid value for field1: " << json2.Get<Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ( json2.Get<Field1>() , "Hello World!");
+    ASSERT_EQ( json2.Get<Field2>() , "");
 
-    if ( json2.Get<Field2>() != "") {
-        log << "2 Invalid value for field2: " << json2.Get<Field2>() << endl;
-        return 1;
-    }
-
-    string newRawJson2 = json.GetPrettyJSONString();
+    std::string newRawJson2 = json.GetPrettyJSONString();
 
     ok = json3.Parse(newRawJson2.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json3.Get<Field1>() != "Hello World!") {
-        log << "2 Invalid value for field1: " << json3.Get<Field1>() << endl;
-        return 1;
-    }
-
-    if ( json3.Get<Field2>() != "") {
-        log << "2 Invalid value for field2: " << json3.Get<Field2>() << endl;
-        return 1;
-    }
-    return 0;
+    ASSERT_EQ( json3.Get<Field1>() , "Hello World!");
+    ASSERT_EQ( json3.Get<Field2>() , "");
 }
 
-int ParseTime(testLogger& log) {
+TEST(JSONParsing, ParseTime) {
     std::string rawJson = R"JSON( 
     {
         "TimeField1": "2015-07-13T05:38:17.33640392Z",
@@ -307,491 +103,28 @@ int ParseTime(testLogger& log) {
 
     std::string error;
 
-    bool ok = json.Parse(rawJson.c_str(),error);
-
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(json.Parse(rawJson.c_str(),error));
 
     const std::string expTime = "2015-07-13T05:38:17.336403Z";
-    if ( json.Get<TimeField1>().ISO8601Timestamp() != expTime) {
-        log << "Invalid value for field1: " << endl;
-        log.ReportStringDiff(expTime,json.Get<TimeField1>().ISO8601Timestamp());
-        return 1;
-    }
-
-    if ( json.Get<TimeField2>().Timestamp() != Time::EpochTimestamp) {
-        log << "Invalid value for field2: " << endl;
-        log.ReportStringDiff(Time::EpochTimestamp, json.Get<TimeField2>().Timestamp());
-        return 1;
-    }
+    ASSERT_EQ(expTime, json.Get<TimeField1>().ISO8601Timestamp());
+    ASSERT_EQ(EpochTimestamp, json.Get<TimeField2>().Timestamp());
 
     string newRawJson = json.GetJSONString();
 
-    log << newRawJson << endl;
+    ASSERT_TRUE(json2.Parse(newRawJson.c_str(), error));
 
-    ok = json2.Parse(newRawJson.c_str(), error);
-
-    if ( json2.Get<TimeField1>().ISO8601Timestamp() != expTime) {
-        log << "2 Invalid value for field1: " << endl;
-        log.ReportStringDiff(expTime,json2.Get<TimeField1>().ISO8601Timestamp());
-        return 1;
-    }
-
-    if ( json2.Get<TimeField2>().Timestamp() != Time::EpochTimestamp) {
-        log << "2 Invalid value for field2: " << endl;
-        log.ReportStringDiff(Time::EpochTimestamp, json2.Get<TimeField2>().Timestamp());
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<TimeField1>().ISO8601Timestamp(), expTime);
+    ASSERT_EQ(json2.Get<TimeField2>().Timestamp(), EpochTimestamp);
 
     string newRawJson2 = json.GetPrettyJSONString();
 
-    ok = json3.Parse(newRawJson2.c_str(), error);
+    ASSERT_TRUE(json3.Parse(newRawJson2.c_str(), error));
 
-    if ( json3.Get<TimeField1>().ISO8601Timestamp() != expTime) {
-        log << "3 Invalid value for field1: " << endl;
-        log.ReportStringDiff(expTime,json3.Get<TimeField1>().ISO8601Timestamp());
-        return 1;
-    }
-
-    if ( json3.Get<TimeField2>().Timestamp() != Time::EpochTimestamp) {
-        log << "3 Invalid value for field2: " << endl;
-        log.ReportStringDiff(Time::EpochTimestamp, json3.Get<TimeField2>().Timestamp());
-        return 1;
-    }
-
-    return 0;
+    ASSERT_EQ(json3.Get<TimeField1>().ISO8601Timestamp(), expTime);
+    ASSERT_EQ(json3.Get<TimeField2>().Timestamp(), EpochTimestamp);
 }
 
-int ParseEmbededString(testLogger& log) {
-    std::string rawJson = R"JSON(
-    {
-        "Object" : {
-            "Field1": "Hello World!",
-            "Field2": "",
-        }
-    }
-    )JSON";
-
-    typedef SimpleParsedJSON<Field1,Field2> JSON; 
-    NewEmbededObject(Object,JSON);
-    SimpleParsedJSON<Object> parent, parent2, parent3;
-
-
-    std::string error;
-
-    bool ok = parent.Parse(rawJson.c_str(),error);
-
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
-
-    JSON& json = parent.Get<Object>();
-
-    if ( json.Get<Field1>() != "Hello World!") {
-        log << "Invalid value for field1: " << json.Get<Field1>() << endl;
-        return 1;
-    }
-
-    if ( json.Get<Field2>() != "") {
-        log << "Invalid value for field2: " << json.Get<Field2>() << endl;
-        return 1;
-    }
-
-    string newRawJson = parent.GetJSONString(true);
-    log << "Raw JSON:" << endl << newRawJson << endl;
-
-    ok = parent2.Parse(newRawJson.c_str(), error);
-
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
-
-    JSON& json2 = parent2.Get<Object>();
-
-    if ( json2.Get<Field1>() != "Hello World!") {
-        log << "2 Invalid value for field1: " << json2.Get<Field1>() << endl;
-        return 1;
-    }
-
-    if ( json2.Get<Field2>() != "") {
-        log << "2 Invalid value for field2: " << json2.Get<Field2>() << endl;
-        return 1;
-    }
-
-    string newRawJson2 = parent.GetPrettyJSONString();
-    log << "Raw JSON:" << endl << newRawJson2 << endl;
-
-    ok = parent3.Parse(newRawJson2.c_str(), error);
-
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
-
-    JSON& json3 = parent3.Get<Object>();
-
-    if ( json3.Get<Field1>() != "Hello World!") {
-        log << "2 Invalid value for field1: " << json3.Get<Field1>() << endl;
-        return 1;
-    }
-
-    if ( json3.Get<Field2>() != "") {
-        log << "2 Invalid value for field2: " << json3.Get<Field2>() << endl;
-        return 1;
-    }
-    return 0;
-}
-
-int ParseEmbededTime(testLogger& log) {
-    std::string rawJson = R"JSON(
-    {
-        "Object" : {
-            "TimeField1": "2015-07-13T05:38:17.33640392Z",
-            "TimeField2": "",
-        }
-    }
-    )JSON";
-
-    typedef SimpleParsedJSON<TimeField1,TimeField2> JSON; 
-    NewEmbededObject(Object,JSON);
-    SimpleParsedJSON<Object> parent, parent2, parent3;
-
-
-    std::string error;
-
-    bool ok = parent.Parse(rawJson.c_str(),error);
-
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
-
-    JSON& json = parent.Get<Object>();
-
-    const std::string expTime = "2015-07-13T05:38:17.336403Z";
-    if ( json.Get<TimeField1>().ISO8601Timestamp() != expTime) {
-        log << "Invalid value for field1: " << endl;
-        log.ReportStringDiff(expTime,json.Get<TimeField1>().ISO8601Timestamp());
-        return 1;
-    }
-
-    if ( json.Get<TimeField2>().Timestamp() != Time::EpochTimestamp) {
-        log << "Invalid value for field2: " << endl;
-        log.ReportStringDiff(Time::EpochTimestamp, json.Get<TimeField2>().Timestamp());
-        return 1;
-    }
-
-    string newRawJson = parent.GetJSONString(true);
-    log << "Raw JSON:" << endl << newRawJson << endl;
-
-    ok = parent2.Parse(newRawJson.c_str(), error);
-
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
-
-    JSON& json2 = parent2.Get<Object>();
-
-
-    if ( json2.Get<TimeField1>().ISO8601Timestamp() != expTime) {
-        log << "2 Invalid value for field1: " << endl;
-        log.ReportStringDiff(expTime,json2.Get<TimeField1>().ISO8601Timestamp());
-        return 1;
-    }
-
-    if ( json2.Get<TimeField2>().Timestamp() != Time::EpochTimestamp) {
-        log << "2 Invalid value for field2: " << endl;
-        log.ReportStringDiff(Time::EpochTimestamp, json2.Get<TimeField2>().Timestamp());
-        return 1;
-    }
-
-    string newRawJson2 = parent.GetPrettyJSONString();
-    log << "Raw JSON:" << endl << newRawJson2 << endl;
-
-    ok = parent3.Parse(newRawJson2.c_str(), error);
-
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
-
-    JSON& json3 = parent3.Get<Object>();
-
-    if ( json3.Get<TimeField1>().ISO8601Timestamp() != expTime) {
-        log << "3 Invalid value for field1: " << endl;
-        log.ReportStringDiff(expTime,json3.Get<TimeField1>().ISO8601Timestamp());
-        return 1;
-    }
-
-    if ( json3.Get<TimeField2>().Timestamp() != Time::EpochTimestamp) {
-        log << "3 Invalid value for field2: " << endl;
-        log.ReportStringDiff(Time::EpochTimestamp, json3.Get<TimeField2>().Timestamp());
-        return 1;
-    }
-
-    return 0;
-}
-
-int ParseEmbededArrayString(testLogger& log) {
-    std::string rawJson = R"JSON(
-    {
-        "Objects": [{
-            "Field1": "Hello World!",
-            "Field2": ""
-        }, {
-            "Field1": "Another string",
-            "Field2": "Not a blank string"
-        }]
-    }
-    )JSON";
-
-    typedef SimpleParsedJSON<Field1,Field2> JSON; 
-    NewObjectArray(Objects,JSON);
-    SimpleParsedJSON<Objects> parent, parent2, parent3;
-
-    std::string error;
-
-    bool ok = parent.Parse(rawJson.c_str(),error);
-
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
-
-    JSON& json = *parent.Get<Objects>()[0];
-    JSON& bjson = *parent.Get<Objects>()[1];
-
-    if ( json.Get<Field1>() != "Hello World!") {
-        log << "Invalid value for field1: " << json.Get<Field1>() << endl;
-        return 1;
-    }
-
-    if ( json.Get<Field2>() != "") {
-        log << "Invalid value for field2: " << json.Get<Field2>() << endl;
-        return 1;
-    }
-
-    if ( bjson.Get<Field1>() != "Another string") {
-        log << "Invalid value for field1: " << bjson.Get<Field1>() << endl;
-        return 1;
-    }
-
-    if ( bjson.Get<Field2>() != "Not a blank string") {
-        log << "Invalid value for field2: " << bjson.Get<Field2>() << endl;
-        return 1;
-    }
-
-    string newRawJson = parent.GetJSONString(true);
-    log << "Raw JSON:" << endl << newRawJson << endl;
-
-    ok = parent2.Parse(newRawJson.c_str(),error);
-
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
-
-    JSON& json2 = *parent.Get<Objects>()[0];
-    JSON& bjson2 = *parent.Get<Objects>()[1];
-
-    if ( json2.Get<Field1>() != "Hello World!") {
-        log << "Invalid value for field1: " << json2.Get<Field1>() << endl;
-        return 1;
-    }
-
-    if ( json2.Get<Field2>() != "") {
-        log << "Invalid value for field2: " << json2.Get<Field2>() << endl;
-        return 1;
-    }
-
-    if ( bjson2.Get<Field1>() != "Another string") {
-        log << "Invalid value for field1: " << bjson2.Get<Field1>() << endl;
-        return 1;
-    }
-
-    if ( bjson2.Get<Field2>() != "Not a blank string") {
-        log << "Invalid value for field2: " << bjson2.Get<Field2>() << endl;
-        return 1;
-    }
-
-    string newRawJson2 = parent.GetPrettyJSONString();
-    log << "Raw JSON:" << endl << newRawJson2 << endl;
-
-    ok = parent3.Parse(newRawJson2.c_str(),error);
-
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
-
-    JSON& json3 = *parent.Get<Objects>()[0];
-    JSON& bjson3 = *parent.Get<Objects>()[1];
-
-    if ( json3.Get<Field1>() != "Hello World!") {
-        log << "Invalid value for field1: " << json3.Get<Field1>() << endl;
-        return 1;
-    }
-
-    if ( json3.Get<Field2>() != "") {
-        log << "Invalid value for field2: " << json3.Get<Field2>() << endl;
-        return 1;
-    }
-
-    if ( bjson3.Get<Field1>() != "Another string") {
-        log << "Invalid value for field1: " << bjson3.Get<Field1>() << endl;
-        return 1;
-    }
-
-    if ( bjson3.Get<Field2>() != "Not a blank string") {
-        log << "Invalid value for field2: " << bjson3.Get<Field2>() << endl;
-        return 1;
-    }
-
-    return 0;
-}
-
-int ParseEmbededArrayTime(testLogger& log) {
-    std::string rawJson = R"JSON(
-    {
-        "Objects": [{
-            "TimeField1": "2015-07-13T05:38:17.33640392Z",
-            "TimeField2": ""
-        }, {
-            "TimeField1": "2016-07-13T05:38:17.33640392Z",
-            "TimeField2": "2017-07-13T05:38:17.33640392Z"
-        }]
-    }
-    )JSON";
-
-    typedef SimpleParsedJSON<TimeField1,TimeField2> JSON; 
-    NewObjectArray(Objects,JSON);
-    SimpleParsedJSON<Objects> parent, parent2, parent3;
-
-    std::string error;
-
-    bool ok = parent.Parse(rawJson.c_str(),error);
-
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
-
-    JSON& json = *parent.Get<Objects>()[0];
-    JSON& bjson = *parent.Get<Objects>()[1];
-
-    const std::string expTime = "2015-07-13T05:38:17.336403Z";
-    const std::string expTimeb1 = "2016-07-13T05:38:17.336403Z";
-    const std::string expTimeb2 = "2017-07-13T05:38:17.336403Z";
-
-    if ( json.Get<TimeField1>().ISO8601Timestamp() != expTime) {
-        log << "Invalid value for field1: " << endl;
-        log.ReportStringDiff(expTime,json.Get<TimeField1>().ISO8601Timestamp());
-        return 1;
-    }
-
-    if ( json.Get<TimeField2>().Timestamp() != Time::EpochTimestamp) {
-        log << "Invalid value for field2: " << endl;
-        log.ReportStringDiff(Time::EpochTimestamp, json.Get<TimeField2>().Timestamp());
-        return 1;
-    }
-
-    if ( bjson.Get<TimeField1>().ISO8601Timestamp() != expTimeb1) {
-        log << "b Invalid value for field1: " << endl;
-        log.ReportStringDiff(expTimeb1,bjson.Get<TimeField1>().ISO8601Timestamp());
-        return 1;
-    }
-
-    if ( bjson.Get<TimeField2>().ISO8601Timestamp() != expTimeb2) {
-        log << "b Invalid value for field1: " << endl;
-        log.ReportStringDiff(expTimeb2,bjson.Get<TimeField1>().ISO8601Timestamp());
-        return 1;
-    }
-
-
-    string newRawJson = parent.GetJSONString(true);
-    log << "Raw JSON:" << endl << newRawJson << endl;
-
-    ok = parent2.Parse(newRawJson.c_str(),error);
-
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
-
-    JSON& json2 = *parent.Get<Objects>()[0];
-    JSON& bjson2 = *parent.Get<Objects>()[1];
-
-    if ( json2.Get<TimeField1>().ISO8601Timestamp() != expTime) {
-        log << "2 Invalid value for field1: " << endl;
-        log.ReportStringDiff(expTime,json2.Get<TimeField1>().ISO8601Timestamp());
-        return 1;
-    }
-
-    if ( json2.Get<TimeField2>().Timestamp() != Time::EpochTimestamp) {
-        log << "2 Invalid value for field2: " << endl;
-        log.ReportStringDiff(Time::EpochTimestamp, json2.Get<TimeField2>().Timestamp());
-        return 1;
-    }
-
-    if ( bjson2.Get<TimeField1>().ISO8601Timestamp() != expTimeb1) {
-        log << "2 b Invalid value for field1: " << endl;
-        log.ReportStringDiff(expTimeb1,bjson2.Get<TimeField1>().ISO8601Timestamp());
-        return 1;
-    }
-
-    if ( bjson2.Get<TimeField2>().ISO8601Timestamp() != expTimeb2) {
-        log << "2 b Invalid value for field1: " << endl;
-        log.ReportStringDiff(expTimeb2,bjson2.Get<TimeField1>().ISO8601Timestamp());
-        return 1;
-    }
-
-
-    string newRawJson2 = parent.GetPrettyJSONString();
-    log << "Raw JSON:" << endl << newRawJson2 << endl;
-
-    ok = parent3.Parse(newRawJson2.c_str(),error);
-
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
-
-    JSON& json3 = *parent.Get<Objects>()[0];
-    JSON& bjson3 = *parent.Get<Objects>()[1];
-
-    if ( json3.Get<TimeField1>().ISO8601Timestamp() != expTime) {
-        log << "3 Invalid value for field1: " << endl;
-        log.ReportStringDiff(expTime,json3.Get<TimeField1>().ISO8601Timestamp());
-        return 1;
-    }
-
-    if ( json3.Get<TimeField2>().Timestamp() != Time::EpochTimestamp) {
-        log << "3 Invalid value for field2: " << endl;
-        log.ReportStringDiff(Time::EpochTimestamp, json3.Get<TimeField2>().Timestamp());
-        return 1;
-    }
-
-    if ( bjson3.Get<TimeField1>().ISO8601Timestamp() != expTimeb1) {
-        log << "3 b Invalid value for field1: " << endl;
-        log.ReportStringDiff(expTimeb1,bjson3.Get<TimeField1>().ISO8601Timestamp());
-        return 1;
-    }
-
-    if ( bjson3.Get<TimeField2>().ISO8601Timestamp() != expTimeb2) {
-        log << "3 b Invalid value for field1: " << endl;
-        log.ReportStringDiff(expTimeb2,bjson3.Get<TimeField1>().ISO8601Timestamp());
-        return 1;
-    }
-
-    return 0;
-}
-
-int ParseStringArray(testLogger& log) {
+TEST(JSONParsing, ParseStringArray) {
     std::string rawJson = R"JSON( 
         {
             "StringArrayField1": [
@@ -810,245 +143,113 @@ int ParseStringArray(testLogger& log) {
 
     bool ok = json.Parse(rawJson.c_str(),error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     const vector<string>& v1 = json.Get<StringArrayField1>();
     const vector<string>& v2 = json.Get<StringArrayField2>();
 
-    if ( v1.size() != 4 ) {
-        log << "Invalid size for field1: " << v1.size() << endl;
-        return 1;
-    }
+    ASSERT_EQ(v1.size(),4 );
 
-    if ( v1[0] != "String 1") {
-        log << "Invalid value for string 0: " << v1[0] << endl;
-        return 1;
-    }
+    ASSERT_EQ(v1[0],"String 1");
 
-    if ( v1[1] != "String 2") {
-        log << "Invalid value for string 1: " << v1[1] << endl;
-        return 1;
-    }
+    ASSERT_EQ(v1[1],"String 2");
 
-    if ( v1[2] != "") {
-        log << "Invalid value for string 2: " << v1[2] << endl;
-        return 1;
-    }
+    ASSERT_EQ(v1[2],"");
 
-    if ( v1[3] != "String 4") {
-        log << "Invalid value for string 3: " << v1[3] << endl;
-        return 1;
-    }
+    ASSERT_EQ(v1[3],"String 4");
 
-    if ( v2.size() != 0 ) {
-        log << "Invalid size for field2: " << v2.size() << endl;
-        return 1;
-    }
+    ASSERT_EQ(v2.size(),0 );
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson = json.GetJSONString(true);
 
     ok = json2.Parse(newRawJson.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse JSON!" << endl;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     const vector<string>& v31 = json2.Get<StringArrayField1>();
     const vector<string>& v32 = json2.Get<StringArrayField2>();
 
-    if ( v31.size() != 4 ) {
-        log << "Invalid size for field1: " << v31.size() << endl;
-        return 1;
-    }
+    ASSERT_EQ(v31.size(),4 );
 
-    if ( v31[0] != "String 1") {
-        log << "Invalid value for string 0: " << v31[0] << endl;
-        return 1;
-    }
+    ASSERT_EQ(v31[0],"String 1");
 
-    if ( v31[1] != "String 2") {
-        log << "Invalid value for string 1: " << v31[1] << endl;
-        return 1;
-    }
+    ASSERT_EQ(v31[1],"String 2");
 
-    if ( v31[2] != "") {
-        log << "Invalid value for string 2: " << v31[2] << endl;
-        return 1;
-    }
+    ASSERT_EQ(v31[2],"");
 
-    if ( v31[3] != "String 4") {
-        log << "Invalid value for string 3: " << v31[3] << endl;
-        return 1;
-    }
+    ASSERT_EQ(v31[3],"String 4");
 
-    if ( v32.size() != 0 ) {
-        log << "Invalid size for field2: " << v32.size() << endl;
-        return 1;
-    }
+    ASSERT_EQ(v32.size(),0 );
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson2 = json.GetPrettyJSONString();
 
     ok = json3.Parse(newRawJson2.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse JSON!" << endl;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     const vector<string>& v21 = json3.Get<StringArrayField1>();
     const vector<string>& v22 = json3.Get<StringArrayField2>();
 
-    if ( v21.size() != 4 ) {
-        log << "Invalid size for field1: " << v21.size() << endl;
-        return 1;
-    }
+    ASSERT_EQ(v21.size(),4 );
 
-    if ( v21[0] != "String 1") {
-        log << "Invalid value for string 0: " << v21[0] << endl;
-        return 1;
-    }
+    ASSERT_EQ(v21[0],"String 1");
 
-    if ( v21[1] != "String 2") {
-        log << "Invalid value for string 1: " << v21[1] << endl;
-        return 1;
-    }
+    ASSERT_EQ(v21[1],"String 2");
 
-    if ( v21[2] != "") {
-        log << "Invalid value for string 2: " << v21[2] << endl;
-        return 1;
-    }
+    ASSERT_EQ(v21[2],"");
 
-    if ( v21[3] != "String 4") {
-        log << "Invalid value for string 3: " << v21[3] << endl;
-        return 1;
-    }
+    ASSERT_EQ(v21[3],"String 4");
 
-    if ( v22.size() != 0 ) {
-        log << "Invalid size for field2: " << v22.size() << endl;
-        return 1;
-    }
+    ASSERT_EQ(v22.size(),0 );
 
-    return 0;
 }
 
-int ParseTimeArray(testLogger& log) {
-    std::string rawJson = R"JSON( 
-        {
-            "TimeArrayField1": [
-                "2015-07-13T05:38:17.33640392Z",
-                "",
-                "2016-07-13T05:38:17.33640392Z",
-                "2017-07-13T05:38:17.33640392Z"
-            ],
-            "TimeArrayField2": []
+TEST(JSONParsing, ParseEmbededTime) {
+    std::string rawJson = R"JSON(
+    {
+        "Object" : {
+            "TimeField1": "2015-07-13T05:38:17.33640392Z",
+            "TimeField2": "",
         }
+    }
     )JSON";
 
-    SimpleParsedJSON<TimeArrayField1, TimeArrayField2> json, json2, json3;
+    typedef SimpleParsedJSON<TimeField1,TimeField2> JSON; 
+    NewEmbededObject(Object,JSON);
+    SimpleParsedJSON<Object> parent, parent2, parent3;
+
 
     std::string error;
 
-    bool ok = json.Parse(rawJson.c_str(),error);
+    ASSERT_TRUE(parent.Parse(rawJson.c_str(),error));
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    JSON& json = parent.Get<Object>();
 
-    auto checker = [&log] (const vector<Time>& v1, const vector<Time>& v2) -> bool
-    {
-        if ( v1.size() != 4 ) {
-            log << "Invalid size for field1: " << v1.size() << endl;
-            return false;
-        }
+    const std::string expTime = "2015-07-13T05:38:17.336403Z";
+    ASSERT_EQ(json.Get<TimeField1>().ISO8601Timestamp(), expTime);
+    ASSERT_EQ(json.Get<TimeField2>().Timestamp(), EpochTimestamp);
 
-        const std::string expTime = "2015-07-13T05:38:17.336403Z";
-        const std::string expTime1 = "2016-07-13T05:38:17.336403Z";
-        const std::string expTime2 = "2017-07-13T05:38:17.336403Z";
+    string newRawJson = parent.GetJSONString(true);
+    ASSERT_TRUE(parent2.Parse(newRawJson.c_str(), error));
 
-        if ( v1[0].ISO8601Timestamp() != expTime) {
-            log << "Invalid value for time 0: " << v1[0].ISO8601Timestamp() << endl;
-            return false;
-        }
+    JSON& json2 = parent2.Get<Object>();
 
-        if ( v1[1].Timestamp() != Time::EpochTimestamp) {
-            log << "Invalid value for time 1: " << v1[1].Timestamp() << endl;
-            return false;
-        }
+    ASSERT_EQ(json2.Get<TimeField1>().ISO8601Timestamp(), expTime);
+    ASSERT_EQ(json2.Get<TimeField2>().Timestamp(), EpochTimestamp);
 
-        if ( v1[2].ISO8601Timestamp() != expTime1) {
-            log << "Invalid value for time 2: " << v1[2].ISO8601Timestamp() << endl;
-            return false;
-        }
+    string newRawJson2 = parent.GetPrettyJSONString();
 
-        if ( v1[3].ISO8601Timestamp() != expTime2) {
-            log << "Invalid value for time 2: " << v1[3].ISO8601Timestamp() << endl;
-            return false;
-        }
+    ASSERT_TRUE(parent3.Parse(newRawJson2.c_str(), error));
 
-        if ( v2.size() != 0 ) {
-            log << "Invalid size for field2: " << v2.size() << endl;
-            return false;
-        }
+    JSON& json3 = parent3.Get<Object>();
 
-        return true;
-    };
-
-    const vector<Time>& v1 = json.Get<TimeArrayField1>();
-    const vector<Time>& v2 = json.Get<TimeArrayField2>();
-
-    if ( !checker(v1,v2)) {
-        return 1;
-    }
-
-    log << "Re-building JSON>..." << endl;
-
-    string newRawJson = json.GetJSONString(true);
-
-    ok = json2.Parse(newRawJson.c_str(), error);
-
-    if (!ok) {
-        log << "Failed to parse JSON!" << endl;
-        return 1;
-    }
-
-    const vector<Time>& v31 = json2.Get<TimeArrayField1>();
-    const vector<Time>& v32 = json2.Get<TimeArrayField2>();
-
-    if ( !checker(v31,v32)) {
-        return 1;
-    }
-
-    log << "Re-building JSON>..." << endl;
-
-    string newRawJson2 = json.GetPrettyJSONString();
-
-    ok = json3.Parse(newRawJson2.c_str(), error);
-
-    if (!ok) {
-        log << "Failed to parse JSON!" << endl;
-        return 1;
-    }
-
-    const vector<Time>& v21 = json3.Get<TimeArrayField1>();
-    const vector<Time>& v22 = json3.Get<TimeArrayField2>();
-
-    if ( !checker(v21,v22)) {
-        return 1;
-    }
-
-    return 0;
+    ASSERT_EQ(json3.Get<TimeField1>().ISO8601Timestamp(), expTime);
+    ASSERT_EQ(json3.Get<TimeField2>().Timestamp(), EpochTimestamp);
 }
 
-int ParseEmbededStringArray(testLogger& log) {
+TEST(JSONParsing, ParseEmbededStringArray) {
     std::string rawJson = R"JSON({
             "Object": {
                 "StringArrayField1": [
@@ -1071,142 +272,257 @@ int ParseEmbededStringArray(testLogger& log) {
 
     bool ok = parent.Parse(rawJson.c_str(),error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     JSON& json = parent.Get<Object>();
 
     const vector<string>& v1 = json.Get<StringArrayField1>();
     const vector<string>& v2 = json.Get<StringArrayField2>();
 
-    if ( v1.size() != 4 ) {
-        log << "Invalid size for field1: " << v1.size() << endl;
-        return 1;
-    }
+    ASSERT_EQ(v1.size(),4 );
 
-    if ( v1[0] != "String 1") {
-        log << "Invalid value for string 0: " << v1[0] << endl;
-        return 1;
-    }
+    ASSERT_EQ(v1[0],"String 1");
 
-    if ( v1[1] != "String 2") {
-        log << "Invalid value for string 1: " << v1[1] << endl;
-        return 1;
-    }
+    ASSERT_EQ(v1[1],"String 2");
 
-    if ( v1[2] != "") {
-        log << "Invalid value for string 2: " << v1[2] << endl;
-        return 1;
-    }
+    ASSERT_EQ(v1[2],"");
 
-    if ( v1[3] != "String 4") {
-        log << "Invalid value for string 3: " << v1[3] << endl;
-        return 1;
-    }
+    ASSERT_EQ(v1[3],"String 4");
 
-    if ( v2.size() != 0 ) {
-        log << "Invalid size for field2: " << v2.size() << endl;
-        return 1;
-    }
+    ASSERT_EQ(v2.size(),0 );
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson = parent.GetJSONString(true);
 
     ok = parent2.Parse(newRawJson.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse JSON!" << endl;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     JSON& json2 = parent2.Get<Object>();
 
     const vector<string>& v21 = json2.Get<StringArrayField1>();
     const vector<string>& v22 = json2.Get<StringArrayField2>();
 
-    if ( v21.size() != 4 ) {
-        log << "Invalid size for field1: " << v21.size() << endl;
-        return 1;
-    }
+    ASSERT_EQ(v21.size(),4 );
 
-    if ( v21[0] != "String 1") {
-        log << "Invalid value for string 0: " << v21[0] << endl;
-        return 1;
-    }
+    ASSERT_EQ(v21[0],"String 1");
 
-    if ( v21[1] != "String 2") {
-        log << "Invalid value for string 1: " << v21[1] << endl;
-        return 1;
-    }
+    ASSERT_EQ(v21[1],"String 2");
 
-    if ( v21[2] != "") {
-        log << "Invalid value for string 2: " << v21[2] << endl;
-        return 1;
-    }
+    ASSERT_EQ(v21[2],"");
 
-    if ( v21[3] != "String 4") {
-        log << "Invalid value for string 3: " << v21[3] << endl;
-        return 1;
-    }
+    ASSERT_EQ(v21[3],"String 4");
 
-    if ( v22.size() != 0 ) {
-        log << "Invalid size for field2: " << v22.size() << endl;
-        return 1;
-    }
+    ASSERT_EQ(v22.size(),0 );
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson2 = parent.GetPrettyJSONString();
 
     ok = parent3.Parse(newRawJson2.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse JSON!" << endl;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     JSON& json3 = parent3.Get<Object>();
 
     const vector<string>& v31 = json3.Get<StringArrayField1>();
     const vector<string>& v32 = json3.Get<StringArrayField2>();
 
-    if ( v31.size() != 4 ) {
-        log << "Invalid size for field1: " << v31.size() << endl;
-        return 1;
-    }
+    ASSERT_EQ(v31.size(),4 );
 
-    if ( v31[0] != "String 1") {
-        log << "Invalid value for string 0: " << v31[0] << endl;
-        return 1;
-    }
+    ASSERT_EQ(v31[0],"String 1");
 
-    if ( v31[1] != "String 2") {
-        log << "Invalid value for string 1: " << v31[1] << endl;
-        return 1;
-    }
+    ASSERT_EQ(v31[1],"String 2");
 
-    if ( v31[2] != "") {
-        log << "Invalid value for string 2: " << v31[2] << endl;
-        return 1;
-    }
+    ASSERT_EQ(v31[2],"");
 
-    if ( v31[3] != "String 4") {
-        log << "Invalid value for string 3: " << v31[3] << endl;
-        return 1;
-    }
+    ASSERT_EQ(v31[3],"String 4");
 
-    if ( v32.size() != 0 ) {
-        log << "Invalid size for field2: " << v32.size() << endl;
-        return 1;
-    }
+    ASSERT_EQ(v32.size(),0 );
 
-    return 0;
 }
 
-int ParseInt(testLogger& log) {
+TEST(JSONParsing, ParseEmbededString) {
+    std::string rawJson = R"JSON(
+    {
+        "Object" : {
+            "Field1": "Hello World!",
+            "Field2": ""
+        }
+    }
+    )JSON";
+
+    typedef SimpleParsedJSON<Field1,Field2> JSON; 
+    NewEmbededObject(Object,JSON);
+    SimpleParsedJSON<Object> parent, parent2, parent3;
+
+
+    std::string error;
+
+    bool ok = parent.Parse(rawJson.c_str(),error);
+
+    ASSERT_TRUE(ok);
+
+    JSON& json = parent.Get<Object>();
+
+    ASSERT_EQ(json.Get<Field1>(),"Hello World!");
+
+    ASSERT_EQ(json.Get<Field2>(),"");
+
+    string newRawJson = parent.GetJSONString(true);
+
+    ok = parent2.Parse(newRawJson.c_str(), error);
+
+    ASSERT_TRUE(ok);
+
+    JSON& json2 = parent2.Get<Object>();
+
+    ASSERT_EQ(json2.Get<Field1>(),"Hello World!");
+
+    ASSERT_EQ(json2.Get<Field2>(),"");
+
+    string newRawJson2 = parent.GetPrettyJSONString();
+
+    ok = parent3.Parse(newRawJson2.c_str(), error);
+
+    ASSERT_TRUE(ok);
+
+    JSON& json3 = parent3.Get<Object>();
+
+    ASSERT_EQ(json3.Get<Field1>(),"Hello World!");
+
+    ASSERT_EQ(json3.Get<Field2>(),"");
+}
+
+TEST(JSONParsing, ParseEmbededArrayString) {
+    std::string rawJson = R"JSON(
+    {
+        "Objects": [{
+            "Field1": "Hello World!",
+            "Field2": ""
+        }, {
+            "Field1": "Another string",
+            "Field2": "Not a blank string"
+        }]
+    }
+    )JSON";
+
+    typedef SimpleParsedJSON<Field1,Field2> JSON; 
+    NewObjectArray(Objects,JSON);
+    SimpleParsedJSON<Objects> parent, parent2, parent3;
+
+    std::string error;
+
+    bool ok = parent.Parse(rawJson.c_str(),error);
+
+    ASSERT_TRUE(ok);
+
+    JSON& json = *parent.Get<Objects>()[0];
+    JSON& bjson = *parent.Get<Objects>()[1];
+
+    ASSERT_EQ(json.Get<Field1>(),"Hello World!");
+
+    ASSERT_EQ(json.Get<Field2>(),"");
+
+    ASSERT_EQ(bjson.Get<Field1>(),"Another string");
+
+    ASSERT_EQ(bjson.Get<Field2>(),"Not a blank string");
+
+    string newRawJson = parent.GetJSONString(true);
+
+    ok = parent2.Parse(newRawJson.c_str(),error);
+
+    ASSERT_TRUE(ok);
+
+    JSON& json2 = *parent.Get<Objects>()[0];
+    JSON& bjson2 = *parent.Get<Objects>()[1];
+
+    ASSERT_EQ(json2.Get<Field1>(),"Hello World!");
+
+    ASSERT_EQ(json2.Get<Field2>(),"");
+
+    ASSERT_EQ(bjson2.Get<Field1>(),"Another string");
+
+    ASSERT_EQ(bjson2.Get<Field2>(),"Not a blank string");
+
+    string newRawJson2 = parent.GetPrettyJSONString();
+
+    ok = parent3.Parse(newRawJson2.c_str(),error);
+
+    ASSERT_TRUE(ok);
+
+    JSON& json3 = *parent.Get<Objects>()[0];
+    JSON& bjson3 = *parent.Get<Objects>()[1];
+
+    ASSERT_EQ(json3.Get<Field1>(),"Hello World!");
+
+    ASSERT_EQ(json3.Get<Field2>(),"");
+
+    ASSERT_EQ(bjson3.Get<Field1>(),"Another string");
+
+    ASSERT_EQ(bjson3.Get<Field2>(),"Not a blank string");
+
+}
+
+TEST(JSONParsing, ParseEmbededArrayTime) {
+    std::string rawJson = R"JSON(
+    {
+        "Objects": [{
+            "TimeField1": "2015-07-13T05:38:17.33640392Z",
+            "TimeField2": ""
+        }, {
+            "TimeField1": "2016-07-13T05:38:17.33640392Z",
+            "TimeField2": "2017-07-13T05:38:17.33640392Z"
+        }]
+    }
+    )JSON";
+
+    typedef SimpleParsedJSON<TimeField1,TimeField2> JSON; 
+    NewObjectArray(Objects,JSON);
+    SimpleParsedJSON<Objects> parent, parent2, parent3;
+
+    std::string error;
+
+    ASSERT_TRUE(parent.Parse(rawJson.c_str(),error));
+
+    JSON& json = *parent.Get<Objects>()[0];
+    JSON& bjson = *parent.Get<Objects>()[1];
+
+    const std::string expTime = "2015-07-13T05:38:17.336403Z";
+    const std::string expTimeb1 = "2016-07-13T05:38:17.336403Z";
+    const std::string expTimeb2 = "2017-07-13T05:38:17.336403Z";
+
+    ASSERT_EQ(json.Get<TimeField1>().ISO8601Timestamp(), expTime);
+    ASSERT_EQ(json.Get<TimeField2>().Timestamp(), EpochTimestamp);
+    ASSERT_EQ(bjson.Get<TimeField1>().ISO8601Timestamp(), expTimeb1);
+    ASSERT_EQ(bjson.Get<TimeField2>().ISO8601Timestamp(), expTimeb2);
+
+    string newRawJson = parent.GetJSONString(true);
+
+    ASSERT_TRUE(parent2.Parse(newRawJson.c_str(),error));
+
+    JSON& json2 = *parent.Get<Objects>()[0];
+    JSON& bjson2 = *parent.Get<Objects>()[1];
+
+    ASSERT_EQ(json2.Get<TimeField1>().ISO8601Timestamp(), expTime);
+    ASSERT_EQ(json2.Get<TimeField2>().Timestamp(), EpochTimestamp);
+    ASSERT_EQ(bjson2.Get<TimeField1>().ISO8601Timestamp(), expTimeb1);
+    ASSERT_EQ(bjson2.Get<TimeField2>().ISO8601Timestamp(), expTimeb2);
+
+    string newRawJson2 = parent.GetPrettyJSONString();
+
+    ASSERT_TRUE(parent3.Parse(newRawJson2.c_str(),error));
+
+    JSON& json3 = *parent.Get<Objects>()[0];
+    JSON& bjson3 = *parent.Get<Objects>()[1];
+
+    ASSERT_EQ(json3.Get<TimeField1>().ISO8601Timestamp(), expTime);
+    ASSERT_EQ(json3.Get<TimeField2>().Timestamp(), EpochTimestamp);
+    ASSERT_EQ(bjson3.Get<TimeField1>().ISO8601Timestamp(), expTimeb1);
+    ASSERT_EQ(bjson3.Get<TimeField2>().ISO8601Timestamp(), expTimeb2);
+
+}
+
+TEST(JSONParsing,ParseInt) {
 
     SimpleParsedJSON<
         IntField1,
@@ -1222,103 +538,55 @@ int ParseInt(testLogger& log) {
         "IntField1":     500,
         "IntField2":    -500,
         "DoubleField1":  500,
-        "DoubleField2": -500,
+        "DoubleField2": -500
     }
     )JSON";
 
     bool ok = json.Parse(rawJson.c_str(),error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json.Get<IntField1>() != 500) {
-        log << "Invalid value for field1: " << json.Get<IntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<IntField1>() , 500);
 
-    if ( json.Get<IntField2>() != -500) {
-        log << "Invalid value for field2: " << json.Get<IntField2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<IntField2>() , -500);
 
-    if ( json.Get<DoubleField1>() != 500) {
-        log << "Invalid value for double 1: " << json.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<DoubleField1>() , 500);
 
-    if ( json.Get<DoubleField2>() != -500) {
-        log << "Invalid value for double 2: " << json.Get<DoubleField2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<DoubleField2>() , -500);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson = json.GetJSONString(true);
 
     ok = json2.Parse(newRawJson.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json2.Get<IntField1>() != 500) {
-        log << "Invalid value for field1: " << json2.Get<IntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<IntField1>() , 500);
 
-    if ( json2.Get<IntField2>() != -500) {
-        log << "Invalid value for field2: " << json2.Get<IntField2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<IntField2>() , -500);
 
-    if ( json2.Get<DoubleField1>() != 500) {
-        log << "Invalid value for double 1: " << json2.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<DoubleField1>() , 500);
 
-    if ( json2.Get<DoubleField2>() != -500) {
-        log << "Invalid value for double 2: " << json2.Get<DoubleField2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<DoubleField2>() , -500);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson2 = json.GetPrettyJSONString();
 
     ok = json3.Parse(newRawJson2.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json3.Get<IntField1>() != 500) {
-        log << "Invalid value for field1: " << json3.Get<IntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<IntField1>() , 500);
 
-    if ( json3.Get<IntField2>() != -500) {
-        log << "Invalid value for field2: " << json3.Get<IntField2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<IntField2>() , -500);
 
-    if ( json3.Get<DoubleField1>() != 500) {
-        log << "Invalid value for double 1: " << json3.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<DoubleField1>() , 500);
 
-    if ( json3.Get<DoubleField2>() != -500) {
-        log << "Invalid value for double 2: " << json3.Get<DoubleField2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<DoubleField2>() , -500);
 
-    return 0;
 }
 
-int ParseIntArray(testLogger& log) {
+TEST(JSONParsing,ParseIntArray) {
     std::string rawJson = R"JSON( 
         {
             "IntArrayField1": [
@@ -1337,92 +605,54 @@ int ParseIntArray(testLogger& log) {
 
     bool ok = json.Parse(rawJson.c_str(),error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     const vector<int>& v1 = json.Get<IntArrayField1>();
     const vector<int>& v2 = json.Get<IntArrayField2>();
 
-    auto f = [&] (const vector<int>& v1, const vector<int>& v2) -> int {
-        if ( v1.size() != 4 ) {
-            log << "Invalid size for field1: " << v1.size() << endl;
-            return 1;
-        }
+    auto f = [&] (const vector<int>& v1, const vector<int>& v2) {
+        ASSERT_EQ(v1.size() , 4 );
 
-        if ( v1[0] != 500) {
-            log << "Invalid value for int 0: " << v1[0] << endl;
-            return 1;
-        }
+        ASSERT_EQ(v1[0] , 500);
 
-        if ( v1[1] != -134) {
-            log << "Invalid value for int 1: " << v1[1] << endl;
-            return 1;
-        }
+        ASSERT_EQ(v1[1] , -134);
 
-        if ( v1[2] != 0) {
-            log << "Invalid value for int 2: " << v1[2] << endl;
-            return 1;
-        }
+        ASSERT_EQ(v1[2] , 0);
 
-        if ( v1[3] != 23) {
-            log << "Invalid value for int 3: " << v1[3] << endl;
-            return 1;
-        }
+        ASSERT_EQ(v1[3] , 23);
 
-        if ( v2.size() != 0 ) {
-            log << "Invalid size for field2: " << v2.size() << endl;
-            return 1;
-        }
-
-        return 0;
+        ASSERT_EQ(v2.size() , 0 );
     };
 
-    if ( f(v1,v2) != 0 ) {
-        return 1;
-    }
+    f(v1,v2);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson = json.GetJSONString(true);
 
     ok = json2.Parse(newRawJson.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse JSON!" << endl;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     const vector<int>& v21 = json2.Get<IntArrayField1>();
     const vector<int>& v22 = json2.Get<IntArrayField2>();
 
-    if ( f(v21,v22) != 0 ) {
-        return 1;
-    }
+    f(v21,v22);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson2 = json.GetPrettyJSONString();
 
     ok = json3.Parse(newRawJson2.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse JSON!" << endl;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     const vector<int>& v31 = json3.Get<IntArrayField1>();
     const vector<int>& v32 = json3.Get<IntArrayField2>();
 
-    if ( f(v31,v32) != 0 ) {
-        return 1;
-    }
+    f(v31,v32);
 
-    return 0;
 }
 
-int ParseEmbededInt(testLogger& log) {
+TEST(JSONParsing,ParseEmbededInt) {
     typedef SimpleParsedJSON<
         IntField1,
         IntField2,
@@ -1440,7 +670,7 @@ int ParseEmbededInt(testLogger& log) {
             "IntField1":     500,
             "IntField2":    -500,
             "DoubleField1":  500,
-            "DoubleField2": -500,
+            "DoubleField2": -500
         }
     }
     )JSON";
@@ -1449,33 +679,17 @@ int ParseEmbededInt(testLogger& log) {
 
     JSON& json = parent.Get<Object>();
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json.Get<IntField1>() != 500) {
-        log << "Invalid value for field1: " << json.Get<IntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<IntField1>() , 500);
 
-    if ( json.Get<IntField2>() != -500) {
-        log << "Invalid value for field2: " << json.Get<IntField2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<IntField2>() , -500);
 
-    if ( json.Get<DoubleField1>() != 500) {
-        log << "Invalid value for double 1: " << json.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<DoubleField1>() , 500);
 
-    if ( json.Get<DoubleField2>() != -500) {
-        log << "Invalid value for double 2: " << json.Get<DoubleField2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<DoubleField2>() , -500);
 
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson = parent.GetJSONString(true);
 
@@ -1484,32 +698,16 @@ int ParseEmbededInt(testLogger& log) {
 
     JSON& json2 = parent2.Get<Object>();
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json2.Get<IntField1>() != 500) {
-        log << "Invalid value for field1: " << json2.Get<IntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<IntField1>() , 500);
 
-    if ( json2.Get<IntField2>() != -500) {
-        log << "Invalid value for field2: " << json2.Get<IntField2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<IntField2>() , -500);
 
-    if ( json2.Get<DoubleField1>() != 500) {
-        log << "Invalid value for double 1: " << json2.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<DoubleField1>() , 500);
 
-    if ( json2.Get<DoubleField2>() != -500) {
-        log << "Invalid value for double 2: " << json2.Get<DoubleField2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<DoubleField2>() , -500);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson2 = parent.GetPrettyJSONString();
 
@@ -1518,35 +716,19 @@ int ParseEmbededInt(testLogger& log) {
 
     JSON& json3 = parent3.Get<Object>();
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json3.Get<IntField1>() != 500) {
-        log << "Invalid value for field1: " << json3.Get<IntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<IntField1>() , 500);
 
-    if ( json3.Get<IntField2>() != -500) {
-        log << "Invalid value for field2: " << json3.Get<IntField2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<IntField2>() , -500);
 
-    if ( json3.Get<DoubleField1>() != 500) {
-        log << "Invalid value for double 1: " << json3.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<DoubleField1>() , 500);
 
-    if ( json3.Get<DoubleField2>() != -500) {
-        log << "Invalid value for double 2: " << json3.Get<DoubleField2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<DoubleField2>() , -500);
 
-    return 0;
 }
 
-int ParseEmbededArrayInt(testLogger& log) {
+TEST(JSONParsing,ParseEmbededArrayInt) {
     typedef SimpleParsedJSON<
         IntField1,
         IntField2,
@@ -1585,38 +767,19 @@ int ParseEmbededArrayInt(testLogger& log) {
 
     JSON& json = *parent.Get<Objects>()[1];
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if (parent.Get<Objects>().size() != 3) {
-        log << "Invalid size: " << parent.Get<Objects>().size() << endl;
-        return 1;
-    }
+    ASSERT_EQ(parent.Get<Objects>().size() , 3);
 
-    if ( json.Get<IntField1>() != 500) {
-        log << "Invalid value for field1: " << json.Get<IntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<IntField1>() , 500);
 
-    if ( json.Get<IntField2>() != -500) {
-        log << "Invalid value for field2: " << json.Get<IntField2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<IntField2>() , -500);
 
-    if ( json.Get<DoubleField1>() != 500) {
-        log << "Invalid value for double 1: " << json.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<DoubleField1>() , 500);
 
-    if ( json.Get<DoubleField2>() != -500) {
-        log << "Invalid value for double 2: " << json.Get<DoubleField2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<DoubleField2>() , -500);
 
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson = parent.GetJSONString(true);
 
@@ -1624,32 +787,16 @@ int ParseEmbededArrayInt(testLogger& log) {
 
     JSON& json2 = *parent2.Get<Objects>()[1];
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json2.Get<IntField1>() != 500) {
-        log << "Invalid value for field1: " << json2.Get<IntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<IntField1>() , 500);
 
-    if ( json2.Get<IntField2>() != -500) {
-        log << "Invalid value for field2: " << json2.Get<IntField2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<IntField2>() , -500);
 
-    if ( json2.Get<DoubleField1>() != 500) {
-        log << "Invalid value for double 1: " << json2.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<DoubleField1>() , 500);
 
-    if ( json2.Get<DoubleField2>() != -500) {
-        log << "Invalid value for double 2: " << json2.Get<DoubleField2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<DoubleField2>() , -500);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson2 = parent.GetPrettyJSONString();
 
@@ -1657,35 +804,19 @@ int ParseEmbededArrayInt(testLogger& log) {
 
     JSON& json3 = *parent3.Get<Objects>()[1];
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json3.Get<IntField1>() != 500) {
-        log << "Invalid value for field1: " << json3.Get<IntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<IntField1>() , 500);
 
-    if ( json3.Get<IntField2>() != -500) {
-        log << "Invalid value for field2: " << json3.Get<IntField2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<IntField2>() , -500);
 
-    if ( json3.Get<DoubleField1>() != 500) {
-        log << "Invalid value for double 1: " << json3.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<DoubleField1>() , 500);
 
-    if ( json3.Get<DoubleField2>() != -500) {
-        log << "Invalid value for double 2: " << json3.Get<DoubleField2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<DoubleField2>() , -500);
 
-    return 0;
 }
 
-int ParseI64(testLogger& log) {
+TEST(JSONParsing,ParseI64) {
     std::string rawJson = R"JSON( 
     {
         "I64Field1": -500,
@@ -1693,7 +824,7 @@ int ParseI64(testLogger& log) {
         "I64Field3": 5147483658,
         "I64Field4": -2147483658,
         "DoubleField1": 5147483658,
-        "DoubleField2": -2147483658,
+        "DoubleField2": -2147483658
     }
     )JSON";
 
@@ -1710,127 +841,61 @@ int ParseI64(testLogger& log) {
 
     bool ok = json.Parse(rawJson.c_str(),error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json.Get<I64Field1>() != -500) {
-        log << "Invalid value for field1: " << json.Get<I64Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<I64Field1>() , -500);
 
-    if ( json.Get<I64Field2>() != 500) {
-        log << "Invalid value for field2: " << json.Get<I64Field2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<I64Field2>() , 500);
 
-    if ( json.Get<I64Field3>() != 5147483658) {
-        log << "Invalid value for field3: " << json.Get<I64Field3>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<I64Field3>() , 5147483658);
 
-    if ( json.Get<I64Field4>() != -2147483658) {
-        log << "Invalid value for field4: " << json.Get<I64Field4>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<I64Field4>() , -2147483658);
 
-    if ( json.Get<DoubleField1>() != 5147483658) {
-        log << "Invalid value for double 1: " << json.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<DoubleField1>() , 5147483658);
 
-    if ( json.Get<DoubleField2>() != -2147483658) {
-        log << "Invalid value for double 2: " << json.Get<DoubleField2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<DoubleField2>() , -2147483658);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson = json.GetJSONString(true);
 
     ok = json2.Parse(newRawJson.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json2.Get<I64Field1>() != -500) {
-        log << "Invalid value for field1: " << json2.Get<I64Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<I64Field1>() , -500);
 
-    if ( json2.Get<I64Field2>() != 500) {
-        log << "Invalid value for field2: " << json2.Get<I64Field2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<I64Field2>() , 500);
 
-    if ( json2.Get<I64Field3>() != 5147483658) {
-        log << "Invalid value for field3: " << json2.Get<I64Field3>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<I64Field3>() , 5147483658);
 
-    if ( json2.Get<I64Field4>() != -2147483658) {
-        log << "Invalid value for field4: " << json2.Get<I64Field4>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<I64Field4>() , -2147483658);
 
-    if ( json2.Get<DoubleField1>() != 5147483658) {
-        log << "Invalid value for double 1: " << json2.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<DoubleField1>() , 5147483658);
 
-    if ( json2.Get<DoubleField2>() != -2147483658) {
-        log << "Invalid value for double 2: " << json2.Get<DoubleField2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<DoubleField2>() , -2147483658);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson2 = json.GetPrettyJSONString();
 
     ok = json3.Parse(newRawJson2.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json3.Get<I64Field1>() != -500) {
-        log << "Invalid value for field1: " << json3.Get<I64Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<I64Field1>() , -500);
 
-    if ( json3.Get<I64Field2>() != 500) {
-        log << "Invalid value for field2: " << json3.Get<I64Field2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<I64Field2>() , 500);
 
-    if ( json3.Get<I64Field3>() != 5147483658) {
-        log << "Invalid value for field3: " << json3.Get<I64Field3>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<I64Field3>() , 5147483658);
 
-    if ( json3.Get<I64Field4>() != -2147483658) {
-        log << "Invalid value for field4: " << json3.Get<I64Field4>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<I64Field4>() , -2147483658);
 
-    if ( json3.Get<DoubleField1>() != 5147483658) {
-        log << "Invalid value for double 1: " << json3.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<DoubleField1>() , 5147483658);
 
-    if ( json3.Get<DoubleField2>() != -2147483658) {
-        log << "Invalid value for double 2: " << json3.Get<DoubleField2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<DoubleField2>() , -2147483658);
 
-    return 0;
 }
 
-int ParseI64Array(testLogger& log) {
+TEST(JSONParsing,ParseI64Array) {
     std::string rawJson = R"JSON( 
         {
             "I64ArrayField1": [
@@ -1849,93 +914,56 @@ int ParseI64Array(testLogger& log) {
 
     bool ok = json.Parse(rawJson.c_str(),error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     const vector<int64_t>& v1 = json.Get<I64ArrayField1>();
     const vector<int64_t>& v2 = json.Get<I64ArrayField2>();
 
-    auto f = [&] (const vector<int64_t>& v1, const vector<int64_t>& v2) -> int {
-        if ( v1.size() != 4 ) {
-            log << "Invalid size for field1: " << v1.size() << endl;
-            return 1;
-        }
+    auto f = [&] (const vector<int64_t>& v1, const vector<int64_t>& v2) {
+        ASSERT_EQ(v1.size() , 4 );
 
-        if ( v1[0] != -500) {
-            log << "Invalid value for int 0: " << v1[0] << endl;
-            return 1;
-        }
+        ASSERT_EQ(v1[0] , -500);
 
-        if ( v1[1] != 500) {
-            log << "Invalid value for int 1: " << v1[1] << endl;
-            return 1;
-        }
+        ASSERT_EQ(v1[1] , 500);
 
-        if ( v1[2] != 5147483658) {
-            log << "Invalid value for int 2: " << v1[2] << endl;
-            return 1;
-        }
+        ASSERT_EQ(v1[2] , 5147483658);
 
-        if ( v1[3] != -2147483658) {
-            log << "Invalid value for int 3: " << v1[3] << endl;
-            return 1;
-        }
+        ASSERT_EQ(v1[3] , -2147483658);
 
-        if ( v2.size() != 0 ) {
-            log << "Invalid size for field2: " << v2.size() << endl;
-            return 1;
-        }
+        ASSERT_EQ(v2.size() , 0 );
 
-        return 0;
     };
 
-    if ( f(v1,v2) != 0 ) {
-        return 1;
-    }
+    f(v1,v2);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson = json.GetJSONString(true);
 
     ok = json2.Parse(newRawJson.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse JSON!" << endl;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     const vector<int64_t>& v21 = json2.Get<I64ArrayField1>();
     const vector<int64_t>& v22 = json2.Get<I64ArrayField2>();
 
-    if ( f(v21,v22) != 0 ) {
-        return 1;
-    }
+    f(v21,v22);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson2 = json.GetPrettyJSONString();
 
     ok = json3.Parse(newRawJson2.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse JSON!" << endl;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     const vector<int64_t>& v31 = json3.Get<I64ArrayField1>();
     const vector<int64_t>& v32 = json3.Get<I64ArrayField2>();
 
-    if ( f(v31,v32) != 0 ) {
-        return 1;
-    }
+    f(v31,v32);
 
-    return 0;
 }
 
 
-int ParseEmbededI64(testLogger& log) {
+TEST(JSONParsing,ParseEmbededI64) {
     std::string rawJson = R"JSON({
         "Object": {
             "I64Field1": -500,
@@ -1943,7 +971,7 @@ int ParseEmbededI64(testLogger& log) {
             "I64Field3": 5147483658,
             "I64Field4": -2147483658,
             "DoubleField1": 5147483658,
-            "DoubleField2": -2147483658,
+            "DoubleField2": -2147483658
         }
     }
     )JSON";
@@ -1964,133 +992,67 @@ int ParseEmbededI64(testLogger& log) {
 
     bool ok = parent.Parse(rawJson.c_str(),error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     JSON& json = parent.Get<Object>();
 
-    if ( json.Get<I64Field1>() != -500) {
-        log << "Invalid value for field1: " << json.Get<I64Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<I64Field1>() , -500);
 
-    if ( json.Get<I64Field2>() != 500) {
-        log << "Invalid value for field2: " << json.Get<I64Field2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<I64Field2>() , 500);
 
-    if ( json.Get<I64Field3>() != 5147483658) {
-        log << "Invalid value for field3: " << json.Get<I64Field3>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<I64Field3>() , 5147483658);
 
-    if ( json.Get<I64Field4>() != -2147483658) {
-        log << "Invalid value for field4: " << json.Get<I64Field4>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<I64Field4>() , -2147483658);
 
-    if ( json.Get<DoubleField1>() != 5147483658) {
-        log << "Invalid value for double 1: " << json.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<DoubleField1>() , 5147483658);
 
-    if ( json.Get<DoubleField2>() != -2147483658) {
-        log << "Invalid value for double 2: " << json.Get<DoubleField2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<DoubleField2>() , -2147483658);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson = parent.GetJSONString(true);
 
     ok = parent2.Parse(newRawJson.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     JSON& json2 = parent2.Get<Object>();
 
-    if ( json2.Get<I64Field1>() != -500) {
-        log << "Invalid value for field1: " << json2.Get<I64Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<I64Field1>() , -500);
 
-    if ( json2.Get<I64Field2>() != 500) {
-        log << "Invalid value for field2: " << json2.Get<I64Field2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<I64Field2>() , 500);
 
-    if ( json2.Get<I64Field3>() != 5147483658) {
-        log << "Invalid value for field3: " << json2.Get<I64Field3>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<I64Field3>() , 5147483658);
 
-    if ( json2.Get<I64Field4>() != -2147483658) {
-        log << "Invalid value for field4: " << json2.Get<I64Field4>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<I64Field4>() , -2147483658);
 
-    if ( json2.Get<DoubleField1>() != 5147483658) {
-        log << "Invalid value for double 1: " << json2.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<DoubleField1>() , 5147483658);
 
-    if ( json2.Get<DoubleField2>() != -2147483658) {
-        log << "Invalid value for double 2: " << json2.Get<DoubleField2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<DoubleField2>() , -2147483658);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson2 = parent.GetPrettyJSONString();
 
     ok = parent3.Parse(newRawJson2.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     JSON& json3 = parent3.Get<Object>();
 
-    if ( json3.Get<I64Field1>() != -500) {
-        log << "Invalid value for field1: " << json3.Get<I64Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<I64Field1>() , -500);
 
-    if ( json3.Get<I64Field2>() != 500) {
-        log << "Invalid value for field2: " << json3.Get<I64Field2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<I64Field2>() , 500);
 
-    if ( json3.Get<I64Field3>() != 5147483658) {
-        log << "Invalid value for field3: " << json3.Get<I64Field3>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<I64Field3>() , 5147483658);
 
-    if ( json3.Get<I64Field4>() != -2147483658) {
-        log << "Invalid value for field4: " << json3.Get<I64Field4>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<I64Field4>() , -2147483658);
 
-    if ( json3.Get<DoubleField1>() != 5147483658) {
-        log << "Invalid value for double 1: " << json3.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<DoubleField1>() , 5147483658);
 
-    if ( json3.Get<DoubleField2>() != -2147483658) {
-        log << "Invalid value for double 2: " << json3.Get<DoubleField2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<DoubleField2>() , -2147483658);
 
-    return 0;
 }
 
-int ParseEmbededArrayI64(testLogger& log) {
+TEST(JSONParsing,ParseEmbededArrayI64) {
     std::string rawJson = R"JSON({
         "Objects": [{
             "I64Field1": -0,
@@ -2135,133 +1097,67 @@ int ParseEmbededArrayI64(testLogger& log) {
 
     bool ok = parent.Parse(rawJson.c_str(),error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     JSON& json = *parent.Get<Objects>()[1];
 
-    if ( json.Get<I64Field1>() != -500) {
-        log << "Invalid value for field1: " << json.Get<I64Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<I64Field1>() , -500);
 
-    if ( json.Get<I64Field2>() != 500) {
-        log << "Invalid value for field2: " << json.Get<I64Field2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<I64Field2>() , 500);
 
-    if ( json.Get<I64Field3>() != 5147483658) {
-        log << "Invalid value for field3: " << json.Get<I64Field3>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<I64Field3>() , 5147483658);
 
-    if ( json.Get<I64Field4>() != -2147483658) {
-        log << "Invalid value for field4: " << json.Get<I64Field4>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<I64Field4>() , -2147483658);
 
-    if ( json.Get<DoubleField1>() != 5147483658) {
-        log << "Invalid value for double 1: " << json.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<DoubleField1>() , 5147483658);
 
-    if ( json.Get<DoubleField2>() != -2147483658) {
-        log << "Invalid value for double 2: " << json.Get<DoubleField2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<DoubleField2>() , -2147483658);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson = parent.GetJSONString(true);
 
     ok = parent2.Parse(newRawJson.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     JSON& json2 = *parent2.Get<Objects>()[1];
 
-    if ( json2.Get<I64Field1>() != -500) {
-        log << "Invalid value for field1: " << json2.Get<I64Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<I64Field1>() , -500);
 
-    if ( json2.Get<I64Field2>() != 500) {
-        log << "Invalid value for field2: " << json2.Get<I64Field2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<I64Field2>() , 500);
 
-    if ( json2.Get<I64Field3>() != 5147483658) {
-        log << "Invalid value for field3: " << json2.Get<I64Field3>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<I64Field3>() , 5147483658);
 
-    if ( json2.Get<I64Field4>() != -2147483658) {
-        log << "Invalid value for field4: " << json2.Get<I64Field4>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<I64Field4>() , -2147483658);
 
-    if ( json2.Get<DoubleField1>() != 5147483658) {
-        log << "Invalid value for double 1: " << json2.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<DoubleField1>() , 5147483658);
 
-    if ( json2.Get<DoubleField2>() != -2147483658) {
-        log << "Invalid value for double 2: " << json2.Get<DoubleField2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<DoubleField2>() , -2147483658);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson22 = parent.GetPrettyJSONString();
 
     ok = parent3.Parse(newRawJson22.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     JSON& json3 = *parent3.Get<Objects>()[1];
 
-    if ( json3.Get<I64Field1>() != -500) {
-        log << "Invalid value for field1: " << json3.Get<I64Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<I64Field1>() , -500);
 
-    if ( json3.Get<I64Field2>() != 500) {
-        log << "Invalid value for field2: " << json3.Get<I64Field2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<I64Field2>() , 500);
 
-    if ( json3.Get<I64Field3>() != 5147483658) {
-        log << "Invalid value for field3: " << json3.Get<I64Field3>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<I64Field3>() , 5147483658);
 
-    if ( json3.Get<I64Field4>() != -2147483658) {
-        log << "Invalid value for field4: " << json3.Get<I64Field4>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<I64Field4>() , -2147483658);
 
-    if ( json3.Get<DoubleField1>() != 5147483658) {
-        log << "Invalid value for double 1: " << json3.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<DoubleField1>() , 5147483658);
 
-    if ( json3.Get<DoubleField2>() != -2147483658) {
-        log << "Invalid value for double 2: " << json3.Get<DoubleField2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<DoubleField2>() , -2147483658);
 
-    return 0;
 }
 
-int ParseUI64(testLogger& log) {
+TEST(JSONParsing,ParseUI64) {
     uint64_t value1 = 500;
     uint64_t value2 = static_cast<uint64_t>(
                           std::numeric_limits<unsigned>::max())
@@ -2282,67 +1178,37 @@ int ParseUI64(testLogger& log) {
 
     bool ok = json.Parse(rawJson.str().c_str(),error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json.Get<UI64Field1>() != value1) {
-        log << "Invalid value for field1: " << json.Get<UI64Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<UI64Field1>() , value1);
 
-    if ( json.Get<UI64Field2>() != value2) {
-        log << "Invalid value for field2: " << json.Get<UI64Field2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<UI64Field2>() , value2);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson = json.GetJSONString(true);
 
     ok = json2.Parse(newRawJson.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json2.Get<UI64Field1>() != value1) {
-        log << "Invalid value for field1: " << json2.Get<UI64Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<UI64Field1>() , value1);
 
-    if ( json2.Get<UI64Field2>() != value2) {
-        log << "Invalid value for field2: " << json2.Get<UI64Field2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<UI64Field2>() , value2);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson2 = json.GetPrettyJSONString();
 
     ok = json3.Parse(newRawJson2.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json3.Get<UI64Field1>() != value1) {
-        log << "Invalid value for field1: " << json3.Get<UI64Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<UI64Field1>() , value1);
 
-    if ( json3.Get<UI64Field2>() != value2) {
-        log << "Invalid value for field2: " << json3.Get<UI64Field2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<UI64Field2>() , value2);
 
-    return 0;
 }
 
-int ParseUI64Array(testLogger& log) {
+TEST(JSONParsing,ParseUI64Array) {
     std::string rawJson = R"JSON( 
         {
             "UI64ArrayField1": [
@@ -2360,87 +1226,53 @@ int ParseUI64Array(testLogger& log) {
 
     bool ok = json.Parse(rawJson.c_str(),error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     const vector<uint64_t>& v1 = json.Get<UI64ArrayField1>();
     const vector<uint64_t>& v2 = json.Get<UI64ArrayField2>();
 
-    auto f = [&] (const vector<uint64_t>& v1, const vector<uint64_t>& v2) -> int {
-        if ( v1.size() != 3 ) {
-            log << "Invalid size for field1: " << v1.size() << endl;
-            return 1;
-        }
+    auto f = [&] (const vector<uint64_t>& v1, const vector<uint64_t>& v2) -> void {
+        ASSERT_EQ(v1.size() , 3 );
 
-        if ( v1[0] != 500) {
-            log << "Invalid value for int 0: " << v1[0] << endl;
-            return 1;
-        }
+        ASSERT_EQ(v1[0] , 500);
 
-        if ( v1[1] != 12514748365008) {
-            log << "Invalid value for int 1: " << v1[1] << endl;
-            return 1;
-        }
+        ASSERT_EQ(v1[1] , 12514748365008);
 
-        if ( v1[2] != 0) {
-            log << "Invalid value for int 1: " << v1[2] << endl;
-            return 1;
-        }
+        ASSERT_EQ(v1[2] , 0);
 
-        if ( v2.size() != 0 ) {
-            log << "Invalid size for field2: " << v2.size() << endl;
-            return 1;
-        }
+        ASSERT_EQ(v2.size() , 0 );
 
-        return 0;
     };
 
-    if ( f(v1,v2) != 0 ) {
-        return 1;
-    }
+    f(v1,v2);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson = json.GetJSONString(true);
 
     ok = json2.Parse(newRawJson.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse JSON!" << endl;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     const vector<uint64_t>& v21 = json2.Get<UI64ArrayField1>();
     const vector<uint64_t>& v22 = json2.Get<UI64ArrayField2>();
 
-    if ( f(v21,v22) != 0 ) {
-        return 1;
-    }
+    f(v21,v22);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson2 = json.GetPrettyJSONString();
 
     ok = json3.Parse(newRawJson2.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse JSON!" << endl;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     const vector<uint64_t>& v31 = json3.Get<UI64ArrayField1>();
     const vector<uint64_t>& v32 = json3.Get<UI64ArrayField2>();
 
-    if ( f(v31,v32) != 0 ) {
-        return 1;
-    }
+    f(v31,v32);
 
-    return 0;
 }
 
-int ParseEmbededUI64(testLogger& log) {
+TEST(JSONParsing,ParseEmbededUI64) {
     uint64_t value1 = 500;
     uint64_t value2 = static_cast<uint64_t>(
                           std::numeric_limits<unsigned>::max())
@@ -2464,73 +1296,43 @@ int ParseEmbededUI64(testLogger& log) {
 
     bool ok = parent.Parse(rawJson.str().c_str(),error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     JSON& json = parent.Get<Object>();
 
-    if ( json.Get<UI64Field1>() != value1) {
-        log << "Invalid value for field1: " << json.Get<UI64Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<UI64Field1>() , value1);
 
-    if ( json.Get<UI64Field2>() != value2) {
-        log << "Invalid value for field2: " << json.Get<UI64Field2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<UI64Field2>() , value2);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson = parent.GetJSONString(true);
 
     ok = parent2.Parse(newRawJson.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     JSON& json2 = parent2.Get<Object>();
 
-    if ( json2.Get<UI64Field1>() != value1) {
-        log << "Invalid value for field1: " << json2.Get<UI64Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<UI64Field1>() , value1);
 
-    if ( json2.Get<UI64Field2>() != value2) {
-        log << "Invalid value for field2: " << json2.Get<UI64Field2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<UI64Field2>() , value2);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson2 = parent.GetPrettyJSONString();
 
     ok = parent3.Parse(newRawJson2.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     JSON& json3 = parent3.Get<Object>();
 
-    if ( json3.Get<UI64Field1>() != value1) {
-        log << "Invalid value for field1: " << json3.Get<UI64Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<UI64Field1>() , value1);
 
-    if ( json3.Get<UI64Field2>() != value2) {
-        log << "Invalid value for field2: " << json3.Get<UI64Field2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<UI64Field2>() , value2);
 
-    return 0;
 }
 
-int ParseEmbededArrayUI64(testLogger& log) {
+TEST(JSONParsing,ParseEmbededArrayUI64) {
     uint64_t value1 = 500;
     uint64_t value2 = static_cast<uint64_t>(
                           std::numeric_limits<unsigned>::max())
@@ -2563,76 +1365,46 @@ int ParseEmbededArrayUI64(testLogger& log) {
 
     bool ok = parent.Parse(rawJson.str().c_str(),error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     JSON& json = *parent.Get<Objects>()[1];
 
-    if ( json.Get<UI64Field1>() != value1) {
-        log << "Invalid value for field1: " << json.Get<UI64Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<UI64Field1>() , value1);
 
-    if ( json.Get<UI64Field2>() != value2) {
-        log << "Invalid value for field2: " << json.Get<UI64Field2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<UI64Field2>() , value2);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson = parent.GetJSONString(true);
 
     ok = parent2.Parse(newRawJson.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     JSON& json2 = *parent2.Get<Objects>()[1];
 
-    if ( json2.Get<UI64Field1>() != value1) {
-        log << "Invalid value for field1: " << json2.Get<UI64Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<UI64Field1>() , value1);
 
-    if ( json2.Get<UI64Field2>() != value2) {
-        log << "Invalid value for field2: " << json2.Get<UI64Field2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<UI64Field2>() , value2);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson22 = parent.GetPrettyJSONString();
 
     ok = parent3.Parse(newRawJson22.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     JSON& json3 = *parent3.Get<Objects>()[1];
 
-    if ( json3.Get<UI64Field1>() != value1) {
-        log << "Invalid value for field1: " << json3.Get<UI64Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<UI64Field1>() , value1);
 
-    if ( json3.Get<UI64Field2>() != value2) {
-        log << "Invalid value for field2: " << json3.Get<UI64Field2>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<UI64Field2>() , value2);
 
-    return 0;
 }
 
-int ParseUnsigned(testLogger& log) {
+TEST(JSONParsing,ParseUnsigned) {
     std::string rawJson = R"JSON( 
     {
-        "UIntField1": 500,
+        "UIntField1": 500
     }
     )JSON";
 
@@ -2642,52 +1414,31 @@ int ParseUnsigned(testLogger& log) {
 
     bool ok = json.Parse(rawJson.c_str(),error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json.Get<UIntField1>() != 500) {
-        log << "Invalid value for field1: " << json.Get<UIntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<UIntField1>() , 500);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson = json.GetJSONString(true);
 
     ok = json2.Parse(newRawJson.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json2.Get<UIntField1>() != 500) {
-        log << "Invalid value for field1: " << json2.Get<UIntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<UIntField1>() , 500);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson2 = json.GetPrettyJSONString();
 
     ok = json3.Parse(newRawJson2.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json3.Get<UIntField1>() != 500) {
-        log << "Invalid value for field1: " << json3.Get<UIntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<UIntField1>() , 500);
 
-    return 0;
 }
 
-int ParseUnsignedArray(testLogger& log) {
+TEST(JSONParsing,ParseUnsignedArray) {
     std::string rawJson = R"JSON( 
     {
         "UIntArrayField1": [
@@ -2706,48 +1457,26 @@ int ParseUnsignedArray(testLogger& log) {
 
     bool ok = json1.Parse(rawJson.c_str(),error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    auto f = [&] (const vector<unsigned>& v1, const vector<unsigned>& v2) -> int {
-        if ( v1.size() != 3 ) {
-            log << "Invalid size for field1: " << v1.size() << endl;
-            return 1;
-        }
+    auto f = [&] (const vector<unsigned>& v1, const vector<unsigned>& v2) -> void {
+        ASSERT_EQ(v1.size() , 3 );
 
-        if ( v1[0] != 500) {
-            log << "Invalid value for int 0: " << v1[0] << endl;
-            return 1;
-        }
+        ASSERT_EQ(v1[0] , 500);
 
-        if ( v1[1] != 0) {
-            log << "Invalid value for int 1: " << v1[1] << endl;
-            return 1;
-        }
+        ASSERT_EQ(v1[1] , 0);
 
-        if ( v1[2] != 123) {
-            log << "Invalid value for int 2: " << v1[2] << endl;
-            return 1;
-        }
+        ASSERT_EQ(v1[2] , 123);
 
-        if ( v2.size() != 0 ) {
-            log << "Invalid size for field2: " << v2.size() << endl;
-            return 1;
-        }
+        ASSERT_EQ(v2.size() , 0 );
 
-        return 0;
     };
 
     const vector<unsigned>& v1 = json1.Get<UIntArrayField1>();
     const vector<unsigned>& v2 = json1.Get<UIntArrayField2>();
 
-    if ( f(v1,v2) != 0 ) {
-        return 1;
-    }
+    f(v1,v2);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson = json1.GetJSONString(true);
 
@@ -2756,11 +1485,8 @@ int ParseUnsignedArray(testLogger& log) {
     const vector<unsigned>& v21 = json2.Get<UIntArrayField1>();
     const vector<unsigned>& v22 = json2.Get<UIntArrayField2>();
 
-    if ( f(v21,v22) != 0 ) {
-        return 1;
-    }
+    f(v21,v22);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson2 = json1.GetPrettyJSONString();
 
@@ -2769,14 +1495,11 @@ int ParseUnsignedArray(testLogger& log) {
     const vector<unsigned>& v31 = json3.Get<UIntArrayField1>();
     const vector<unsigned>& v32 = json3.Get<UIntArrayField2>();
 
-    if ( f(v31,v32) != 0 ) {
-        return 1;
-    }
+    f(v31,v32);
 
-    return 0;
 }
 
-int ParseBoolArray(testLogger& log) {
+TEST(JSONParsing,ParseBoolArray) {
     std::string rawJson = R"JSON( 
     {
         "BoolArrayField1": [
@@ -2796,53 +1519,28 @@ int ParseBoolArray(testLogger& log) {
 
     bool ok = json1.Parse(rawJson.c_str(),error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    auto f = [&] (const vector<bool>& v1, const vector<bool>& v2) -> int {
-        if ( v1.size() != 4 ) {
-            log << "Invalid size for field1: " << v1.size() << endl;
-            return 1;
-        }
+    auto f = [&] (const vector<bool>& v1, const vector<bool>& v2) -> void {
+        ASSERT_EQ(v1.size() , 4 );
 
-        if ( v1[0] != true) {
-            log << "Invalid value for int 0: " << v1[0] << endl;
-            return 1;
-        }
+        ASSERT_EQ(v1[0] , true);
 
-        if ( v1[1] != false) {
-            log << "Invalid value for int 1: " << v1[1] << endl;
-            return 1;
-        }
+        ASSERT_EQ(v1[1] , false);
 
-        if ( v1[2] != true) {
-            log << "Invalid value for int 2: " << v1[2] << endl;
-            return 1;
-        }
+        ASSERT_EQ(v1[2] , true);
 
-        if ( v1[3] != false) {
-            log << "Invalid value for int 3: " << v1[3] << endl;
-            return 1;
-        }
+        ASSERT_EQ(v1[3] , false);
 
-        if ( v2.size() != 0 ) {
-            log << "Invalid size for field2: " << v2.size() << endl;
-            return 1;
-        }
+        ASSERT_EQ(v2.size() , 0 );
 
-        return 0;
     };
 
     const vector<bool>& v1 = json1.Get<BoolArrayField1>();
     const vector<bool>& v2 = json1.Get<BoolArrayField2>();
 
-    if ( f(v1,v2) != 0 ) {
-        return 1;
-    }
+    f(v1,v2);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson = json1.GetJSONString(true);
 
@@ -2851,11 +1549,8 @@ int ParseBoolArray(testLogger& log) {
     const vector<bool>& v21 = json2.Get<BoolArrayField1>();
     const vector<bool>& v22 = json2.Get<BoolArrayField2>();
 
-    if ( f(v21,v22) != 0 ) {
-        return 1;
-    }
+    f(v21,v22);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson2 = json1.GetPrettyJSONString();
 
@@ -2864,14 +1559,11 @@ int ParseBoolArray(testLogger& log) {
     const vector<bool>& v31 = json3.Get<BoolArrayField1>();
     const vector<bool>& v32 = json3.Get<BoolArrayField2>();
 
-    if ( f(v31,v32) != 0 ) {
-        return 1;
-    }
+    f(v31,v32);
 
-    return 0;
 }
 
-int ParseDoubleArray(testLogger& log) {
+TEST(JSONParsing,ParseDoubleArray) {
     std::string rawJson = R"JSON( 
     {
         "DoubleArrayField1": [
@@ -2892,58 +1584,30 @@ int ParseDoubleArray(testLogger& log) {
 
     bool ok = json1.Parse(rawJson.c_str(),error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    auto f = [&] (const vector<double>& v1, const vector<double>& v2) -> int {
-        if ( v1.size() != 5 ) {
-            log << "Invalid size for field1: " << v1.size() << endl;
-            return 1;
-        }
+    auto f = [&] (const vector<double>& v1, const vector<double>& v2) -> void {
+        ASSERT_EQ(v1.size() , 5 );
 
-        if ( v1[0] != 5.5) {
-            log << "Invalid value for item 0: " << v1[0] << endl;
-            return 1;
-        }
+        ASSERT_EQ(v1[0] , 5.5);
 
-        if ( v1[1] != 5) {
-            log << "Invalid value for item 1: " << v1[1] << endl;
-            return 1;
-        }
+        ASSERT_EQ(v1[1] , 5);
 
-        if ( v1[2] != -5) {
-            log << "Invalid value for item 2: " << v1[2] << endl;
-            return 1;
-        }
+        ASSERT_EQ(v1[2] , -5);
 
-        if ( v1[3] != 2000000000000L) {
-            log << "Invalid value for item 3: " << v1[3] << endl;
-            return 1;
-        }
+        ASSERT_EQ(v1[3] , 2000000000000L);
 
-        if ( v1[4] != -2000000000001L) {
-            log << "Invalid value for item 4: " << v1[4] << endl;
-            return 1;
-        }
+        ASSERT_EQ(v1[4] , -2000000000001L);
 
-        if ( v2.size() != 0 ) {
-            log << "Invalid size for field2: " << v2.size() << endl;
-            return 1;
-        }
+        ASSERT_EQ(v2.size() , 0 );
 
-        return 0;
     };
 
     const vector<double>& v1 = json1.Get<DoubleArrayField1>();
     const vector<double>& v2 = json1.Get<DoubleArrayField2>();
 
-    if ( f(v1,v2) != 0 ) {
-        return 1;
-    }
+    f(v1,v2);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson = json1.GetJSONString(true);
 
@@ -2952,11 +1616,8 @@ int ParseDoubleArray(testLogger& log) {
     const vector<double>& v21 = json2.Get<DoubleArrayField1>();
     const vector<double>& v22 = json2.Get<DoubleArrayField2>();
 
-    if ( f(v21,v22) != 0 ) {
-        return 1;
-    }
+    f(v21,v22);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson2 = json1.GetPrettyJSONString();
 
@@ -2965,17 +1626,14 @@ int ParseDoubleArray(testLogger& log) {
     const vector<double>& v31 = json3.Get<DoubleArrayField1>();
     const vector<double>& v32 = json3.Get<DoubleArrayField2>();
 
-    if ( f(v31,v32) != 0 ) {
-        return 1;
-    }
+    f(v31,v32);
 
-    return 0;
 }
 
-int ParseEmbededUnsigned(testLogger& log) {
+TEST(JSONParsing,ParseEmbededUnsigned) {
     std::string rawJson = R"JSON({
         "Object": {
-            "UIntField1": 500,
+            "UIntField1": 500
         }
     }
     )JSON";
@@ -2990,17 +1648,10 @@ int ParseEmbededUnsigned(testLogger& log) {
 
     JSON& json = parent.Get<Object>();
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json.Get<UIntField1>() != 500) {
-        log << "Invalid value for field1: " << json.Get<UIntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<UIntField1>() , 500);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson = parent.GetJSONString(true);
 
@@ -3008,17 +1659,10 @@ int ParseEmbededUnsigned(testLogger& log) {
 
     JSON& json2 = parent2.Get<Object>();
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json2.Get<UIntField1>() != 500) {
-        log << "Invalid value for field1: " << json2.Get<UIntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<UIntField1>() , 500);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson2 = parent.GetPrettyJSONString();
 
@@ -3026,20 +1670,13 @@ int ParseEmbededUnsigned(testLogger& log) {
 
     JSON& json3 = parent3.Get<Object>();
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json3.Get<UIntField1>() != 500) {
-        log << "Invalid value for field1: " << json3.Get<UIntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<UIntField1>() , 500);
 
-    return 0;
 }
 
-int ParseEmbededArrayUnsigned(testLogger& log) {
+TEST(JSONParsing,ParseEmbededArrayUnsigned) {
     std::string rawJson = R"JSON({
         "Objects": [{
             "UIntField1": 0
@@ -3061,24 +1698,14 @@ int ParseEmbededArrayUnsigned(testLogger& log) {
 
     bool ok = parent.Parse(rawJson.c_str(),error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( parent.Get<Objects>().size() != 3 ) {
-        log << "Invalid size: " << parent.Get<Objects>().size();
-        return 1;
-    }
+    ASSERT_EQ(parent.Get<Objects>().size() , 3 );
 
     JSON& json = *parent.Get<Objects>()[1];
 
-    if ( json.Get<UIntField1>() != 500) {
-        log << "Invalid value for field1: " << json.Get<UIntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<UIntField1>() , 500);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson = parent.GetJSONString(true);
 
@@ -3086,17 +1713,10 @@ int ParseEmbededArrayUnsigned(testLogger& log) {
 
     JSON& json2 = *parent2.Get<Objects>()[1];
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json2.Get<UIntField1>() != 500) {
-        log << "Invalid value for field1: " << json2.Get<UIntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<UIntField1>() , 500);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson2 = parent.GetPrettyJSONString();
 
@@ -3104,20 +1724,13 @@ int ParseEmbededArrayUnsigned(testLogger& log) {
 
     JSON& json3 = *parent3.Get<Objects>()[1];
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json3.Get<UIntField1>() != 500) {
-        log << "Invalid value for field1: " << json3.Get<UIntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<UIntField1>() , 500);
 
-    return 0;
 }
 
-int LargeInt(testLogger& log) {
+TEST(JSONParsing,LargeInt) {
     stringstream rawJson;
     rawJson << "{\"IntField1\": "
             << std::numeric_limits<unsigned>::max()
@@ -3129,19 +1742,12 @@ int LargeInt(testLogger& log) {
 
     bool ok = json.Parse(rawJson.str().c_str(),error);
 
-    if (ok) {
-        log << "Large int parsed!" << endl;
-        return 1;
-    }
+    ASSERT_FALSE(ok);
 
-    if ( error != "Invalid value for field: IntField1" ) {
-        log << "Invalid error messsage: " << error << endl;
-        return 1;
-    }
-    return 0;
+    ASSERT_EQ(error , "Invalid value for field: IntField1" );
 }
 
-int LargeI64(testLogger& log) {
+TEST(JSONParsing,LargeI64) {
     stringstream rawJson;
     rawJson << "{\"I64Field1\": "
             << std::numeric_limits<uint64_t>::max()
@@ -3153,25 +1759,18 @@ int LargeI64(testLogger& log) {
 
     bool ok = json.Parse(rawJson.str().c_str(),error);
 
-    if (ok) {
-        log << "Large i64 parsed!" << endl;
-        return 1;
-    }
+    ASSERT_FALSE(ok);
 
-    if ( error != "Invalid value for field: I64Field1" ) {
-        log << "Invalid error messsage: " << error << endl;
-        return 1;
-    }
+    ASSERT_EQ(error , "Invalid value for field: I64Field1" );
 
-    return 0;
 }
 
-int ExtraField(testLogger& log) {
+TEST(JSONParsing,ExtraField) {
 
     std::string rawJson = R"JSON( 
     {
         "Field1": "Hello World!",
-        "Field2": "Hello World!",
+        "Field2": "Hello World!"
     }
     )JSON";
 
@@ -3182,18 +1781,13 @@ int ExtraField(testLogger& log) {
     bool ok  = json.Parse(rawJson.c_str(),error);
 
     if (ok) {
-        log << "Extra field parsed!" << endl;
     }
 
-    if ( error != "Unknown extra field: Field2" ) {
-        log << "Invalid error message: " << error;
-        return 1;
-    }
-    return 0;
+    ASSERT_EQ(error , "Unknown extra field: Field2" );
 }
 
 
-int ParseEmbededBool(testLogger& log) {
+TEST(JSONParsing,ParseEmbededBool) {
     std::string rawJson = R"JSON({
         "Object": {
             "BoolField1": false,
@@ -3218,107 +1812,56 @@ int ParseEmbededBool(testLogger& log) {
 
     bool ok = parent.Parse(rawJson.c_str(), error);
 
-    if ( !ok ) {
-        log << "Failed to parse bools!" << endl;
-        log << error << endl;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     JSON& json = parent.Get<Object>();
 
-    if (json.Get<BoolField1>()) {
-        log << "Field1 returned true!";
-        return 1;
-    }
+    ASSERT_FALSE(json.Get<BoolField1>());
 
-    if (!json.Get<BoolField2>()) {
-        log << "Field2 returned false!";
-        return 1;
-    }
+    ASSERT_TRUE(json.Get<BoolField2>());
 
-    if (json.Get<BoolField3>()) {
-        log << "Field3 returned true!";
-        return 1;
-    }
+    ASSERT_FALSE(json.Get<BoolField3>());
 
-    if (!json.Get<BoolField4>()) {
-        log << "Field4 returned false!";
-        return 1;
-    }
+    ASSERT_TRUE(json.Get<BoolField4>());
 
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson = parent.GetJSONString(true);
 
     ok = parent2.Parse(newRawJson.c_str(), error);
 
-    if ( !ok ) {
-        log << "Failed to parse bools!" << endl;
-        log << error << endl;
-        return 1;
-    }
+    ASSERT_TRUE(ok );
 
     JSON& json2 = parent2.Get<Object>();
 
-    if (json2.Get<BoolField1>()) {
-        log << "Field1 returned true!";
-        return 1;
-    }
+    ASSERT_FALSE(json2.Get<BoolField1>());
 
-    if (!json2.Get<BoolField2>()) {
-        log << "Field2 returned false!";
-        return 1;
-    }
+    ASSERT_TRUE(json2.Get<BoolField2>());
 
-    if (json2.Get<BoolField3>()) {
-        log << "Field3 returned true!";
-        return 1;
-    }
+    ASSERT_FALSE(json2.Get<BoolField3>());
 
-    if (!json2.Get<BoolField4>()) {
-        log << "Field4 returned false!";
-        return 1;
-    }
+    ASSERT_TRUE(json2.Get<BoolField4>());
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson2 = parent.GetPrettyJSONString();
 
     ok = parent3.Parse(newRawJson2.c_str(), error);
 
-    if ( !ok ) {
-        log << "Failed to parse bools!" << endl;
-        log << error << endl;
-        return 1;
-    }
+    ASSERT_TRUE(ok );
 
     JSON& json3 = parent3.Get<Object>();
 
-    if (json3.Get<BoolField1>()) {
-        log << "Field1 returned true!";
-        return 1;
-    }
+    ASSERT_FALSE(json3.Get<BoolField1>());
 
-    if (!json3.Get<BoolField2>()) {
-        log << "Field2 returned false!";
-        return 1;
-    }
+    ASSERT_TRUE(json3.Get<BoolField2>());
 
-    if (json3.Get<BoolField3>()) {
-        log << "Field3 returned true!";
-        return 1;
-    }
+    ASSERT_FALSE(json3.Get<BoolField3>());
 
-    if (!json3.Get<BoolField4>()) {
-        log << "Field4 returned false!";
-        return 1;
-    }
+    ASSERT_TRUE(json3.Get<BoolField4>());
 
-    return 0;
 }
 
-int ParseEmbededArrayBool(testLogger& log) {
+TEST(JSONParsing,ParseEmbededArrayBool) {
     std::string rawJson = R"JSON({
         "Objects": [{
             "BoolField1": false,
@@ -3355,106 +1898,55 @@ int ParseEmbededArrayBool(testLogger& log) {
 
     bool ok = parent.Parse(rawJson.c_str(), error);
 
-    if ( !ok ) {
-        log << "Failed to parse bools!" << endl;
-        log << error << endl;
-        return 1;
-    }
+    ASSERT_TRUE(ok );
 
     JSON& json = *parent.Get<Objects>()[1];
 
-    if (json.Get<BoolField1>()) {
-        log << "Field1 returned true!";
-        return 1;
-    }
+    ASSERT_FALSE(json.Get<BoolField1>());
 
-    if (!json.Get<BoolField2>()) {
-        log << "Field2 returned false!";
-        return 1;
-    }
+    ASSERT_TRUE(json.Get<BoolField2>());
 
-    if (json.Get<BoolField3>()) {
-        log << "Field3 returned true!";
-        return 1;
-    }
+    ASSERT_FALSE(json.Get<BoolField3>());
 
-    if (!json.Get<BoolField4>()) {
-        log << "Field4 returned false!";
-        return 1;
-    }
+    ASSERT_TRUE(json.Get<BoolField4>());
 
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson = parent.GetJSONString(true);
 
     ok = parent2.Parse(newRawJson.c_str(), error);
 
-    if ( !ok ) {
-        log << "Failed to parse bools!" << endl;
-        log << error << endl;
-        return 1;
-    }
+    ASSERT_TRUE(ok );
 
     JSON& json2 = *parent2.Get<Objects>()[1];
 
-    if (json2.Get<BoolField1>()) {
-        log << "Field1 returned true!";
-        return 1;
-    }
+    ASSERT_FALSE(json2.Get<BoolField1>());
 
-    if (!json2.Get<BoolField2>()) {
-        log << "Field2 returned false!";
-        return 1;
-    }
+    ASSERT_TRUE(json2.Get<BoolField2>());
 
-    if (json2.Get<BoolField3>()) {
-        log << "Field3 returned true!";
-        return 1;
-    }
+    ASSERT_FALSE(json2.Get<BoolField3>());
 
-    if (!json2.Get<BoolField4>()) {
-        log << "Field4 returned false!";
-        return 1;
-    }
+    ASSERT_TRUE(json2.Get<BoolField4>());
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson2 = parent.GetPrettyJSONString();
 
     ok = parent3.Parse(newRawJson2.c_str(), error);
 
-    if ( !ok ) {
-        log << "Failed to parse bools!" << endl;
-        log << error << endl;
-        return 1;
-    }
+    ASSERT_TRUE(ok );
 
     JSON& json3 = *parent3.Get<Objects>()[1];
 
-    if (json3.Get<BoolField1>()) {
-        log << "Field1 returned true!";
-        return 1;
-    }
+    ASSERT_FALSE(json3.Get<BoolField1>());
 
-    if (!json3.Get<BoolField2>()) {
-        log << "Field2 returned false!";
-        return 1;
-    }
+    ASSERT_TRUE(json3.Get<BoolField2>());
 
-    if (json3.Get<BoolField3>()) {
-        log << "Field3 returned true!";
-        return 1;
-    }
+    ASSERT_FALSE(json3.Get<BoolField3>());
 
-    if (!json3.Get<BoolField4>()) {
-        log << "Field4 returned false!";
-        return 1;
-    }
+    ASSERT_TRUE(json3.Get<BoolField4>());
 
-    return 0;
 }
-int ParseBool(testLogger& log) {
+TEST(JSONParsing,ParseBool) {
     std::string rawJson = R"JSON( 
     {
         "BoolField1": false,
@@ -3475,107 +1967,56 @@ int ParseBool(testLogger& log) {
 
     bool ok = json.Parse(rawJson.c_str(), error);
 
-    if ( !ok ) {
-        log << "Failed to parse bools!" << endl;
-        log << error << endl;
-        return 1;
-    }
+    ASSERT_TRUE(ok );
 
-    if (json.Get<BoolField1>()) {
-        log << "Field1 returned true!";
-        return 1;
-    }
+    ASSERT_FALSE(json.Get<BoolField1>());
 
-    if (!json.Get<BoolField2>()) {
-        log << "Field2 returned false!";
-        return 1;
-    }
+    ASSERT_TRUE(json.Get<BoolField2>());
 
-    if (json.Get<BoolField3>()) {
-        log << "Field3 returned true!";
-        return 1;
-    }
+    ASSERT_FALSE(json.Get<BoolField3>());
 
-    if (!json.Get<BoolField4>()) {
-        log << "Field4 returned false!";
-        return 1;
-    }
+    ASSERT_TRUE(json.Get<BoolField4>());
 
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson = json.GetJSONString(true);
 
     ok = json2.Parse(newRawJson.c_str(), error);
 
-    if ( !ok ) {
-        log << "Failed to parse bools!" << endl;
-        log << error << endl;
-        return 1;
-    }
+    ASSERT_TRUE(ok );
 
-    if (json2.Get<BoolField1>()) {
-        log << "Field1 returned true!";
-        return 1;
-    }
+    ASSERT_FALSE(json2.Get<BoolField1>());
 
-    if (!json2.Get<BoolField2>()) {
-        log << "Field2 returned false!";
-        return 1;
-    }
+    ASSERT_TRUE(json2.Get<BoolField2>());
 
-    if (json2.Get<BoolField3>()) {
-        log << "Field3 returned true!";
-        return 1;
-    }
+    ASSERT_FALSE(json2.Get<BoolField3>());
 
-    if (!json2.Get<BoolField4>()) {
-        log << "Field4 returned false!";
-        return 1;
-    }
+    ASSERT_TRUE(json2.Get<BoolField4>());
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson2 = json.GetPrettyJSONString();
 
     ok = json3.Parse(newRawJson2.c_str(), error);
 
-    if ( !ok ) {
-        log << "Failed to parse bools!" << endl;
-        log << error << endl;
-        return 1;
-    }
+    ASSERT_TRUE(ok );
 
-    if (json3.Get<BoolField1>()) {
-        log << "Field1 returned true!";
-        return 1;
-    }
+    ASSERT_FALSE(json3.Get<BoolField1>());
 
-    if (!json3.Get<BoolField2>()) {
-        log << "Field2 returned false!";
-        return 1;
-    }
+    ASSERT_TRUE(json3.Get<BoolField2>());
 
-    if (json3.Get<BoolField3>()) {
-        log << "Field3 returned true!";
-        return 1;
-    }
+    ASSERT_FALSE(json3.Get<BoolField3>());
 
-    if (!json3.Get<BoolField4>()) {
-        log << "Field4 returned false!";
-        return 1;
-    }
-    return 0;
+    ASSERT_TRUE(json3.Get<BoolField4>());
 }
 
-int ParseDouble(testLogger& log) {
+TEST(JSONParsing,ParseDouble) {
     std::string rawJson = R"JSON( 
     {
         "DoubleField1": 5.5,
         "DoubleField2": 5,
         "DoubleField3": -5,
         "DoubleField4": 2000000000000,
-        "DoubleField5": -2000000000001,
+        "DoubleField5": -2000000000001
     }
     )JSON";
 
@@ -3593,83 +2034,49 @@ int ParseDouble(testLogger& log) {
 
     bool ok = json.Parse(rawJson.c_str(),error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    auto f = [&] (JSON& json) -> int {
-        if ( json.Get<DoubleField1>() != 5.5) {
-            log << "Invalid value for field1: " << json.Get<DoubleField1>() << endl;
-            return 1;
-        }
+    auto f = [&] (JSON& json) -> void {
+        ASSERT_EQ(json.Get<DoubleField1>() , 5.5);
 
-        if ( json.Get<DoubleField2>() != 5) {
-            log << "Invalid value for field2: " << json.Get<DoubleField2>() << endl;
-            return 1;
-        }
+        ASSERT_EQ(json.Get<DoubleField2>() , 5);
 
-        if ( json.Get<DoubleField3>() != -5) {
-            log << "Invalid value for field3: " << json.Get<DoubleField3>() << endl;
-            return 1;
-        }
+        ASSERT_EQ(json.Get<DoubleField3>() , -5);
 
-        if ( json.Get<DoubleField4>() != 2000000000000L) {
-            log << "Invalid value for field4: " << json.Get<DoubleField4>() << endl;
-            return 1;
-        }
+        ASSERT_EQ(json.Get<DoubleField4>() , 2000000000000L);
 
-        if ( json.Get<DoubleField5>() != -2000000000001L) {
-            log << "Invalid value for field5: " << json.Get<DoubleField5>() << endl;
-            return 1;
-        }
+        ASSERT_EQ(json.Get<DoubleField5>() , -2000000000001L);
 
-        return 0;
     };
 
-    if ( f(json) != 0 ) {
-        return 1;
-    }
+    f(json);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson = json.GetJSONString(true);
 
     ok = json2.Parse(newRawJson.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( f(json2) != 0 ) {
-        return 1;
-    }
+    f(json2);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson2 = json.GetPrettyJSONString();
 
     ok = json3.Parse(newRawJson2.c_str(), error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( f(json3) != 0 ) {
-        return 1;
-    }
+    f(json3);
 
-    return 0;
 }
 
-int ParseEmbededDouble(testLogger& log) {
+TEST(JSONParsing,ParseEmbededDouble) {
     std::string rawJson = R"JSON({
         "Object": {
             "DoubleField1": 5.5,
             "DoubleField2": 5,
-            "DoubleField3": -5,
+            "DoubleField3": -5
         }
     }
     )JSON";
@@ -3686,19 +2093,12 @@ int ParseEmbededDouble(testLogger& log) {
 
     bool ok = parent.Parse(rawJson.c_str(),error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     JSON& json = parent.Get<Object>();
 
-    if ( json.Get<DoubleField1>() != 5.5) {
-        log << "Invalid value for field1: " << json.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<DoubleField1>() , 5.5);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson = parent.GetJSONString(true);
 
@@ -3706,17 +2106,10 @@ int ParseEmbededDouble(testLogger& log) {
 
     JSON& json2 = parent2.Get<Object>();
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json2.Get<DoubleField1>() != 5.5) {
-        log << "Invalid value for field1: " << json2.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<DoubleField1>() , 5.5);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson2 = parent.GetPrettyJSONString();
 
@@ -3724,20 +2117,13 @@ int ParseEmbededDouble(testLogger& log) {
 
     JSON& json3 = parent3.Get<Object>();
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json3.Get<DoubleField1>() != 5.5) {
-        log << "Invalid value for field1: " << json3.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<DoubleField1>() , 5.5);
 
-    return 0;
 }
 
-int ParseEmbededArrayDouble(testLogger& log) {
+TEST(JSONParsing,ParseEmbededArrayDouble) {
     std::string rawJson = R"JSON({
         "Objects": [{
             "DoubleField1": 0.5,
@@ -3769,19 +2155,12 @@ int ParseEmbededArrayDouble(testLogger& log) {
 
     bool ok = parent.Parse(rawJson.c_str(),error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     JSON& json = *parent.Get<Objects>()[1];
 
-    if ( json.Get<DoubleField1>() != 5.5) {
-        log << "Invalid value for field1: " << json.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<DoubleField1>() , 5.5);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson = parent.GetJSONString(true);
 
@@ -3789,17 +2168,10 @@ int ParseEmbededArrayDouble(testLogger& log) {
 
     JSON& json2 = *parent2.Get<Objects>()[1];
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json2.Get<DoubleField1>() != 5.5) {
-        log << "Invalid value for field1: " << json2.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<DoubleField1>() , 5.5);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson2 = parent.GetPrettyJSONString();
 
@@ -3807,20 +2179,13 @@ int ParseEmbededArrayDouble(testLogger& log) {
 
     JSON& json3 = *parent3.Get<Objects>()[1];
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json3.Get<DoubleField1>() != 5.5) {
-        log << "Invalid value for field1: " << json3.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<DoubleField1>() , 5.5);
 
-    return 0;
 }
 
-int Clear(testLogger& log) {
+TEST(JSONParsing,Clear) {
     SimpleParsedJSON<
         IntField1,
         UIntField1,
@@ -3829,8 +2194,7 @@ int Clear(testLogger& log) {
         DoubleField1,
         BoolField1,
         Field1,
-        StringArrayField1,
-        TimeField1
+        StringArrayField1
         > json;
 
     json.Get<IntField1>() = 23;
@@ -3841,102 +2205,44 @@ int Clear(testLogger& log) {
     json.Get<BoolField1>() = true;
     json.Get<Field1>() = "Hello!";
     json.Get<StringArrayField1>().push_back("Hello!");
-    json.Get<TimeField1>() = "2015-07-13T05:38:17.336403Z";
 
 
     json.Clear();
 
-    if ( json.Get<IntField1>() != 0) {
-        log << "Invalid value for int: " << json.Get<IntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<IntField1>() , 0);
 
-    if ( json.Get<UIntField1>() != 0) {
-        log << "Invalid value for uint: " << json.Get<UIntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<UIntField1>() , 0);
 
-    if ( json.Get<I64Field1>() != 0) {
-        log << "Invalid value for int64_t: " << json.Get<I64Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<I64Field1>() , 0);
 
-    if ( json.Get<UI64Field1>() != 0) {
-        log << "Invalid value for uint64_t: " << json.Get<UI64Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<UI64Field1>() , 0);
 
-    if ( json.Get<DoubleField1>() != 0) {
-        log << "Invalid value for double: " << json.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<DoubleField1>() , 0);
 
-    if ( json.Get<BoolField1>() != false) {
-        log << "Invalid value for bool: " << json.Get<BoolField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<BoolField1>() , false);
 
-    if ( json.Get<Field1>() != "") {
-        log << "Invalid value for bool: " << json.Get<Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<Field1>() , "");
 
-    if ( json.Get<StringArrayField1>().size() != 0) {
-        log << "Invalid size for strign array: "
-            << json.Get<StringArrayField1>().size() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<StringArrayField1>().size() , 0);
 
-    if ( json.Supplied<IntField1>()) {
-        log << "Int supplied!" << endl;
-        return 1;
-    }
+    ASSERT_FALSE(json.Supplied<IntField1>());
 
-    if ( json.Supplied<UIntField1>()) {
-        log << "UInt supplied!" << endl;
-        return 1;
-    }
+    ASSERT_FALSE(json.Supplied<UIntField1>());
 
-    if ( json.Supplied<I64Field1>()) {
-        log << "I64 supplied!" << endl;
-        return 1;
-    }
+    ASSERT_FALSE(json.Supplied<I64Field1>());
 
-    if ( json.Supplied<UI64Field1>()) {
-        log << "UI64 supplied!" << endl;
-        return 1;
-    }
+    ASSERT_FALSE(json.Supplied<UI64Field1>());
 
-    if ( json.Supplied<DoubleField1>()) {
-        log << "Double supplied!" << endl;
-        return 1;
-    }
+    ASSERT_FALSE(json.Supplied<DoubleField1>());
 
-    if ( json.Supplied<BoolField1>()) {
-        log << "Bool supplied!" << endl;
-        return 1;
-    }
+    ASSERT_FALSE(json.Supplied<BoolField1>());
 
-    if ( json.Supplied<Field1>()) {
-        log << "String supplied!" << endl;
-        return 1;
-    }
+    ASSERT_FALSE(json.Supplied<Field1>());
 
-    if ( json.Supplied<StringArrayField1>()) {
-        log << "String Array supplied!" << endl;
-        return 1;
-    }
-
-    if ( json.Get<TimeField1>().Timestamp() != Time::EpochTimestamp) {
-        log << "Invalid value for cleared time!"
-            << json.Get<TimeField1>().Timestamp() << endl;
-        return 1;
-    }
-
+    ASSERT_FALSE(json.Supplied<StringArrayField1>());
 
     string ExpNotNull =
 R"RAW({
-    "TimeField1": "1970-01-01T00:00:00.000000Z",
     "StringArrayField1": [],
     "Field1": "",
     "BoolField1": false,
@@ -3947,18 +2253,10 @@ R"RAW({
     "IntField1": 0
 })RAW";
     string notNull = json.GetPrettyJSONString(false);
-    if ( notNull != ExpNotNull) {
-        log << "Incorrect JSON found for not-null print!" << endl;
-        log << "Expected: " << endl;
-        log << ExpNotNull << endl;
-        log << "Actual: " << endl;
-        log << notNull << endl;
-        return 1;
-    }
+    ASSERT_EQ(notNull , ExpNotNull);
 
     string ExpNull =
 R"RAW({
-    "TimeField1": null,
     "StringArrayField1": null,
     "Field1": null,
     "BoolField1": null,
@@ -3970,19 +2268,11 @@ R"RAW({
 })RAW";
 
     string null = json.GetPrettyJSONString(true);
-    if ( null != ExpNull) {
-        log << "Incorrect JSON found for null print!" << endl;
-        log << "Expected: " << endl;
-        log << ExpNull << endl;
-        log << "Actual: " << endl;
-        log << null << endl;
-        return 1;
-    }
+    ASSERT_EQ(null , ExpNull);
 
-    return 0;
 }
 
-int EmbededClear(testLogger& log) {
+TEST(JSONParsing,EmbededClear) {
     typedef SimpleParsedJSON<
         IntField1,
         UIntField1,
@@ -3991,8 +2281,7 @@ int EmbededClear(testLogger& log) {
         DoubleField1,
         BoolField1,
         Field1,
-        StringArrayField1,
-        TimeField1
+        StringArrayField1
         > JSON;
 
     NewEmbededObject(Object,JSON);
@@ -4007,62 +2296,29 @@ int EmbededClear(testLogger& log) {
     json.Get<BoolField1>() = true;
     json.Get<Field1>() = "Hello!";
     json.Get<StringArrayField1>().push_back("Hello!");
-    json.Get<TimeField1>() = "2015-07-13T05:38:17.336403Z";
 
     parent.Clear();
 
 
-    if ( json.Get<IntField1>() != 0) {
-        log << "Invalid value for int: " << json.Get<IntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<IntField1>() , 0);
 
-    if ( json.Get<UIntField1>() != 0) {
-        log << "Invalid value for uint: " << json.Get<UIntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<UIntField1>() , 0);
 
-    if ( json.Get<I64Field1>() != 0) {
-        log << "Invalid value for int64_t: " << json.Get<I64Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<I64Field1>() , 0);
 
-    if ( json.Get<UI64Field1>() != 0) {
-        log << "Invalid value for uint64_t: " << json.Get<UI64Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<UI64Field1>() , 0);
 
-    if ( json.Get<DoubleField1>() != 0) {
-        log << "Invalid value for double: " << json.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<DoubleField1>() , 0);
 
-    if ( json.Get<BoolField1>() != false) {
-        log << "Invalid value for bool: " << json.Get<BoolField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<BoolField1>() , false);
 
-    if ( json.Get<Field1>() != "") {
-        log << "Invalid value for bool: " << json.Get<Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<Field1>() , "");
 
-    if ( json.Get<StringArrayField1>().size() != 0) {
-        log << "Invalid size for strign array: "
-            << json.Get<StringArrayField1>().size() << endl;
-        return 1;
-    }
-
-    if ( json.Get<TimeField1>().Timestamp() != Time::EpochTimestamp) {
-        log << "Invalid value for cleared time!"
-            << json.Get<TimeField1>().Timestamp() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<StringArrayField1>().size() , 0);
 
     string ExpNotNull =
 R"RAW({
     "Object": {
-        "TimeField1": "1970-01-01T00:00:00.000000Z",
         "StringArrayField1": [],
         "Field1": "",
         "BoolField1": false,
@@ -4074,14 +2330,7 @@ R"RAW({
     }
 })RAW";
     string notNull = parent.GetPrettyJSONString(false);
-    if ( notNull != ExpNotNull) {
-        log << "Incorrect JSON found for not-null print!" << endl;
-        log << "Expected: " << endl;
-        log << ExpNotNull << endl;
-        log << "Actual: " << endl;
-        log << notNull << endl;
-        return 1;
-    }
+    ASSERT_EQ(notNull , ExpNotNull);
 
     string ExpNull =
 R"RAW({
@@ -4089,19 +2338,11 @@ R"RAW({
 })RAW";
 
     string null = parent.GetPrettyJSONString(true);
-    if ( null != ExpNull) {
-        log << "Incorrect JSON found for null print!" << endl;
-        log << "Expected: " << endl;
-        log << ExpNull << endl;
-        log << "Actual: " << endl;
-        log << null << endl;
-        return 1;
-    }
+    ASSERT_EQ(null , ExpNull);
 
-    return 0;
 }
 
-int EmbededArrayClear(testLogger& log) {
+TEST(JSONParsing,EmbededArrayClear) {
     typedef SimpleParsedJSON<
         IntField1,
         UIntField1,
@@ -4110,8 +2351,7 @@ int EmbededArrayClear(testLogger& log) {
         DoubleField1,
         BoolField1,
         Field1,
-        StringArrayField1,
-        TimeField1
+        StringArrayField1
         > JSON;
 
     NewObjectArray(Objects,JSON);
@@ -4120,62 +2360,28 @@ int EmbededArrayClear(testLogger& log) {
     parent.Get<Objects>().emplace_back();
     JSON& json = *parent.Get<Objects>()[0];
 
-    if ( json.Get<IntField1>() != 0) {
-        log << "Invalid value for int: " << json.Get<IntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<IntField1>() , 0);
 
-    if ( json.Get<UIntField1>() != 0) {
-        log << "Invalid value for uint: " << json.Get<UIntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<UIntField1>() , 0);
 
-    if ( json.Get<I64Field1>() != 0) {
-        log << "Invalid value for int64_t: " << json.Get<I64Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<I64Field1>() , 0);
 
-    if ( json.Get<UI64Field1>() != 0) {
-        log << "Invalid value for uint64_t: " << json.Get<UI64Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<UI64Field1>() , 0);
 
-    if ( json.Get<DoubleField1>() != 0) {
-        log << "Invalid value for double: " << json.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<DoubleField1>() , 0);
 
-    if ( json.Get<BoolField1>() != false) {
-        log << "Invalid value for bool: " << json.Get<BoolField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<BoolField1>() , false);
 
-    if ( json.Get<Field1>() != "") {
-        log << "Invalid value for bool: " << json.Get<Field1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<Field1>() , "");
 
-    if ( json.Get<StringArrayField1>().size() != 0) {
-        log << "Invalid size for strign array: "
-            << json.Get<StringArrayField1>().size() << endl;
-        return 1;
-    }
-
-    if ( json.Get<TimeField1>().Timestamp() != Time::EpochTimestamp) {
-        log << "Invalid value for cleared time!"
-            << json.Get<TimeField1>().Timestamp() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<StringArrayField1>().size() , 0);
 
     parent.Clear();
 
-    if (parent.Get<Objects>().size() != 0 ) {
-        return 1;
-    }
-    return 0;
+    ASSERT_EQ(parent.Get<Objects>().size() , 0);
 }
 
-int EmbededObjectError(testLogger& log) {
+TEST(JSONParsing,EmbededObjectError) {
     stringstream rawJson;
     rawJson << "{\"IntField1\": { \"field1\": 1 } } ";
 
@@ -4185,20 +2391,13 @@ int EmbededObjectError(testLogger& log) {
 
     bool ok = json.Parse(rawJson.str().c_str(),error);
 
-    if (ok) {
-        log << "Embeded object parsed!" << endl;
-        return 1;
-    }
+    ASSERT_FALSE(ok);
 
-    if ( error != "Invalid type for field: IntField1" ) {
-        log << "Invalid error messsage: " << error << endl;
-        return 1;
-    }
-    return 0;
+    ASSERT_EQ(error , "Invalid type for field: IntField1" );
 }
 
 
-int TrippleEmbededObject(testLogger& log) {
+TEST(JSONParsing,TrippleEmbededObject) {
     std::string rawJson = R"JSON({
         "Object3": {
             "Object2": { 
@@ -4230,19 +2429,12 @@ int TrippleEmbededObject(testLogger& log) {
     std::string error;
     bool ok = parent.Parse(rawJson.c_str(),error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
     JSON& json = parent.Get<Object3>().Get<Object2>().Get<Object>();
 
-    if ( json.Get<DoubleField1>() != 5.5) {
-        log << "Invalid value for field1: " << json.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json.Get<DoubleField1>() , 5.5);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson = parent.GetJSONString(true);
 
@@ -4250,17 +2442,10 @@ int TrippleEmbededObject(testLogger& log) {
 
     JSON& json2 = parent2.Get<Object3>().Get<Object2>().Get<Object>();
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json2.Get<DoubleField1>() != 5.5) {
-        log << "Invalid value for field1: " << json2.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json2.Get<DoubleField1>() , 5.5);
 
-    log << "Re-building JSON>..." << endl;
 
     string newRawJson2 = parent.GetPrettyJSONString();
 
@@ -4268,20 +2453,13 @@ int TrippleEmbededObject(testLogger& log) {
 
     JSON& json3 = parent3.Get<Object3>().Get<Object2>().Get<Object>();
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    }
+    ASSERT_TRUE(ok);
 
-    if ( json3.Get<DoubleField1>() != 5.5) {
-        log << "Invalid value for field1: " << json3.Get<DoubleField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(json3.Get<DoubleField1>() , 5.5);
 
-    return 0;
 }
 
-int EmbededObjectInArray(testLogger& log) {
+TEST(JSONParsing,EmbededObjectInArray) {
     std::string rawJson = R"JSON({
         "OuterObjects": [
             {
@@ -4323,20 +2501,11 @@ int EmbededObjectInArray(testLogger& log) {
     std::string error;
     bool ok = json.Parse(rawJson.c_str(),error);
 
-    if (!ok) {
-        log << "Failed to parse: " << error;
-        return 1;
-    } else {
-        log << ">> " << rawJson << endl;
-        log << "<< " << json.GetJSONString(true) << endl;
-    }
+    ASSERT_TRUE(ok);
 
     auto& outerObjects = json.Get<OuterObjects>();
 
-    if ( outerObjects.size() != 2) {
-        log << "Invalid OuterObjects size: " << outerObjects.size() << endl;
-        return 1;
-    }
+    ASSERT_EQ(outerObjects.size() , 2);
 
     auto& outer1 = *outerObjects[0];
     auto& outer2 = *outerObjects[1];
@@ -4344,49 +2513,27 @@ int EmbededObjectInArray(testLogger& log) {
     auto& objects1 = outer1.Get<Objects>();
     auto& objects2 = outer2.Get<Objects>();
 
-    if (objects1.size() != 2 ) {
-        log << "Invalid size for objects1: " << objects1.size() << endl;
-        return 1;
-    }
+    ASSERT_EQ(objects1.size() , 2 );
 
     auto& object1 = *objects1[0];
     auto& object2 = *objects1[1];
 
-    if ( object1.Get<IntField1>() != 1 ) {
-        log << "Invalid value for object1: " << object1.Get<IntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(object1.Get<IntField1>() , 1 );
 
-    if ( object2.Get<IntField1>() != 2 ) {
-        log << "Invalid value for object2: " << object2.Get<IntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(object2.Get<IntField1>() , 2 );
 
-    if (objects2.size() != 3 ) {
-        log << "Invalid size for objects2: " << objects2.size() << endl;
-        return 1;
-    }
+    ASSERT_EQ(objects2.size() , 3 );
 
     auto& object3 = *objects2[0];
     auto& object4 = *objects2[1];
     auto& object5 = *objects2[2];
 
-    if ( object3.Get<IntField1>() != 3 ) {
-        log << "Invalid value for object3: " << object3.Get<IntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(object3.Get<IntField1>() , 3 );
 
-    if ( object4.Get<IntField1>() != 4 ) {
-        log << "Invalid value for object4: " << object4.Get<IntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(object4.Get<IntField1>() , 4 );
 
-    if ( object5.Get<IntField1>() != 5 ) {
-        log << "Invalid value for object5: " << object5.Get<IntField1>() << endl;
-        return 1;
-    }
+    ASSERT_EQ(object5.Get<IntField1>() , 5 );
 
-    return 0;
 }
 
 namespace Supplied_JSON {
@@ -4473,7 +2620,7 @@ namespace Supplied_JSON {
     > OutputJSON;
 
 };
-int Supplied(testLogger& log) {
+TEST(JSONParsing,Supplied) {
     using namespace Supplied_JSON;
     string inputJSON =
 R"RAW({
@@ -4514,7 +2661,7 @@ R"RAW({
     "Field2": null,
     "DoubleField2": null,
     "DoubleArrayField2": null,
-    "BoolField2": null,
+    "BoolField2": null
 })RAW";
     string expOutput =
 R"RAW({
@@ -4614,30 +2761,16 @@ R"RAW({
 })RAW";
     OutputJSON json;
     string error;
-    if ( !json.Parse(inputJSON.c_str(), error) ) {
-        log << "Failed to parse JSON: " << error << endl;
-        return 1;
-    }
+    ASSERT_TRUE(json.Parse(inputJSON.c_str(), error) );
     string output = json.GetPrettyJSONString(true);
 
-    if ( output != expOutput ) {
-        log << "Invalid output after parse" << endl;
-        log << "Expected: " << endl << expOutput << endl;
-        log << "Got:      " << endl << output << endl;
-        return 1;
-    }
+    ASSERT_EQ(output , expOutput);
 
     json.Clear();
     output = json.GetPrettyJSONString(true);
 
-    if ( output != allNull ) {
-        log << "Invalid output after clear" << endl;
-        log << "Expected: " << endl << allNull << endl;
-        log << "Got:      " << endl << output << endl;
-        return 1;
-    }
+    ASSERT_EQ(output , allNull);
 
-    return 0;
 }
 
 namespace Supplied_Embeded {
@@ -4766,7 +2899,7 @@ namespace Supplied_Embeded {
     > OutputJSON;
 };
 
-int SuppliedEmbeded(testLogger& log) {
+TEST(JSONParsing,SuppliedEmbeded) {
     using namespace Supplied_Embeded;
     string input =
 R"RAW({
@@ -4813,30 +2946,16 @@ R"RAW({
 })RAW";
     OutputJSON json;
     string error;
-    if ( !json.Parse(input.c_str(), error) ) {
-        log << "Failed to parse JSON: " << error << endl;
-        return 1;
-    }
+    ASSERT_TRUE(json.Parse(input.c_str(), error) );
 
     string output = json.GetPrettyJSONString(true);
 
-    if ( output != expOutput ) {
-        log << "Invalid output after parse" << endl;
-        log << "Expected: " << endl << expOutput << endl;
-        log << "Got:      " << endl << output << endl;
-        return 1;
-    }
+    ASSERT_EQ(output , expOutput);
 
     json.Clear();
     output = json.GetPrettyJSONString(true);
 
-    if ( output != allNull ) {
-        log << "Invalid output after clear" << endl;
-        log << "Expected: " << endl << allNull << endl;
-        log << "Got:      " << endl << output << endl;
-        return 1;
-    }
-    return 0;
+    ASSERT_EQ(output , allNull);
 }
 
 namespace Supplied_EmbededInArray {
@@ -4861,7 +2980,7 @@ namespace Supplied_EmbededInArray {
     > OutputJSON;
 };
 
-int SuppliedEmbededObjectInArray(testLogger& log) {
+TEST(JSONParsing,SuppliedEmbededObjectInArray) {
     using namespace Supplied_EmbededInArray;
 
     string input = R"RAW(
@@ -4918,29 +3037,76 @@ R"RAW({
 })RAW";
     OutputJSON json;
     string error;
-    if ( !json.Parse(input.c_str(), error) ) {
-        log << "Failed to parse JSON: " << error << endl;
-        return 1;
-    }
+    ASSERT_TRUE(json.Parse(input.c_str(), error) );
 
     string output = json.GetPrettyJSONString(true);
 
-    if ( output != expOutput ) {
-        log << "Invalid output after parse" << endl;
-        log << "Expected: " << endl << expOutput << endl;
-        log << "Got:      " << endl << output << endl;
-        return 1;
-    }
+    ASSERT_EQ(output , expOutput);
 
     json.Clear();
     output = json.GetPrettyJSONString(true);
 
-    if ( output != allNull ) {
-        log << "Invalid output after clear" << endl;
-        log << "Expected: " << endl << allNull << endl;
-        log << "Got:      " << endl << output << endl;
-        return 1;
-    }
+    ASSERT_EQ(output , allNull);
 
-    return 0;
 }
+
+TEST(JSONParsing,ParseTimeArray) {
+    std::string rawJson = R"JSON( 
+        {
+            "TimeArrayField1": [
+                "2015-07-13T05:38:17.33640392Z",
+                "",
+                "2016-07-13T05:38:17.33640392Z",
+                "2017-07-13T05:38:17.33640392Z"
+            ],
+            "TimeArrayField2": []
+        }
+    )JSON";
+
+    SimpleParsedJSON<TimeArrayField1, TimeArrayField2> json, json2, json3;
+
+    std::string error;
+
+    ASSERT_TRUE(json.Parse(rawJson.c_str(),error));
+
+    auto checker = [] (const vector<Time>& v1, const vector<Time>& v2) -> void
+    {
+        ASSERT_EQ(v1.size(), 4);
+        const std::string expTime = "2015-07-13T05:38:17.336403Z";
+        const std::string expTime1 = "2016-07-13T05:38:17.336403Z";
+        const std::string expTime2 = "2017-07-13T05:38:17.336403Z";
+
+        ASSERT_EQ(v1[0].ISO8601Timestamp(), expTime);
+        ASSERT_EQ(v1[1].Timestamp(), EpochTimestamp);
+        ASSERT_EQ(v1[2].ISO8601Timestamp(), expTime1);
+        ASSERT_EQ(v1[3].ISO8601Timestamp(), expTime2);
+
+        ASSERT_EQ(v2.size(), 0 );
+    };
+
+    const vector<Time>& v1 = json.Get<TimeArrayField1>();
+    const vector<Time>& v2 = json.Get<TimeArrayField2>();
+
+    checker(v1,v2);
+
+    string newRawJson = json.GetJSONString(true);
+
+    ASSERT_TRUE(json2.Parse(newRawJson.c_str(), error));
+
+    const vector<Time>& v21 = json2.Get<TimeArrayField1>();
+    const vector<Time>& v22 = json2.Get<TimeArrayField2>();
+
+    checker(v21,v22);
+
+    string newRawJson2 = json.GetPrettyJSONString();
+
+    ASSERT_TRUE(json3.Parse(newRawJson2.c_str(), error));
+
+    const vector<Time>& v31 = json3.Get<TimeArrayField1>();
+    const vector<Time>& v32 = json3.Get<TimeArrayField2>();
+
+    checker(v31,v32);
+}
+
+
+

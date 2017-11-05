@@ -1,60 +1,14 @@
-#include "tester.h"
+#include "gtest/gtest.h"
 #include <SimpleJSON.h>
 
-int SingleStringGen(testLogger& log);
-int SingleTimeGen(testLogger& log);
-int MultipleStringGen(testLogger& log);
-int SingleUI64(testLogger& log);
-int SingleI64(testLogger& log);
-int SingleInt(testLogger& log);
-int SingleUInt(testLogger& log);
-int DoubleFields(testLogger& log);
-int BooleanFields(testLogger& log);
-int SingleEmbededObject(testLogger& log);
-int IntArray(testLogger& log);
-int I64Array(testLogger& log);
-int UIntArray(testLogger& log);
-int UI64Array(testLogger& log);
-int DoubleArray(testLogger& log);
-int StringArray(testLogger& log);
-int TimeArray(testLogger& log);
-int SingleEmbededObjectWithArrays(testLogger& log);
-int DoublyEmbededObject(testLogger& log);
-int ArrayOfObjects(testLogger& log);
-int ArrayOfObjects2(testLogger& log);
+using namespace std;
 
-namespace {
+int main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }
 
-int main(int argc, const char *argv[])
-{
-    Test("Testing generation of single string object",SingleStringGen).RunTest();
-    Test("Testing generation of single time object",SingleTimeGen).RunTest();
-    Test("Testing generation of multiple string object",MultipleStringGen).RunTest();
-    Test("Testing generation of single large unsigned int object",SingleUI64).RunTest();
-    Test("Testing generation of single large int object",SingleI64).RunTest();
-    Test("Testing generation of single int object",SingleInt).RunTest();
-    Test("Testing generation of single unsigned int object",SingleUInt).RunTest();
-    Test("Testing generation of double fields",DoubleFields).RunTest();
-    Test("Testing generation of boolean fields in object",BooleanFields).RunTest();
-    Test("Testing generation of a single embeded object",SingleEmbededObject).RunTest();
-    Test("Testing generation of an object with an int array",IntArray).RunTest();
-    Test("Testing generation of an object with a large int array",I64Array).RunTest();
-    Test("Testing generation of an object with an unsigned int array",UIntArray).RunTest();
-    Test("Testing generation of an object with a large unsigned int array",UI64Array).RunTest();
-    Test("Testing generation of an object with a double array",DoubleArray).RunTest();
-    Test("Testing generation of an object with a string array",StringArray).RunTest();
-    Test("Testing generation of an object with a time array",TimeArray).RunTest();
-    Test("Testing generation of a single embeded object with arrays",SingleEmbededObjectWithArrays).RunTest();
-    Test("Testing generation of a doubley embeded object",DoublyEmbededObject).RunTest();
-    Test("Testing generation of array of objects",ArrayOfObjects).RunTest();
-    Test("Testing generation of array of objects with more repeats",ArrayOfObjects2).RunTest();
-
-
-    return 0;
-}
-
-int SingleStringGen(testLogger& log) {
+TEST(JSONParsing, SingleStringGen) {
     string input = R"RAW(
        {
            "stringField1": "Hello World!"
@@ -68,19 +22,10 @@ int SingleStringGen(testLogger& log) {
 "    > OutputJSON;\n";
     string output = spJSON::Gen("OutputJSON", input);
 
-    if (output != expected) {
-        log << "Missmatch in generated code" << endl;
-        log << "Expected: " << endl;
-        log << expected << endl;
-        log << endl;
-        log << "Got: " << endl;
-        log << output << endl;
-        return 1;
-    }
-    return 0;
+    ASSERT_EQ(output , expected);
 }
 
-int SingleTimeGen(testLogger& log) {
+TEST(JSONParsing, SingleTimeGen) {
     string input = R"RAW(
        {
            "timeField1": "2015-07-13T05:38:17.33640392Z"
@@ -94,19 +39,30 @@ int SingleTimeGen(testLogger& log) {
 "    > OutputJSON;\n";
     string output = spJSON::Gen("OutputJSON", input);
 
-    if (output != expected) {
-        log << "Missmatch in generated code" << endl;
-        log << "Expected: " << endl;
-        log << expected << endl;
-        log << endl;
-        log << "Got: " << endl;
-        log << output << endl;
-        return 1;
-    }
-    return 0;
+    ASSERT_EQ(output, expected);
 }
 
-int MultipleStringGen(testLogger& log) {
+TEST(JSONParsing, IgnoreNull) {
+    string input = R"RAW(
+       {
+           "stringField1": "Hello World!",
+           "dummyField": null
+       }
+    )RAW";
+    string expected =
+            "    NewStringField(stringField1);\n"
+                    "\n"
+                    "    typedef SimpleParsedJSON<\n"
+                    "        stringField1\n"
+                    "    > OutputJSON;\n";
+    spJSON::GeneratorOptions options;
+    options.ignoreNull = true;
+    string output = spJSON::Gen("OutputJSON", input, options);
+
+    ASSERT_EQ(output , expected);
+}
+
+TEST(JSONParsing, MultipleStringGen) {
     string input = R"RAW(
        {
            "stringField1": "Hello World!",
@@ -126,19 +82,10 @@ int MultipleStringGen(testLogger& log) {
 "    > OutputJSON;\n";
     string output = spJSON::Gen("OutputJSON", input);
 
-    if (output != expected) {
-        log << "Missmatch in generated code" << endl;
-        log << "Expected: " << endl;
-        log << expected << endl;
-        log << endl;
-        log << "Got: " << endl;
-        log << output << endl;
-        return 1;
-    }
-    return 0;
+    ASSERT_EQ(output , expected);
 }
 
-int SingleUI64(testLogger& log) {
+TEST(JSONParsing, SingleUI64) {
     string input = R"RAW(
        {
           "id": 505874924095815700
@@ -152,19 +99,10 @@ int SingleUI64(testLogger& log) {
 "    > OutputJSON;\n";
     string output = spJSON::Gen("OutputJSON", input);
 
-    if (output != expected) {
-        log << "Missmatch in generated code" << endl;
-        log << "Expected: " << endl;
-        log << expected << endl;
-        log << endl;
-        log << "Got: " << endl;
-        log << output << endl;
-        return 1;
-    }
-    return 0;
+    ASSERT_EQ(output , expected);
 }
 
-int SingleI64(testLogger& log) {
+TEST(JSONParsing, SingleI64) {
     string input = R"RAW(
        {
           "id": -505874924095815700
@@ -178,19 +116,10 @@ int SingleI64(testLogger& log) {
 "    > OutputJSON;\n";
     string output = spJSON::Gen("OutputJSON", input);
 
-    if (output != expected) {
-        log << "Missmatch in generated code" << endl;
-        log << "Expected: " << endl;
-        log << expected << endl;
-        log << endl;
-        log << "Got: " << endl;
-        log << output << endl;
-        return 1;
-    }
-    return 0;
+    ASSERT_EQ(output , expected);
 }
 
-int SingleUInt(testLogger& log) {
+TEST(JSONParsing, SingleUInt) {
     string input = R"RAW(
        {
           "id": 50587
@@ -204,19 +133,10 @@ int SingleUInt(testLogger& log) {
 "    > OutputJSON;\n";
     string output = spJSON::Gen("OutputJSON", input);
 
-    if (output != expected) {
-        log << "Missmatch in generated code" << endl;
-        log << "Expected: " << endl;
-        log << expected << endl;
-        log << endl;
-        log << "Got: " << endl;
-        log << output << endl;
-        return 1;
-    }
-    return 0;
+    ASSERT_EQ(output , expected);
 }
 
-int SingleInt(testLogger& log) {
+TEST(JSONParsing, SingleInt) {
     string input = R"RAW(
        {
           "id": -50587
@@ -230,19 +150,10 @@ int SingleInt(testLogger& log) {
 "    > OutputJSON;\n";
     string output = spJSON::Gen("OutputJSON", input);
 
-    if (output != expected) {
-        log << "Missmatch in generated code" << endl;
-        log << "Expected: " << endl;
-        log << expected << endl;
-        log << endl;
-        log << "Got: " << endl;
-        log << output << endl;
-        return 1;
-    }
-    return 0;
+    ASSERT_EQ(output , expected);
 }
 
-int IntArray(testLogger& log) {
+TEST(JSONParsing, IntArray) {
     string input = R"RAW(
        {
           "ids": [
@@ -252,26 +163,105 @@ int IntArray(testLogger& log) {
        }
     )RAW";
     string expected =
+            "    NewIntArrayField(ids);\n"
+                    "\n"
+                    "    typedef SimpleParsedJSON<\n"
+                    "        ids\n"
+                    "    > OutputJSON;\n";
+    string output = spJSON::Gen("OutputJSON", input);
+
+    ASSERT_EQ(output , expected);
+}
+
+TEST(JSONParsing, IntArrayIgnoreNull) {
+    string input = R"RAW(
+       {
+          "ids": [
+              -5082,
+              500,
+              null
+          ]
+       }
+    )RAW";
+    string expected =
 "    NewIntArrayField(ids);\n"
 "\n"
 "    typedef SimpleParsedJSON<\n"
 "        ids\n"
 "    > OutputJSON;\n";
-    string output = spJSON::Gen("OutputJSON", input);
+    spJSON::GeneratorOptions options;
+    options.ignoreNull = true;
+    string output = spJSON::Gen("OutputJSON", input, options);
 
-    if (output != expected) {
-        log << "Missmatch in generated code" << endl;
-        log << "Expected: " << endl;
-        log << expected << endl;
-        log << endl;
-        log << "Got: " << endl;
-        log << output << endl;
-        return 1;
-    }
-    return 0;
+    ASSERT_EQ(output , expected);
 }
 
-int I64Array(testLogger& log) {
+TEST(JSONParsing, ArrayIgnoreAllNull) {
+    string input = R"RAW(
+       {
+          "ids": [-5, 10],
+          "ignore": [null]
+          "ignore2": [null, null]
+       }
+    )RAW";
+    string expected =
+            "    NewIntArrayField(ids);\n"
+                    "\n"
+                    "    typedef SimpleParsedJSON<\n"
+                    "        ids\n"
+                    "    > OutputJSON;\n";
+    spJSON::GeneratorOptions options;
+    options.ignoreNull = true;
+    string output = spJSON::Gen("OutputJSON", input, options);
+
+    ASSERT_EQ(output , expected);
+}
+
+TEST(JSONParsing, ArrayIgnoreEmpty) {
+    string input = R"RAW(
+       {
+          "ids": [-5, 10],
+          "ignore": [ ]
+       }
+    )RAW";
+    string expected =
+            "    NewIntArrayField(ids);\n"
+                    "\n"
+                    "    typedef SimpleParsedJSON<\n"
+                    "        ids\n"
+                    "    > OutputJSON;\n";
+    spJSON::GeneratorOptions options;
+    options.ignoreNull = true;
+    string output = spJSON::Gen("OutputJSON", input, options);
+
+    ASSERT_EQ(output , expected);
+}
+
+TEST(JSONParsing, IntArrayIgnoreNullFirst) {
+    string input = R"RAW(
+       {
+          "ids": [
+              null,
+              -5082,
+              500,
+              null
+          ]
+       }
+    )RAW";
+    string expected =
+            "    NewIntArrayField(ids);\n"
+                    "\n"
+                    "    typedef SimpleParsedJSON<\n"
+                    "        ids\n"
+                    "    > OutputJSON;\n";
+    spJSON::GeneratorOptions options;
+    options.ignoreNull = true;
+    string output = spJSON::Gen("OutputJSON", input, options);
+
+    ASSERT_EQ(output , expected);
+}
+
+TEST(JSONParsing, I64Array) {
     string input = R"RAW(
        {
           "ids": [
@@ -288,19 +278,10 @@ int I64Array(testLogger& log) {
 "    > OutputJSON;\n";
     string output = spJSON::Gen("OutputJSON", input);
 
-    if (output != expected) {
-        log << "Missmatch in generated code" << endl;
-        log << "Expected: " << endl;
-        log << expected << endl;
-        log << endl;
-        log << "Got: " << endl;
-        log << output << endl;
-        return 1;
-    }
-    return 0;
+    ASSERT_EQ(output , expected);
 }
 
-int DoubleArray(testLogger& log) {
+TEST(JSONParsing, DoubleArray) {
     string input = R"RAW(
        {
           "ids": [
@@ -317,19 +298,10 @@ int DoubleArray(testLogger& log) {
 "    > OutputJSON;\n";
     string output = spJSON::Gen("OutputJSON", input);
 
-    if (output != expected) {
-        log << "Missmatch in generated code" << endl;
-        log << "Expected: " << endl;
-        log << expected << endl;
-        log << endl;
-        log << "Got: " << endl;
-        log << output << endl;
-        return 1;
-    }
-    return 0;
+    ASSERT_EQ(output , expected);
 }
 
-int StringArray(testLogger& log) {
+TEST(JSONParsing, StringArray) {
     string input = R"RAW(
        {
           "ids": [
@@ -346,48 +318,10 @@ int StringArray(testLogger& log) {
 "    > OutputJSON;\n";
     string output = spJSON::Gen("OutputJSON", input);
 
-    if (output != expected) {
-        log << "Missmatch in generated code" << endl;
-        log << "Expected: " << endl;
-        log << expected << endl;
-        log << endl;
-        log << "Got: " << endl;
-        log << output << endl;
-        return 1;
-    }
-    return 0;
+    ASSERT_EQ(output , expected);
 }
 
-int TimeArray(testLogger& log) {
-    string input = R"RAW(
-       {
-          "ids": [
-              "2015-07-13T05:38:17.33640392Z",
-              ""
-          ]
-       }
-    )RAW";
-    string expected =
-"    NewTimeArrayField(ids);\n"
-"\n"
-"    typedef SimpleParsedJSON<\n"
-"        ids\n"
-"    > OutputJSON;\n";
-    string output = spJSON::Gen("OutputJSON", input);
-
-    if (output != expected) {
-        log << "Missmatch in generated code" << endl;
-        log << "Expected: " << endl;
-        log << expected << endl;
-        log << endl;
-        log << "Got: " << endl;
-        log << output << endl;
-        return 1;
-    }
-    return 0;
-}
-
-int UIntArray(testLogger& log) {
+TEST(JSONParsing, UIntArray) {
     string input = R"RAW(
        {
           "ids": [
@@ -404,19 +338,10 @@ int UIntArray(testLogger& log) {
 "    > OutputJSON;\n";
     string output = spJSON::Gen("OutputJSON", input);
 
-    if (output != expected) {
-        log << "Missmatch in generated code" << endl;
-        log << "Expected: " << endl;
-        log << expected << endl;
-        log << endl;
-        log << "Got: " << endl;
-        log << output << endl;
-        return 1;
-    }
-    return 0;
+    ASSERT_EQ(output , expected);
 }
 
-int UI64Array(testLogger& log) {
+TEST(JSONParsing, UI64Array) {
     string input = R"RAW(
        {
           "ids": [
@@ -433,19 +358,10 @@ int UI64Array(testLogger& log) {
 "    > OutputJSON;\n";
     string output = spJSON::Gen("OutputJSON", input);
 
-    if (output != expected) {
-        log << "Missmatch in generated code" << endl;
-        log << "Expected: " << endl;
-        log << expected << endl;
-        log << endl;
-        log << "Got: " << endl;
-        log << output << endl;
-        return 1;
-    }
-    return 0;
+    ASSERT_EQ(output , expected);
 }
 
-int DoubleFields(testLogger& log) {
+TEST(JSONParsing, DoubleFields) {
     string input = R"RAW(
        {
           "d1": -50587.0,
@@ -465,19 +381,10 @@ int DoubleFields(testLogger& log) {
 "    > OutputJSON;\n";
     string output = spJSON::Gen("OutputJSON", input);
 
-    if (output != expected) {
-        log << "Missmatch in generated code" << endl;
-        log << "Expected: " << endl;
-        log << expected << endl;
-        log << endl;
-        log << "Got: " << endl;
-        log << output << endl;
-        return 1;
-    }
-    return 0;
+    ASSERT_EQ(output , expected);
 }
 
-int BooleanFields(testLogger& log) {
+TEST(JSONParsing, BooleanFields) {
     string input = R"RAW(
        {
           "truncated": false,
@@ -494,25 +401,59 @@ int BooleanFields(testLogger& log) {
 "    > OutputJSON;\n";
     string output = spJSON::Gen("OutputJSON", input);
 
-    if (output != expected) {
-        log << "Missmatch in generated code" << endl;
-        log << "Expected: " << endl;
-        log << expected << endl;
-        log << endl;
-        log << "Got: " << endl;
-        log << output << endl;
-        return 1;
-    }
-    return 0;
+    ASSERT_EQ(output , expected);
 }
 
-int SingleEmbededObject(testLogger& log) {
+TEST(JSONParsing, BooleanArrayFields) {
+    string input = R"RAW(
+       {
+          "truncated": [false, true],
+          "profile_use_background_image": [true]
+       }
+    )RAW";
+    string expected =
+            "    NewBoolArrayField(profile_use_background_image);\n"
+                    "    NewBoolArrayField(truncated);\n"
+                    "\n"
+                    "    typedef SimpleParsedJSON<\n"
+                    "        profile_use_background_image,\n"
+                    "        truncated\n"
+                    "    > OutputJSON;\n";
+    string output = spJSON::Gen("OutputJSON", input);
+
+    ASSERT_EQ(output , expected);
+}
+
+TEST(JSONParsing, BooleanArrayFieldsWithNull) {
+    string input = R"RAW(
+       {
+          "truncated": [false, true, null],
+          "profile_use_background_image": [null, true]
+       }
+    )RAW";
+    string expected =
+            "    NewBoolArrayField(profile_use_background_image);\n"
+            "    NewBoolArrayField(truncated);\n"
+            "\n"
+            "    typedef SimpleParsedJSON<\n"
+            "        profile_use_background_image,\n"
+            "        truncated\n"
+            "    > OutputJSON;\n";
+    spJSON::GeneratorOptions options;
+    options.ignoreNull = true;
+    string output = spJSON::Gen("OutputJSON", input, options);
+
+    ASSERT_EQ(output , expected);
+}
+
+TEST(JSONParsing, SingleEmbededObject) {
     string input = R"RAW(
        {
           "id": 505874924095815700,
           "metadata": {
             "result_type": "recent",
-            "iso_language_code": "ja"
+            "iso_language_code": "ja",
+            "dummy": null
           },
           "created_at": "Sun Aug 31 00:29:15 +0000 2014"
        }
@@ -537,21 +478,14 @@ int SingleEmbededObject(testLogger& log) {
 "        id,\n"
 "        metadata\n"
 "    > OutputJSON;\n";
-    string output = spJSON::Gen("OutputJSON", input);
+    spJSON::GeneratorOptions options;
+    options.ignoreNull = true;
+    string output = spJSON::Gen("OutputJSON", input, options);
 
-    if (output != expected) {
-        log << "Missmatch in generated code" << endl;
-        log << "Expected: " << endl;
-        log << expected << endl;
-        log << endl;
-        log << "Got: " << endl;
-        log << output << endl;
-        return 1;
-    }
-    return 0;
+    ASSERT_EQ(output , expected);
 }
 
-int DoublyEmbededObject(testLogger& log) {
+TEST(JSONParsing, DoublyEmbededObject) {
     string input = R"RAW(
        {
           "id": 505874924095815700,
@@ -562,7 +496,8 @@ int DoublyEmbededObject(testLogger& log) {
                 "result_type": "recent",
                 "alias_ids": [1,2],
                 "iso_language_code": "ja",
-                "aliases": ["alias1", "alias2"]
+                "aliases": ["alias1", "alias2"],
+                "dummy": null
             }
           },
           "created_at": "Sun Aug 31 00:29:15 +0000 2014"
@@ -604,21 +539,15 @@ int DoublyEmbededObject(testLogger& log) {
 "        id,\n"
 "        metadata\n"
 "    > OutputJSON;\n";
-    string output = spJSON::Gen("OutputJSON", input);
 
-    if (output != expected) {
-        log << "Missmatch in generated code" << endl;
-        log << "Expected: " << endl;
-        log << expected << endl;
-        log << endl;
-        log << "Got: " << endl;
-        log << output << endl;
-        return 1;
-    }
-    return 0;
+    spJSON::GeneratorOptions options;
+    options.ignoreNull = true;
+    string output = spJSON::Gen("OutputJSON", input, options);
+
+    ASSERT_EQ(output , expected);
 }
 
-int SingleEmbededObjectWithArrays(testLogger& log) {
+TEST(JSONParsing,SingleEmbededObjectWithArrays) {
     string input = R"RAW(
        {
           "id": 505874924095815700,
@@ -657,19 +586,10 @@ int SingleEmbededObjectWithArrays(testLogger& log) {
 "    > OutputJSON;\n";
     string output = spJSON::Gen("OutputJSON", input);
 
-    if (output != expected) {
-        log << "Missmatch in generated code" << endl;
-        log << "Expected: " << endl;
-        log << expected << endl;
-        log << endl;
-        log << "Got: " << endl;
-        log << output << endl;
-        return 1;
-    }
-    return 0;
+    ASSERT_EQ(output , expected);
 }
 
-int ArrayOfObjects(testLogger& log ) {
+TEST(JSONGen, ArrayOfObjects) {
     string input = R"RAW(
        {
           "id": 505874924095815700,
@@ -681,7 +601,7 @@ int ArrayOfObjects(testLogger& log ) {
               "indices": [
                 58,
                 80
-              ]
+             ]
             },
             {
               "url": "http://t.co/LU8T7vmU3h",
@@ -719,24 +639,204 @@ int ArrayOfObjects(testLogger& log ) {
 
     string output = spJSON::Gen("OutputJSON", input);
 
-    if (output != expected) {
-        log << "Missmatch in generated code" << endl;
-        log << "Expected: " << endl;
-        log << expected << endl;
-        log << endl;
-        log << "Got: " << endl;
-        log << output << endl;
-        return 1;
-    }
-    return 0;
+    ASSERT_EQ(output , expected);
 }
 
-int ArrayOfObjects2(testLogger& log ) {
+TEST(JSONGen, ArrayOfObjects_NoMerge) {
+    string input = R"RAW(
+       {
+          "id": 505874924095815700,
+          "urls": [
+            {
+              "url": "http://t.co/QMLJeFmfMT",
+              "expanded_url": "http://www.pixiv.net/member.php?id=4776",
+              "display_url": "pixiv.net/member.php?id=…",
+              "indices": [
+                58,
+                80
+             ]
+            },
+            {
+              "url": "http://t.co/LU8T7vmU3h",
+              "expanded_url": "http://ask.fm/KATANA77",
+              "display_url": "ask.fm/KATANA77",
+              "new_string": "This shouldn't be int the parse"
+            }
+          ],
+          "created_at": "Sun Aug 31 00:29:15 +0000 2014"
+       }
+    )RAW";
+    string expected =
+            "    NewStringField(created_at);\n"
+                    "    NewUI64Field(id);\n"
+                    "\n"
+                    "    namespace urls_fields {\n"
+                    "        NewStringField(display_url);\n"
+                    "        NewStringField(expanded_url);\n"
+                    "        NewUIntArrayField(indices);\n"
+                    "        NewStringField(url);\n"
+                    "\n"
+                    "        typedef SimpleParsedJSON<\n"
+                    "            display_url,\n"
+                    "            expanded_url,\n"
+                    "            indices,\n"
+                    "            url\n"
+                    "        > JSON;\n"
+                    "    }\n"
+                    "    NewObjectArray(urls, urls_fields::JSON);\n"
+                    "\n"
+                    "    typedef SimpleParsedJSON<\n"
+                    "        created_at,\n"
+                    "        id,\n"
+                    "        urls\n"
+                    "    > OutputJSON;\n";
+
+    string output = spJSON::Gen("OutputJSON", input);
+
+    ASSERT_EQ(output , expected);
+}
+
+TEST(JSONGen, ArrayOfObjects_Merge) {
+    string input = R"RAW(
+       {
+          "id": 505874924095815700,
+          "urls": [
+            {
+              "url": "http://t.co/QMLJeFmfMT",
+              "expanded_url": "http://www.pixiv.net/member.php?id=4776",
+              "display_url": "pixiv.net/member.php?id=…",
+              "indices": [
+                58,
+                80
+             ]
+            },
+            {
+              "url": "http://t.co/LU8T7vmU3h",
+              "expanded_url": "http://ask.fm/KATANA77",
+              "display_url": "ask.fm/KATANA77",
+              "new_string": "This shouldn't be int the parse"
+            }
+          ],
+          "created_at": "Sun Aug 31 00:29:15 +0000 2014"
+       }
+    )RAW";
+    string expected =
+            "    NewStringField(created_at);\n"
+                    "    NewUI64Field(id);\n"
+                    "\n"
+                    "    namespace urls_fields {\n"
+                    "        NewStringField(display_url);\n"
+                    "        NewStringField(expanded_url);\n"
+                    "        NewUIntArrayField(indices);\n"
+                    "        NewStringField(new_string);\n"
+                    "        NewStringField(url);\n"
+                    "\n"
+                    "        typedef SimpleParsedJSON<\n"
+                    "            display_url,\n"
+                    "            expanded_url,\n"
+                    "            indices,\n"
+                    "            new_string,\n"
+                    "            url\n"
+                    "        > JSON;\n"
+                    "    }\n"
+                    "    NewObjectArray(urls, urls_fields::JSON);\n"
+                    "\n"
+                    "    typedef SimpleParsedJSON<\n"
+                    "        created_at,\n"
+                    "        id,\n"
+                    "        urls\n"
+                    "    > OutputJSON;\n";
+
+    spJSON::GeneratorOptions options;
+    options.mergeFields = true;
+    string output = spJSON::Gen("OutputJSON", input, options);
+
+    ASSERT_EQ(output , expected);
+}
+
+TEST(JSONGen, ArrayOfObjects_MergeNull) {
+string input = R"RAW(
+       {
+          "id": 505874924095815700,
+          "urls": [
+            null,
+            {
+            },
+            {
+              "url": null,
+              "expanded_url": null,
+              "display_url": null,
+              "indices": null
+            },
+            {
+              "indices": [null]
+            },
+            {
+              "url": "http://t.co/QMLJeFmfMT",
+              "expanded_url": "http://www.pixiv.net/member.php?id=4776",
+              "display_url": "pixiv.net/member.php?id=…",
+              "indices": [
+                58,
+                80
+             ]
+            },
+            {
+              "url": "http://t.co/LU8T7vmU3h",
+              "expanded_url": "http://ask.fm/KATANA77",
+              "display_url": "ask.fm/KATANA77",
+              "new_string": "This shouldn't be int the parse"
+            },
+            {
+              "url": null,
+              "expanded_url": null,
+              "display_url": null,
+              "indices": null
+            }
+          ],
+          "created_at": "Sun Aug 31 00:29:15 +0000 2014"
+       }
+    )RAW";
+string expected =
+        "    NewStringField(created_at);\n"
+                "    NewUI64Field(id);\n"
+                "\n"
+                "    namespace urls_fields {\n"
+                "        NewStringField(display_url);\n"
+                "        NewStringField(expanded_url);\n"
+                "        NewUIntArrayField(indices);\n"
+                "        NewStringField(new_string);\n"
+                "        NewStringField(url);\n"
+                "\n"
+                "        typedef SimpleParsedJSON<\n"
+                "            display_url,\n"
+                "            expanded_url,\n"
+                "            indices,\n"
+                "            new_string,\n"
+                "            url\n"
+                "        > JSON;\n"
+                "    }\n"
+                "    NewObjectArray(urls, urls_fields::JSON);\n"
+                "\n"
+                "    typedef SimpleParsedJSON<\n"
+                "        created_at,\n"
+                "        id,\n"
+                "        urls\n"
+                "    > OutputJSON;\n";
+
+spJSON::GeneratorOptions options;
+options.mergeFields = true;
+options.ignoreNull = true;
+string output = spJSON::Gen("OutputJSON", input, options);
+
+ASSERT_EQ(output , expected);
+}
+
+TEST(JSONGen, ArrayOfObjects2) {
     string input = R"RAW(
        {
             "OuterObjects": [
                 {
-                    "Objects": [ 
+                    "Objects": [
                         {
                             "IntField1": 1
                         },
@@ -746,7 +846,7 @@ int ArrayOfObjects2(testLogger& log ) {
                     ]
                 },
                 {
-                    "Objects": [ 
+                    "Objects": [
                         {
                             "IntField1": 3
                         },
@@ -786,14 +886,334 @@ R"RAW(
 )RAW";
     string output = spJSON::Gen("OutputJSON", input);
 
-    if (output != expected) {
-        log << "Missmatch in generated code" << endl;
-        log << "Expected: " << endl;
-        log << expected << endl;
-        log << endl;
-        log << "Got: " << endl;
-        log << output << endl;
-        return 1;
+    ASSERT_EQ(output , expected);
+}
+
+TEST(JSONGen, ArrayOfObjects2_NoMerge) {
+string input = R"RAW(
+       {
+            "OuterObjects": [
+                {
+                    "Objects": [
+                        {
+                            "IntField1": 1
+                        },
+                        {
+                            "IntField2": 2
+                        }
+                    ]
+                },
+                {
+                    "Objects": [
+                        {
+                            "IntField1": 3
+                        },
+                        {
+                            "IntField2": 4
+                        },
+                        {
+                            "IntField3": 5
+                        }
+                    ]
+                }
+            ]
+       }
+    )RAW";
+string expected =
+        R"RAW(
+    namespace OuterObjects_fields {
+
+        namespace Objects_fields {
+            NewUIntField(IntField1);
+
+            typedef SimpleParsedJSON<
+                IntField1
+            > JSON;
+        }
+        NewObjectArray(Objects, Objects_fields::JSON);
+
+        typedef SimpleParsedJSON<
+            Objects
+        > JSON;
     }
-    return 0;
+    NewObjectArray(OuterObjects, OuterObjects_fields::JSON);
+
+    typedef SimpleParsedJSON<
+        OuterObjects
+    > OutputJSON;
+)RAW";
+    spJSON::GeneratorOptions options;
+    options.mergeFields = false;
+    options.ignoreNull = true;
+    string output = spJSON::Gen("OutputJSON", input, options);
+
+ASSERT_EQ(output , expected);
+}
+
+TEST(JSONGen, ArrayOfObjects2_Merge) {
+    string input = R"RAW(
+           {
+                "OuterObjects": [
+                    {
+                        "Objects": [
+                            {
+                                "IntField1": 1
+                            },
+                            {
+                                "IntField2": 2
+                            }
+                        ]
+                    },
+                    {
+                        "Objects": [
+                            {
+                                "IntField1": 3
+                            },
+                            {
+                                "IntField2": 4
+                            },
+                            {
+                                "IntField3": 5
+                            }
+                        ]
+                    }
+                ]
+           }
+        )RAW";
+    string expected =
+            R"RAW(
+    namespace OuterObjects_fields {
+
+        namespace Objects_fields {
+            NewUIntField(IntField1);
+            NewUIntField(IntField2);
+            NewUIntField(IntField3);
+
+            typedef SimpleParsedJSON<
+                IntField1,
+                IntField2,
+                IntField3
+            > JSON;
+        }
+        NewObjectArray(Objects, Objects_fields::JSON);
+
+        typedef SimpleParsedJSON<
+            Objects
+        > JSON;
+    }
+    NewObjectArray(OuterObjects, OuterObjects_fields::JSON);
+
+    typedef SimpleParsedJSON<
+        OuterObjects
+    > OutputJSON;
+)RAW";
+    spJSON::GeneratorOptions options;
+    options.mergeFields = true;
+    options.ignoreNull = true;
+    string output = spJSON::Gen("OutputJSON", input, options);
+
+    ASSERT_EQ(output , expected);
+}
+
+TEST(JSONGen, ArrayOfObjects2_MultiMerge) {
+    string input = R"RAW(
+           {
+                "OuterObjects": [
+                    {
+                        "Objects": [
+                            {
+                                "IntField1": 1
+                            },
+                            {
+                                "IntField2": 2
+                            }
+                        ],
+                        "Objects2": [
+                            {
+                                "IntField21": 1
+                            },
+                            {
+                                "IntField22": 2
+                            }
+                        ]
+                    },
+                    {
+                        "Dummy": {
+                            "dummyField": "String"
+                        },
+                        "Objects": [
+                            {
+                                "IntField1": 3
+                            },
+                            {
+                                "IntField2": 4
+                            },
+                            {
+                                "IntField3": 5
+                            }
+                        ]
+                    }
+                ],
+                "Objects": [
+                    {
+                        "outer1": 1
+                    },
+                    {
+                        "outer2": 2
+                    }
+                ]
+           }
+        )RAW";
+    string expected =
+            R"RAW(
+    namespace Objects_fields {
+        NewUIntField(outer1);
+        NewUIntField(outer2);
+
+        typedef SimpleParsedJSON<
+            outer1,
+            outer2
+        > JSON;
+    }
+    NewObjectArray(Objects, Objects_fields::JSON);
+
+    namespace OuterObjects_fields {
+
+        namespace Dummy_fields {
+            NewStringField(dummyField);
+
+            typedef SimpleParsedJSON<
+                dummyField
+            > JSON;
+        }
+        NewEmbededObject(Dummy, Dummy_fields::JSON);
+
+        namespace Objects_fields {
+            NewUIntField(IntField1);
+            NewUIntField(IntField2);
+            NewUIntField(IntField3);
+
+            typedef SimpleParsedJSON<
+                IntField1,
+                IntField2,
+                IntField3
+            > JSON;
+        }
+        NewObjectArray(Objects, Objects_fields::JSON);
+
+        namespace Objects2_fields {
+            NewUIntField(IntField21);
+            NewUIntField(IntField22);
+
+            typedef SimpleParsedJSON<
+                IntField21,
+                IntField22
+            > JSON;
+        }
+        NewObjectArray(Objects2, Objects2_fields::JSON);
+
+        typedef SimpleParsedJSON<
+            Dummy,
+            Objects,
+            Objects2
+        > JSON;
+    }
+    NewObjectArray(OuterObjects, OuterObjects_fields::JSON);
+
+    typedef SimpleParsedJSON<
+        Objects,
+        OuterObjects
+    > OutputJSON;
+)RAW";
+    spJSON::GeneratorOptions options;
+    options.mergeFields = true;
+    options.ignoreNull = true;
+    string output = spJSON::Gen("OutputJSON", input, options);
+
+    ASSERT_EQ(output , expected);
+}
+
+TEST(JSONGen, ArrayOfObjects2WithNulls) {
+    string input = R"RAW(
+       {
+            "OuterObjects": [
+                null,
+                {
+                    "Objects": [
+                        null,
+                        {
+                            "IntField1": 1
+                        },
+                        {
+                            "IntField1": 2
+                        },
+                        null
+                    ]
+                },
+                {
+                    "Objects": [
+                        {
+                            "IntField1": 3
+                        },
+                        {
+                            "IntField1": 4
+                        },
+                        {
+                            "IntField1": 5
+                        },
+                        null
+                    ]
+                }
+            ]
+       }
+    )RAW";
+    string expected =
+            R"RAW(
+    namespace OuterObjects_fields {
+
+        namespace Objects_fields {
+            NewUIntField(IntField1);
+
+            typedef SimpleParsedJSON<
+                IntField1
+            > JSON;
+        }
+        NewObjectArray(Objects, Objects_fields::JSON);
+
+        typedef SimpleParsedJSON<
+            Objects
+        > JSON;
+    }
+    NewObjectArray(OuterObjects, OuterObjects_fields::JSON);
+
+    typedef SimpleParsedJSON<
+        OuterObjects
+    > OutputJSON;
+)RAW";
+    spJSON::GeneratorOptions options;
+    options.ignoreNull = true;
+    string output = spJSON::Gen("OutputJSON", input, options);
+
+    ASSERT_EQ(output , expected);
+}
+
+TEST(JSONGen, ArrayOfTimestamps) {
+    string input = R"RAW(
+       {
+          "ids": [
+              "2015-07-13T05:38:17.33640392Z",
+              ""
+          ]
+       }
+    )RAW";
+    string expected =
+"    NewTimeArrayField(ids);\n"
+"\n"
+"    typedef SimpleParsedJSON<\n"
+"        ids\n"
+"    > OutputJSON;\n";
+
+    string output = spJSON::Gen("OutputJSON", input);
+
+    ASSERT_EQ(output, expected);
 }

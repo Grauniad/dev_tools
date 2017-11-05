@@ -98,7 +98,7 @@ public:
      * Return the current object as a JSON string, and reset the builder.
      */
     std::string GetAndClear();
-
+private:
     /*****************************************************
      *       Add Anonymous Data
      ****************************************************/
@@ -115,8 +115,6 @@ public:
     void Add(const double& value);
 
     void Add(const bool& value);
-
-private:
 
     /*****************************************************
      * Data
@@ -151,12 +149,26 @@ namespace spJSON {
      *                    Auto Generate an implementation
      **************************************************************************/
 
+    struct GeneratorOptions {
+        GeneratorOptions() {
+            // defaults...
+            ignoreNull = false;
+            mergeFields = false;
+        }
+        bool ignoreNull;
+        bool mergeFields;
+    };
+
      /** 
       * Auto-generate an implementation of SimpleParsedJSON, based on an example JSON string
       *
       * @returns The code to generate the SimpleParsedJSON implementation
       */
-     std::string Gen(const std::string& className, const std::string& exampleJson);
+     std::string Gen(
+             const std::string& className,
+             const std::string& exampleJson,
+             spJSON::GeneratorOptions options = spJSON::GeneratorOptions());
+
 }
 
 /*****************************************************************************
@@ -287,6 +299,15 @@ public:
      *                    Run the Parser
      **************************************************************************/
 
+    class IParser {
+    public:
+        virtual ~IParser() {}
+        struct ParseError {
+            std::string msg;
+        };
+        virtual void Parse(const char* json, SimpleParsedJSON<Fields...>& spj) = 0;
+    };
+
     /**
      * Parse the json string provided and store the fields in our members. Raise
      * an error if unknown fields are provided, or if known fields are of the
@@ -305,6 +326,7 @@ public:
      * @returns TRUE if all (and only) our fields were found in the JSON
      */
     bool Parse(const char* json, std::string& errMsg);
+    bool Parse(const char* json, std::string& errMsg, IParser& parser);
 
     /**************************************************************************
      *                    Access Results
@@ -378,6 +400,8 @@ public:
     bool StartArray();
 
     bool EndArray(rapidjson::SizeType elementCount);
+
+    bool RawNumber(const char* str, size_t len, bool copy);
 
     /**************************************************************************
      *                       Public Utilities

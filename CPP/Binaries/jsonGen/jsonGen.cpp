@@ -14,6 +14,9 @@ int main(int argc, const char *argv[])
     ifstream file(argv[1]);
     stringstream input;
     input << file.rdbuf();
-    cout << spJSON::Gen("OutputJSON", input.str()) << endl;
+    spJSON::GeneratorOptions options;
+    options.mergeFields = true;
+    options.ignoreNull = true;
+    cout << spJSON::Gen("OutputJSON", input.str(), options) << endl;
     return 0;
 }

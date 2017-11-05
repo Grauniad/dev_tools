@@ -191,6 +191,14 @@ ifndef NO_MEMTEST
 endif
 
 #
+# Configure location of glibc
+#
+ifndef GLIBC
+    GLIBC=LOCAL
+endif
+
+
+#
 # Configure Debuggers
 #
 
@@ -294,6 +302,9 @@ endif
 INCLUDE_FLAGS=-I$(CURDIR) -I$(EXPORT_INCLUDES_DIR)
 INCLUDE_FLAGS+=$(addprefix -I,$(ADDITIONAL_INCLUDE_FLAGS))
 
+EXTERNAL_LIBS+=$(addprefix -L,$(ADDITIONAL_LIB_DIRS))
+
+
 # Expose libDefer to the test framework
 # Make the defer header available for use in test scripts
 TEST_COMP_FLAGS=-I$(DEV_TOOLS_DIR)/CPP/Libraries/libDefer/
@@ -311,6 +322,11 @@ endif
 
 ifeq ($(findstring YES,$(STATIC)),YES)
    COMP_FLAGS+=$(COMPILER_STATIC)
+endif
+
+ifeq ($(findstring LOCAL,$(GLIBC)),LOCAL)
+else
+   COMP_FLAGS+=-Wl,--rpath=$(GLIBC)
 endif
 
 ifndef COMP_PROFILE_FLAGS
@@ -525,10 +541,13 @@ ifeq ($(LINK_CEF_RESOURCES),YES)
     FILES_TO_SYM_LINK+=$(CEF_LIBS)/libcef.so*
     FILES_TO_SYM_LINK+=$(CEF_LIBS)/libffmpegsumo.so*
     FILES_TO_SYM_LINK+=$(CEF_LIBS)/libpdf.so*
+    FILES_TO_SYM_LINK+=$(CEF_LIBS)/natives_blob.bin
+    FILES_TO_SYM_LINK+=$(CEF_LIBS)/snapshot_blob.bin
     FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/cef_100_percent.pak
     FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/cef_200_percent.pak
     FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/cef.pak 
     FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/devtools_resources.pak
+    FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/cef_extensions.pak
     FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/icudtl.dat
 endif
 
@@ -539,10 +558,13 @@ ifeq ($(TEST_LINK_CEF_RESOURCES),YES)
     TEST_FILES_TO_SYM_LINK+=$(CEF_LIBS)/libcef.so*
     TEST_FILES_TO_SYM_LINK+=$(CEF_LIBS)/libffmpegsumo.so*
     TEST_FILES_TO_SYM_LINK+=$(CEF_LIBS)/libpdf.so*
+    TEST_FILES_TO_SYM_LINK+=$(CEF_LIBS)/natives_blob.bin
+    TEST_FILES_TO_SYM_LINK+=$(CEF_LIBS)/snapshot_blob.bin
     TEST_FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/cef_100_percent.pak
     TEST_FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/cef_200_percent.pak
     TEST_FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/cef.pak 
     TEST_FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/devtools_resources.pak
+    TEST_FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/cef_extensions.pak
     TEST_FILES_TO_SYM_LINK+=$(CEF_RESOURCES)/icudtl.dat
 endif
 ###################################################################
@@ -594,7 +616,7 @@ endif
 ifeq ($(USE_CEF),YES)
 
     INCLUDE_FLAGS+=-I$(CEF_DIR)
-    EXTERNAL_LIBS+=-L$(CEF_LIBS) $(CEF_LIBS)/obj.target/libcef_dll_wrapper.a -lcef 
+    EXTERNAL_LIBS+=-L$(CEF_LIBS) $(CEF_LIBS)/libcef_dll_wrapper.a -lcef 
 endif
 
 #
@@ -644,7 +666,14 @@ else
 endif
    EXTERNAL_LIBS+=$(BOOST_LINK_FLAGS)
 endif
- 
+
+#
+# googletest
+#
+ifeq ($(USE_GTEST),YES)
+    EXTERNAL_LIBS+=-lgtest
+endif
+
 ###################################################################
 #                        Tags                                     #
 ###################################################################
@@ -961,6 +990,7 @@ usage:
 	@echo "INCLUDES_DIR:  $(INCLUDES_DIR)"
 	@echo "LINKED_FILES:  $(LINKED_FILES)"
 	@echo "EXTERNAL_LIBS: $(EXTERNAL_LIBS)"
+	@echo "GLIBC:         $(GLIBC)"
 	@echo ""
 	@echo "USE_GSL:				  $(USE_GSL)   ( LOCAL: $(USE_LOCAL_GSL))"
 	@echo "USE_PLPLOT:			  $(USE_PLPLOT)   ( LOCAL: $(USE_LOCAL_PLPLOT))"
@@ -968,6 +998,7 @@ usage:
 	@echo "USE_SQLITE:			  $(USE_SQLITE)"
 	@echo "USE_FPIC:			  $(USE_FPIC)"
 	@echo "USE_CEF:				  $(USE_CEF)"
+	@echo "USE_GTEST:			  $(USE_GTEST)"
 	@echo "USE_GTK:				  $(USE_GTK)"
 	@echo "USE_JSON:			  $(USE_JSON)"
 	@echo "USE_WEB_SOCKET_CPP:    $(USE_WEB_SOCKET_CPP)"
@@ -989,7 +1020,7 @@ usage:
 	@echo "  TO open a module's help page: >>  make bost-help <module>" 
 	@echo ""
 	@echo "        Test Options"
-	@echo "ADDITIONAL_TEST_COMP_FLAGS: Add extra flags used when compiling test binaries - (), <$(ADDITIONAL_INCLUDE_FLAGS)>"
+	@echo "ADDITIONAL_TEST_COMP_FLAGS: Add extra flags used when compiling test binaries - (), <$(ADDITIONAL_TEST_COMP_FLAGS)>"
 	@echo "DEV_TOOLS_TEST_CAPTURE_FROM  (Cherry pick contexts to full_log):"
 	@echo "    >$(DEV_TOOLS_TEST_CAPTURE_FROM)<"
 	@echo "Other Test Options ( set to activate)"
@@ -1021,6 +1052,7 @@ usage:
 	@echo "FATAL_WARNINGS             Set to NO to prevent compiler warnings becomings errors - (YES), <$(FATAL_WARNINGS)>"
 	@echo "ALL_WARNINGS               Set to NO to turn off warnings for questionable code - (YES), <$(ALL_WARNINGS)>"
 	@echo "ADDITIONAL_INCLUDE_FLAGS:  Add extra include directories - (), <$(ADDITIONAL_INCLUDE_FLAGS)>"
+	@echo "ADDITIONAL_LIB_DIRS:       Add extra directories to search for libs - (), <$(ADDITIONAL_LIB_DIRS)>"
 	@echo ""
 	@echo "        File Operations"
 	@echo "LINK_CEF_RESOURCES: $(LINK_CEF_RESOURCES)"

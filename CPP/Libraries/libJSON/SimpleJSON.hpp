@@ -10,6 +10,7 @@
 
 #include <limits>
 #include <type_traits>
+#include <rapidjson/error/en.h>
 #include <util_time.h>
 
 /*****************************************************************************
@@ -125,7 +126,7 @@ void FieldArrayBase<TYPE>::Clear() {
 template <typename TYPE>
 bool FieldArrayBase<TYPE>::StartArray() {
     if(inArray) {
-        throw spJSON::ParseError();
+        throw spJSON::WrongTypeError{this->Name()};
     } else {
         inArray = true;
     }
@@ -221,11 +222,12 @@ struct TimeArrayField: public FieldArrayBase<Time> {
     void AddToJSON(Builder& builder, bool nullIfNotSupplied) {
         if ( supplied || !nullIfNotSupplied )
         {
-            builder.StartArray(Name());
+        	std::vector<std::string> stringValues;
+        	stringValues.reserve(value.size());
             for (Time& t: value) {
-                builder.Add(t.ISO8601Timestamp());
+            	stringValues.emplace_back(std::move(t.ISO8601Timestamp()));
             }
-            builder.EndArray();
+            builder.Add(Name(), stringValues);
         }
         else
         {
@@ -268,7 +270,7 @@ struct IntArrayField: public FieldArrayBase<int> {
 
     bool Uint(unsigned u) {
         if (u <= static_cast<unsigned>(std::numeric_limits<int>::max())) {
-            value.push_back(u);
+            value.push_back(std::move(u));
         } else {
             throw spJSON::ValueError{Name()};
         }
@@ -313,7 +315,7 @@ struct I64Field: public FieldBase {
 
 struct I64ArrayField: public FieldArrayBase<int64_t> {
     bool Int(int i) {
-        value.push_back(i);
+        value.push_back(std::move(i));
         return true;
     }
 
@@ -323,14 +325,14 @@ struct I64ArrayField: public FieldArrayBase<int64_t> {
     }
 
     bool Uint(unsigned u) {
-        value.push_back(u);
+        value.push_back(std::move(u));
         return true;
     }
 
     bool Uint64(uint64_t u) {
         if (u <= static_cast<uint64_t>(std::numeric_limits<int64_t>::max()))
         {
-            value.push_back(u);
+            value.push_back(std::move(u));
         } else {
             throw spJSON::ValueError{Name()};
         }
@@ -360,7 +362,7 @@ struct UI64Field: public FieldBase {
 
 struct UI64ArrayField: public FieldArrayBase<uint64_t> {
     bool Uint(unsigned u) {
-        value.push_back(u);
+        value.push_back(std::move(u));
         return true;
     }
 
@@ -430,27 +432,27 @@ struct DoubleField: public FieldBase {
 
 struct DoubleArrayField: public FieldArrayBase<double> {
     bool Int(int i) {
-        value.push_back(i);
+        value.push_back(std::move(i));
         return true;
     }
 
     bool Int64(int64_t i) {
-        value.push_back(i);
+        value.push_back(std::move(i));
         return true;
     }
 
     bool Uint(unsigned u) {
-        value.push_back(u);
+        value.push_back(std::move(u));
         return true;
     }
 
     bool Uint64(uint64_t u) {
-        value.push_back(u);
+        value.push_back(std::move(u));
         return true;
     }
 
     bool Double(double d) {
-        value.push_back(d);
+        value.push_back(std::move(d));
         return true;
     }
 };
@@ -805,12 +807,28 @@ SimpleParsedJSON<Fields...>::SimpleParsedJSON()
 
 template <class...Fields>
 bool SimpleParsedJSON<Fields...>::Parse(const char* json, std::string& errMsg) {
+    class RapidJSONParser: public IParser {
+        virtual void Parse(const char* json, SimpleParsedJSON<Fields...>& spj) {
+            rapidjson::StringStream ss(json);
+            rapidjson::Reader reader;
+            constexpr unsigned parseFlags =
+                    rapidjson::kParseDefaultFlags | rapidjson::kParseTrailingCommasFlag;
+            rapidjson::ParseResult result = reader.Parse<parseFlags>(ss,spj);
+            if (result.IsError()) {
+                throw typename IParser::ParseError{rapidjson::GetParseError_En(result.Code())};
+            }
+        }
+    } rjp;
+
+    return Parse(json,errMsg,rjp);
+}
+
+template <class...Fields>
+bool SimpleParsedJSON<Fields...>::Parse(const char* json, std::string& errMsg, IParser& parser) {
     bool ok = false;
-    rapidjson::StringStream ss(json);
-    rapidjson::Reader reader;
 
     try {
-        reader.Parse(ss,*this);
+        parser.Parse(json,*this);
         ok = true;
     } catch (spJSON::UnknownFieldError extraField) {
         errMsg = "Unknown extra field: " + extraField.field;
@@ -820,6 +838,8 @@ bool SimpleParsedJSON<Fields...>::Parse(const char* json, std::string& errMsg) {
         errMsg = "Invalid JSON!";
     } catch (spJSON::WrongTypeError& type) {
         errMsg = "Invalid type for field: " + type.field;
+    } catch (typename IParser::ParseError& error) {
+        errMsg = "Failed to parse JSON: " + error.msg;
     }
 
     return ok;
@@ -940,6 +960,10 @@ bool SimpleParsedJSON<Fields...>::String(
     return true;
 }
 
+template <class...Fields>
+bool SimpleParsedJSON<Fields...>::RawNumber(const char *str, size_t len, bool copy) {
+    return this->String(str, len, copy);
+}
 /**
  * The current field has an integer value. Check our current field is an int, or
  * can be converted to one, and set it.
