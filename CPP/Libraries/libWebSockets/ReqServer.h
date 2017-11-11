@@ -1,6 +1,7 @@
 #ifndef __DEV_TOOLS_CPP_LIBRARIES_WEBSOCKETS_REQ_SERVER_H__
 #define __DEV_TOOLS_CPP_LIBRARIES_WEBSOCKETS_REQ_SERVER_H__
 
+#include <future>
 #include <map>
 #include <memory>
 
@@ -16,6 +17,12 @@ public:
     virtual std::string OnRequest(const char* request) = 0;
 
     struct InvalidRequestException {
+        int code;
+        std::string errMsg;
+    };
+
+    // Unrecoverable error - terminate the server
+    struct FatalError {
         int code;
         std::string errMsg;
     };
@@ -57,7 +64,7 @@ public:
     virtual void OnRequest(RequestHandle hdl) = 0;
 };
 
-typedef websocketpp::server<websocketpp::config::asio> server;
+typedef websocketpp::server<websocketpp::config::asio> Server;
 
 /**
  *  The request server 
@@ -72,17 +79,19 @@ public:
      */
     RequestServer();
 
+    virtual ~RequestServer();
+
     /**
      * Install a new handler, which will be availabel when HandleRequests is
      * called
      */
     void AddHandler(
              const std::string& requestName, 
-             std::unique_ptr<RequestReplyHandler>&& handler);
+             std::unique_ptr<RequestReplyHandler> handler);
 
     void AddHandler(
              const std::string& requestName, 
-             std::unique_ptr<SubscriptionHandler>&& handler);
+             std::unique_ptr<SubscriptionHandler> handler);
 
     /**
      * Run the event loop, handle any incoming requests or posted tasks
@@ -105,15 +114,34 @@ public:
 
     std::string HandleMessage(
          const std::string& request,
-         server*  raw_server,
+         Server*  raw_server,
          websocketpp::connection_hdl hdl);
+
+    /**
+     * Blocks until the request server's is up, and the event loop is running.
+     */
+    void WaitUntilRunning();
 
 
     /**
      * Handle an on_close even on an active connection.
      */
     void HandleClose(websocketpp::connection_hdl hdl);
+
+    struct FatalErrorException {
+        int code;
+        std::string message;
+    };
+
+    // Unrecoverable error has occurred - close down the server as gracefully as
+    // we can and, then throw an exception out of HandleRequests
+    void FatalError(int code, std::string message);
 private:
+    /**
+     * Bail out of the event loop...
+     */
+    void Stop();
+
     std::string HandleRequestReplyMessage(
                     const std::string& reqName,
                     const std::string& request,
@@ -123,10 +151,15 @@ private:
                     const std::string& reqName,
                     const std::string& request,
                     SubscriptionHandler& handler,
-                    server*  raw_server,
+                    Server*  raw_server,
                     websocketpp::connection_hdl hdl);
 
-    server echo_server;
+
+    Server requestServer_;
+    std::promise<bool> runningFlag;
+    std::future<bool>  running;
+    std::promise<bool> stopFlag;
+    std::future<bool>  stopped;
 
     std::map<std::string,std::unique_ptr<RequestReplyHandler>> req_handlers;
     std::map<std::string,std::unique_ptr<SubscriptionHandler>> sub_handlers;
@@ -135,6 +168,11 @@ private:
      * Maps an active connection to
      */
     std::map<void*,SubscriptionHandler::RequestHandle> conn_map;
+
+    // Error tracking
+    bool        failed;
+    int         failCode;
+    std::string failMsg;
 };
 
 

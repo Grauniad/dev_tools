@@ -10,6 +10,7 @@
 #include <mutex>
 #include <atomic>
 
+#include "ReqSvrRequest.h"
 
 /**
  * Spawns a new IO thread, which can be used to create
@@ -41,6 +42,14 @@ public:
         const AsyncHTTPSClient::HeaderMap& headers);
 
     /**
+     * Request content via a one-short request to a ReqServer
+     */
+    std::shared_ptr<ReqSvrRequest> Request(
+            const std::string& uri,
+            const std::string& requestName,
+            const std::string& jsonData);
+
+    /**
      * Spawn a new thread to handle a websocket stream
      */
 
@@ -55,20 +64,6 @@ private:
      */
     void Stop();
 
-    /**
-     * Check if the IO thread should continue
-     */
-    bool IOContinue();
-
-    /**
-     * Notifies the IO thread that new has been scheduled.
-     */
-    void NewIO();
-
-    std::atomic<bool> io_continue;
-    std::condition_variable io_trigger;
-    std::mutex io_mutex;
-    typedef std::unique_lock<std::mutex> IOLock;
     boost::asio::io_service io_service;
     std::thread io_thread;
 };

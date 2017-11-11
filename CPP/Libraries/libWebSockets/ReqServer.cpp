@@ -17,12 +17,12 @@ namespace {
     NewStringField(errorText);
     typedef SimpleParsedJSON<errorNumber,errorText> ErrorMsg;
 
-    std::string ErrorMessage(const std::string& msg) {
+    std::string ErrorMessage(const std::string& msg, const int& code) {
         std::string response;
         static ErrorMsg errJSON;
         errJSON.Clear();
 
-        errJSON.Get<errorNumber>() = 0;
+        errJSON.Get<errorNumber>() = code;
         errJSON.Get<errorText>() = msg;
         response = "ERROR ";
         response += errJSON.GetJSONString();
@@ -35,24 +35,35 @@ using websocketpp::lib::placeholders::_1;
 using websocketpp::lib::placeholders::_2;
 using websocketpp::lib::bind;
 
-typedef server::message_ptr message_ptr;
+typedef Server::message_ptr message_ptr;
 
 // Define a callback to handle incoming messages
-void on_message(RequestServer* s, server* raw_server, websocketpp::connection_hdl hdl, message_ptr msg) {
-    if (msg->get_payload() == "stop-listening") {
-        raw_server->stop_listening();
-    } else {
-        SLOG_FROM(LOG_VERBOSE,">> ReqServer::on_message",
-        "Received message from: " << hdl.lock().get() << endl <<
-        "Message: " << msg->get_payload() << endl);
-        const std::string& reply = s->HandleMessage(msg->get_payload(),raw_server,hdl);
+void on_message(RequestServer* s, Server* raw_server, websocketpp::connection_hdl hdl, message_ptr msg) {
+    try {
+        if (msg->get_payload() == "stop-listening") {
+            raw_server->stop_listening();
+        } else {
+            SLOG_FROM(LOG_VERBOSE,">> ReqServer::on_message",
+                "Received message from: " << hdl.lock().get() << endl <<
+                "Message: " << msg->get_payload() << endl);
+            const std::string& reply = s->HandleMessage(msg->get_payload(),raw_server,hdl);
 
-        if (reply != "") {
-            SLOG_FROM(LOG_VERBOSE,"<< ReqServer::on_message",
-            "Sending Message to:" << hdl.lock().get() << endl <<
-            "Message: " << reply << endl);
-            raw_server->send(hdl,reply,websocketpp::frame::opcode::TEXT);
+            if (reply != "") {
+                SLOG_FROM(LOG_VERBOSE,"<< ReqServer::on_message",
+                    "Sending Message to:" << hdl.lock().get() << endl <<
+                    "Message: " << reply << endl);
+                raw_server->send(hdl,reply,websocketpp::frame::opcode::TEXT);
+            }
         }
+    } catch (RequestReplyHandler::FatalError& fatal) {
+        websocketpp::lib::error_code ec;
+        raw_server->get_con_from_hdl(hdl)->close(
+                websocketpp::close::status::internal_endpoint_error,
+                "Fatal error",
+                ec);
+        SLOG_FROM(LOG_VERBOSE,"RequestServer::on_message",
+            "An unrecoverable error occurred - shutting down the server");
+        s->FatalError(fatal.code, fatal.errMsg);
     }
 }
 
@@ -69,8 +80,9 @@ class Request: public SubscriptionHandler::SubRequest {
 public:
     Request(
         const std::string& req,
-        server* s,
+        Server* s,
         websocketpp::connection_hdl c)
+
     : request(req), serv(s), conn(serv->get_con_from_hdl(c)), open(true)
     {
     }
@@ -99,8 +111,8 @@ public:
 
 private:
     std::string                 request;
-    server*                     serv;
-    server::connection_ptr      conn;
+    Server*                     serv;
+    Server::connection_ptr      conn;
     bool                        open;
 };
 
@@ -108,31 +120,36 @@ private:
  *                Request Serve
  **************************************************************/
 
-RequestServer::RequestServer() {
+RequestServer::RequestServer()
+   : running(runningFlag.get_future())
+   , stopped(stopFlag.get_future())
+   , failed(false)
+   , failCode(0)
+{
     // Set logging settings
-    echo_server.set_access_channels(websocketpp::log::alevel::all);
-    echo_server.clear_access_channels(websocketpp::log::alevel::frame_payload);
+    requestServer_.clear_access_channels(websocketpp::log::alevel::all);
+    requestServer_.set_access_channels(websocketpp::log::alevel::fail);
 
-    echo_server.init_asio();
+    requestServer_.init_asio();
 }
 
 void RequestServer::AddHandler(
          const std::string& requestName, 
-         std::unique_ptr<RequestReplyHandler>&& handler) 
+         std::unique_ptr<RequestReplyHandler> handler)
 {
     req_handlers[requestName].reset(handler.release());
 }
 
 void RequestServer::AddHandler(
          const std::string& requestName, 
-         std::unique_ptr<SubscriptionHandler>&& handler)
+         std::unique_ptr<SubscriptionHandler> handler)
 {
     sub_handlers[requestName].reset(handler.release());
 }
 
 std::string RequestServer::HandleMessage(
     const std::string& request,
-    server* raw_server,
+    Server* raw_server,
     websocketpp::connection_hdl hdl)
 {
 
@@ -151,7 +168,7 @@ std::string RequestServer::HandleMessage(
             response = 
                 HandleSubscriptionMessage(reqName, request, *(sub_it->second),raw_server,hdl);
         } else {
-            response = ErrorMessage("No such request: " + reqName);
+            response = ErrorMessage("No such request: " + reqName, 0);
         }
     }
     return response;
@@ -172,7 +189,7 @@ std::string RequestServer::HandleRequestReplyMessage(
     try {
         response = handler.OnRequest(jsonRequest);
     } catch (const RequestReplyHandler::InvalidRequestException& e) {
-        response = ErrorMessage(e.errMsg);
+        response = ErrorMessage(e.errMsg, e.code);
     }
 
     return response;
@@ -190,11 +207,38 @@ void RequestServer::HandleClose(websocketpp::connection_hdl hdl) {
 
 }
 
+RequestServer::~RequestServer() {
+    Stop();
+}
+
+void RequestServer::WaitUntilRunning()
+{
+    running.wait();
+}
+
+void RequestServer::Stop() {
+    websocketpp::lib::error_code ec;
+    requestServer_.stop_listening(ec);
+    requestServer_.stop();
+    stopped.wait();
+    requestServer_.get_io_service().stop();
+    requestServer_.get_io_service().reset();
+}
+
+void RequestServer::FatalError(int code, std::string message) {
+    failed = true;
+    failCode = code;
+    failMsg = std::move(message);
+    websocketpp::lib::error_code ec;
+    requestServer_.stop_listening(ec);
+    requestServer_.stop();
+}
+
 std::string RequestServer::HandleSubscriptionMessage(
                     const std::string& reqName,
                     const std::string& request,
                     SubscriptionHandler& handler,
-                    server*  raw_server,
+                    Server*  raw_server,
                     websocketpp::connection_hdl hdl)
 {
     std::string response = "";
@@ -209,7 +253,7 @@ std::string RequestServer::HandleSubscriptionMessage(
             new Request(jsonRequest,raw_server,hdl));
         handler.OnRequest(reqHdl);
     } catch (const SubscriptionHandler::InvalidRequestException& e) {
-        response = ErrorMessage(e.errMsg);
+        response = ErrorMessage(e.errMsg, e.code);
     }
 
     return response;
@@ -217,25 +261,45 @@ std::string RequestServer::HandleSubscriptionMessage(
 
 
 void RequestServer::HandleRequests(unsigned short port) {
+    struct OnExit {
+        std::promise<bool>& stopFlag_;
+        ~OnExit() {
+            stopFlag_.set_value(true);
+        }
+    } stopOnExit{stopFlag};
+
     try {
-        echo_server.set_message_handler(bind(&on_message,this,&echo_server,::_1,::_2));
-        echo_server.set_close_handler(bind(&on_close,this,::_1));
+        requestServer_.set_message_handler(bind(&on_message,this,&requestServer_,::_1,::_2));
+        requestServer_.set_close_handler(bind(&on_close,this,::_1));
 
-        echo_server.listen(port);
+        // Allow address re-use so that orphaned sessions from an old server
+        // which are about to be killed off don't prevent us starting up.
+        // NOTE: This will *not* allow two active server listeners (see
+        //       NoDoublePortBind test)
+        requestServer_.set_reuse_addr(true);
 
-        echo_server.start_accept();
+        requestServer_.listen(port);
+
+        requestServer_.start_accept();
+
+        PostTask([&] () -> void {
+            this->runningFlag.set_value(true);
+        });
 
         // Start the ASIO io_service run loop
-        echo_server.run();
+        requestServer_.run();
     } catch (websocketpp::exception const & e) {
-        std::cout << "******************************************************" << std::endl;
-        std::cout << "Web Sockets ERROR: " << e.what() << std::endl;
-        std::cout << "******************************************************" << std::endl;
+        FatalError(-1, e.what());
+    }
+
+    if (failed)
+    {
+        throw FatalErrorException {failCode, failMsg};
     }
 }
 
 void RequestServer::PostTask(const RequestServer::InteruptHandler& f) {
-    boost::asio::io_service& serv = echo_server.get_io_service();
+    boost::asio::io_service& serv = requestServer_.get_io_service();
     
     serv.post(f);
 }

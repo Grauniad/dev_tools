@@ -10,7 +10,8 @@ MAKE_DIRS= IOInterface\
 		   regex \
 		   strings  \
 		   JSON \
-		   ThreadComms
+		   ThreadComms \
+		   WebSockets
 
 MODE=CPP
 

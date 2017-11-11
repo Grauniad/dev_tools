@@ -21,8 +21,10 @@ HTTPRequest::HTTPRequest(boost::asio::io_service& io_service,
                          const std::string& path,
                          const std::string& data,
                          const HeaderMap& headers)
-   : AsyncHTTPSClient(REQUEST_MODE_POST, io_service, server, path, headers, data),
-     statusFuture(statusFlag.get_future())
+   : AsyncHTTPSClient(REQUEST_MODE_POST, io_service, server, path, headers, data)
+   , statusFuture(statusFlag.get_future())
+   , ready(false)
+   , notify(false)
 {
     StartRequest();
 }

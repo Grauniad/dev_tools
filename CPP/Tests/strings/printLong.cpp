@@ -12,7 +12,7 @@ using namespace std;
 const long TARGET = 100000;
 const long MAX = numeric_limits<long>::max();
 const long BIG_MUL = 100000;
-const size_t MAX_PRINT=8;
+const size_t MAX_PRINT=22;
 
 namespace benchmark {
     void stdprintf() {
@@ -96,8 +96,8 @@ int CheckLongs(testLogger& log ) {
     char sbuf[50];
     char fbuf[50];
     for ( long i = -100000; i < 100000; ++i ) {
-        snprintf(sbuf,5,"%ld",i);
-        StringUtils::FastPrintLong(i,5,fbuf);
+        snprintf(sbuf,12,"%ld",i);
+        StringUtils::FastPrintLong(i,12,fbuf);
         if (  strncmp(sbuf,fbuf,50) != 0 ) {
             log << "Failed long: " << i << endl;
             log << "expected: " << sbuf << endl;

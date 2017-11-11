@@ -99,7 +99,9 @@ void AsyncHTTPSClient::handle_resolve(const boost::system::error_code& err,
     {
         // Attempt a connection to each endpoint in the list until we
         // successfully establish a connection.
-        boost::asio::async_connect(socket_.lowest_layer(), endpoint_iterator,
+        boost::asio::async_connect(
+                socket_.lowest_layer(),
+                endpoint_iterator,
                 boost::bind(&AsyncHTTPSClient::handle_connect, this,
                     boost::asio::placeholders::error));
     }
