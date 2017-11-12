@@ -80,7 +80,7 @@ void AsyncReqSvrRequest::OnMessage(
     reply_.state_ = ReplyMessage::COMPLETE;
 
     // But must also check that it wasn't a standard error...
-    const std::string payload = reply_.content;
+    const std::string& payload = reply_.content;
     if ( payload.length() > ERROR_FLAG.length() &&
          payload.substr(0, ERROR_FLAG.length()) == ERROR_FLAG)
     {
